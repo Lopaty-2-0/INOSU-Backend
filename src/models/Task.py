@@ -1,8 +1,8 @@
 import datetime
 import sqlalchemy as sql
-from src.database import Base
+from src.__init__ import db
 
-class Task(Base):
+class Task(db.Model):
     __tablename__ = "Task"
 
     id = sql.Column(sql.Integer, primary_key = True, autoincrement = True)
@@ -22,3 +22,6 @@ class Task(Base):
         self.elaboration = elaboration
         self.review = review
         self.guarantor = guarantor
+
+    def __repr__(self):
+        return f'<Task {self.name, self.startDate, self.endDate, self.task, self.guarantor!r}>'

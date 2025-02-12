@@ -1,7 +1,7 @@
 import sqlalchemy as sql
-from src.database import Base
+from src.__init__ import db
 
-class Specialization(Base):
+class Specialization(db.Model):
     __tablename__ = "Specialization"
 
     id = sql.Column(sql.Integer, primary_key = True, autoincrement = True)
@@ -13,3 +13,6 @@ class Specialization(Base):
         self.name = name
         self.abbrevation = abbrevation
         self.lengthOfStudy = lengthOfStudy
+
+    def __repr__(self):
+        return f'<Team {self.name, self.abbrevation, self.lengthOfStudy!r}>'

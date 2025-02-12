@@ -1,7 +1,7 @@
 import sqlalchemy as sql
-from src.database import Base
+from src.__init__ import db
 
-class Team(Base):
+class Team(db.Model):
     __tablename__ = "Team"
 
     idUser = sql.Column(sql.Integer, sql.ForeignKey("User.id"), primary_key = True)
@@ -12,3 +12,6 @@ class Team(Base):
         self.idUser = idUser
         self.idTask = idTask
         self.leader = leader
+
+    def __repr__(self):
+        return f'<Team {self.idTask, self.idUser, self.leader!r}>'

@@ -1,8 +1,8 @@
 import datetime
 import sqlalchemy as sql
-from src.database import Base
+from src.__init__ import db
 
-class User(Base):
+class User(db.Model):
     __tablename__ = "User"
 
     id = sql.Column(sql.Integer, primary_key = True, autoincrement=True)
@@ -25,3 +25,6 @@ class User(Base):
         self.profilePicture = profilePicture
         self.email = email
         self.idClass = idClass
+
+    def __repr__(self):
+        return f'<User {self.name, self.surname, self.role, self.email, self.idClass!r}>'
