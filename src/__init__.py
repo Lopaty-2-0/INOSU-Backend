@@ -3,7 +3,8 @@ import sqlalchemy as sql
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost/test'
+#We love Markétka <3
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost/marketkaDB'
 app.config['SECRET_KEY'] = ''
 
 db = sql(app)
