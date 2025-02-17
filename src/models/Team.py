@@ -1,12 +1,11 @@
-import sqlalchemy as sql
-from src.__init__ import db
+from app import db
 
 class Team(db.Model):
     __tablename__ = "Team"
 
-    idUser = sql.Column(sql.Integer, sql.ForeignKey("User.id"), primary_key = True)
-    idTask = sql.Column(sql.Integer, sql.ForeignKey("Task.id"), primary_key = True)
-    leader = sql.Column(sql.Boolean, nullable = False)
+    idUser = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key = True)
+    idTask = db.Column(db.Integer, db.ForeignKey("Task.id"), primary_key = True)
+    leader = db.Column(db.Boolean, nullable = False)
 
     def __init__(self, idUser, idTask, leader):
         self.idUser = idUser

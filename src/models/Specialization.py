@@ -1,13 +1,12 @@
-import sqlalchemy as sql
-from src.__init__ import db
+from app import db
 
 class Specialization(db.Model):
     __tablename__ = "Specialization"
 
-    id = sql.Column(sql.Integer, primary_key = True, autoincrement = True)
-    name = sql.Column(sql.VARCHAR(45), unique = True, nullable = False)
-    abbrevation = sql.Column(sql.CHAR(1), unique = True, nullable = False)
-    lengthOfStudy = sql.Column(sql.Integer, nullable = False)
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    name = db.Column(db.VARCHAR(45), unique = True, nullable = False)
+    abbrevation = db.Column(db.CHAR(1), unique = True, nullable = False)
+    lengthOfStudy = db.Column(db.Integer, nullable = False)
 
     def __init__(self, name, abbrevation, lengthOfStudy):
         self.name = name

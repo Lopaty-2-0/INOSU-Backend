@@ -1,13 +1,12 @@
-import sqlalchemy as sql
-from src.__init__ import db
+from app import db
 
 class Class(db.Model):
     __tablename__ = "Class"
 
-    id = sql.Column(sql.Integer, primary_key = True, autoincrement = True)
-    grade = sql.Column(sql.Integer, nullable = False)
-    group = sql.Column(sql.CHAR(1), nullable = False)
-    idSpecialization = sql.Column(sql.Integer, sql.ForeignKey("Specialization.id"), nullable = False)
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    grade = db.Column(db.Integer, nullable = False)
+    group = db.Column(db.CHAR(1), nullable = False)
+    idSpecialization = db.Column(db.Integer, db.ForeignKey("Specialization.id"), nullable = False)
 
     def __init__(self, grade, group, idSpecialization):
         self.grade = grade

@@ -1,20 +1,19 @@
 import datetime
-import sqlalchemy as sql
-from src.__init__ import db
+from app import db
 
 class User(db.Model):
     __tablename__ = "User"
 
-    id = sql.Column(sql.Integer, primary_key = True, autoincrement=True)
-    name = sql.Column(sql.VARCHAR(100), nullable = False)
-    surname = sql.Column(sql.VARCHAR(100), nullable = False)
-    abbreviation = sql.Column(sql.VARCHAR(4), unige = True)
-    createdAt = sql.Column(sql.DateTime, default = datetime.datetime.now, nullable = False)
-    role = sql.Column(sql.VARCHAR(45), nullable = False)
-    password = sql.Column(sql.Text, nullable = False)
-    profilePicture = sql.Column(sql.VARCHAR(255), default="/img/profile_photos/default.jpg", nullable=False)
-    email = sql.Column(sql.VARCHAR(255), unique = True, nullable = False)
-    idClass = sql.Column(sql.Integer, sql.ForeignKey("Class.id"))
+    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
+    name = db.Column(db.VARCHAR(100), nullable = False)
+    surname = db.Column(db.VARCHAR(100), nullable = False)
+    abbreviation = db.Column(db.VARCHAR(4), unique = True)
+    createdAt = db.Column(db.DateTime, default = datetime.datetime.now, nullable = False)
+    role = db.Column(db.VARCHAR(45), nullable = False)
+    password = db.Column(db.Text, nullable = False)
+    profilePicture = db.Column(db.VARCHAR(255), default="/img/profile_photos/default.jpg", nullable=False)
+    email = db.Column(db.VARCHAR(255), unique = True, nullable = False)
+    idClass = db.Column(db.Integer, db.ForeignKey("Class.id"))
 
     def __init__(self, name, surname, role, password, profilePicture, email, idClass = None, abbreviation = None):
         self.name = name

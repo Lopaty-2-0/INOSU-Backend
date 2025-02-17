@@ -1,18 +1,17 @@
 import datetime
-import sqlalchemy as sql
-from src.__init__ import db
+from app import db
 
 class Task(db.Model):
     __tablename__ = "Task"
 
-    id = sql.Column(sql.Integer, primary_key = True, autoincrement = True)
-    name = sql.Column(sql.VARCHAR(45), nullable = False)
-    startDate = sql.Column(sql.DateTime, default = datetime.datetime.now,nullable = False)
-    endDate = sql.Column(sql.DateTime, nullable = False)
-    task = sql.Column(sql.VARCHAR(255), nullable = False)
-    elaboration = sql.Column(sql.VARCHAR(255), nullable = False)
-    review = sql.Column(sql.VARCHAR(255), nullable = False)
-    guarantor = sql.Column(sql.Integer, sql.ForeignKey("User.id"),nullable = False)
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    name = db.Column(db.VARCHAR(45), nullable = False)
+    startDate = db.Column(db.DateTime, default = datetime.datetime.now,nullable = False)
+    endDate = db.Column(db.DateTime, nullable = False)
+    task = db.Column(db.VARCHAR(255), nullable = False)
+    elaboration = db.Column(db.VARCHAR(255), nullable = False)
+    review = db.Column(db.VARCHAR(255), nullable = False)
+    guarantor = db.Column(db.Integer, db.ForeignKey("User.id"),nullable = False)
 
     def __init__(self, name, startDate, endDate, task, elaboration, review, guarantor):
         self.name = name
