@@ -25,6 +25,7 @@ def registration(name, surname, abbreviation, role, password, profilePicture, em
     if email == None:
         return sendResponse(400, , "Email is not entered", "error")
     
+    if db.Query.filter_by(email = email) == email
     newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = password, profilePicture = profilePicture, email = email, idClass = idClass)
 
     db.session.add(newUser)
@@ -34,5 +35,4 @@ def registration(name, surname, abbreviation, role, password, profilePicture, em
 def login(login, password):
     if login == None or password == None:
         return sendResponse(400, , "Email or password not entered", "error")
-    
     
