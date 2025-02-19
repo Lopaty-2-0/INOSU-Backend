@@ -13,7 +13,7 @@ class User(db.Model):
     password = db.Column(db.Text, nullable = False)
     profilePicture = db.Column(db.VARCHAR(255), default="/img/profile_photos/default.jpg", nullable=False)
     email = db.Column(db.VARCHAR(255), unique = True, nullable = False)
-    idClass = db.Column(db.Integer, db.ForeignKey("Class.id"))
+    idClass = db.Column(db.Integer, db.ForeignKey("Class.id"), nullable = True)
 
     def __init__(self, name, surname, role, password, profilePicture, email, idClass = None, abbreviation = None):
         self.name = name
