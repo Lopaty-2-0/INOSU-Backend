@@ -2,7 +2,7 @@ import datetime
 from app import db
 
 class Task(db.Model):
-    __tablename__ = "Task"
+    __tablename__ = "task"
 
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     name = db.Column(db.VARCHAR(45), nullable = False)
@@ -11,7 +11,7 @@ class Task(db.Model):
     task = db.Column(db.VARCHAR(255), nullable = False)
     elaboration = db.Column(db.VARCHAR(255), nullable = False)
     review = db.Column(db.VARCHAR(255), nullable = False)
-    guarantor = db.Column(db.Integer, db.ForeignKey("User.id"),nullable = False)
+    guarantor = db.Column(db.Integer, db.ForeignKey("user.id"),nullable = False)
 
     def __init__(self, name, startDate, endDate, task, elaboration, review, guarantor):
         self.name = name
@@ -23,4 +23,4 @@ class Task(db.Model):
         self.guarantor = guarantor
 
     def __repr__(self):
-        return f'<Task {self.name, self.startDate, self.endDate, self.task, self.guarantor!r}>'
+        return f'<task {self.name, self.startDate, self.endDate, self.task, self.guarantor!r}>'

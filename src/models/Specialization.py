@@ -1,7 +1,7 @@
 from app import db
 
 class Specialization(db.Model):
-    __tablename__ = "Specialization"
+    __tablename__ = "specialization"
 
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     name = db.Column(db.VARCHAR(45), unique = True, nullable = False)
@@ -14,4 +14,4 @@ class Specialization(db.Model):
         self.lengthOfStudy = lengthOfStudy
 
     def __repr__(self):
-        return f'<Team {self.name, self.abbrevation, self.lengthOfStudy!r}>'
+        return f'<specialization {self.name, self.abbrevation, self.lengthOfStudy!r}>'

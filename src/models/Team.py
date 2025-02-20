@@ -1,10 +1,10 @@
 from app import db
 
 class Team(db.Model):
-    __tablename__ = "Team"
+    __tablename__ = "team"
 
-    idUser = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key = True)
-    idTask = db.Column(db.Integer, db.ForeignKey("Task.id"), primary_key = True)
+    idUser = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key = True)
+    idTask = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key = True)
     leader = db.Column(db.Boolean, nullable = False)
 
     def __init__(self, idUser, idTask, leader):
@@ -13,4 +13,4 @@ class Team(db.Model):
         self.leader = leader
 
     def __repr__(self):
-        return f'<Team {self.idTask, self.idUser, self.leader!r}>'
+        return f'<team {self.idTask, self.idUser, self.leader!r}>'

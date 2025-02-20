@@ -41,9 +41,16 @@ def registration():
         return  sendResponse(400, 7,  {"message": "Password is too short" }, "error")
     if not email:
         return  sendResponse(400, 8,  {"message": "Email is not entered" }, "error")
+    if User.query.filter_by(email = email).first():
+        return  sendResponse(400, 9,  {"message": "Email is already in use" }, "error")
+    if not idClass:
+        idClass = None
+
     
     db.session.add(User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = password, profilePicture = profilePicture, email = email, idClass = idClass))
     db.session.commit()
+
+    return sendResponse(1,8,{"message" : "User created succesfuly"}, "succes")
 
 @routes_bp.route("/login", methods=['POST'])
 def login():
@@ -52,5 +59,5 @@ def login():
     password = str(data["password"])
 
     if not login or not password:
-        return sendResponse(400, 9,  {"message": "Email or password not entered" }, "error")
+        return sendResponse(400, 10,  {"message": "Email or password not entered" }, "error")
     
