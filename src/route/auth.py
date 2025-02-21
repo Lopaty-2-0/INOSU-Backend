@@ -2,6 +2,7 @@ from app import  db
 from flask import Blueprint, request
 from utils.response import sendResponse
 from models.User import User
+import datetime
 
 routes_bp = Blueprint('routes', __name__)
 
@@ -15,7 +16,7 @@ def server_error(e):
 
 @routes_bp.route("/")
 def index():
-    return 
+    return {"message": "My balls itch", "time": datetime.datetime.now}
 
 @routes_bp.route("/registration", methods=['POST'])
 def registration():
@@ -43,6 +44,8 @@ def registration():
         return  sendResponse(400, 8,  {"message": "Email is not entered" }, "error")
     if User.query.filter_by(email = email).first():
         return  sendResponse(400, 9,  {"message": "Email is already in use" }, "error")
+    if User.query.filter_by(abbreviation = abbreviation).first():
+        return  sendResponse(400, 11,  {"message": "Abbreviation is already in use" }, "error")
     if not idClass:
         idClass = None
 
@@ -61,3 +64,17 @@ def login():
     if not login or not password:
         return sendResponse(400, 10,  {"message": "Email or password not entered" }, "error")
     
+    #dont know if works, probably not, will test later
+    if User.query.filter_by(email = login) or User.query.filter_by(abbreviation = login):
+        if User.query.filter_by(password = password):
+            return sendResponse(400, 12, {"message": "Login succesful", "User":"smrdí mi koule"}, "succes")
+
+    return sendResponse(400,13,{"message": "Wrong email or password"}, "error")
+
+@routes_bp.route("/logout")
+def logout():
+    return
+
+@routes_bp.route("/verification")
+def verification():
+    return

@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
+from createDB import creatussy
 
 
 
@@ -9,10 +10,13 @@ app = Flask(__name__)
 
 
 #We love Markétka <3
+#We need Markétka in our life
+#We want Markétka in our life
 
+
+creatussy()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root@localhost/marketkaDB'
 app.config['SECRET_KEY'] = ''
-
 
 db = sql(app)
 
