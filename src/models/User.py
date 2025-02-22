@@ -1,7 +1,9 @@
 import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 from app import db
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key = True, autoincrement=True)
@@ -15,6 +17,17 @@ class User(db.Model):
     email = db.Column(db.VARCHAR(255), unique = True, nullable = False)
     idClass = db.Column(db.Integer, db.ForeignKey("class.id"), nullable = True)
 
+    @property
+    def hash_password(self):
+        raise AttributeError("password not readable")
+    
+    @hash_password.setter
+    def hashed_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password, password)
+
     def __init__(self, name, surname, role, password, profilePicture, email, idClass = None, abbreviation = None):
         self.name = name
         self.surname = surname
@@ -24,6 +37,6 @@ class User(db.Model):
         self.profilePicture = profilePicture
         self.email = email
         self.idClass = idClass
-
+    
     def __repr__(self):
         return f'<user {self.name, self.surname, self.role, self.email, self.idClass!r}>'
