@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 import flask_login
 
+
 app = Flask(__name__)
 
 #We love Markétka <3
@@ -23,14 +24,18 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 with app.app_context():
-    from models.User import User
-    from models.Class import Class
-    from models.Task import Task
-    from models.Specialization import Specialization
-    from models.Team import Team
-    from models.Task_Class import Task_Class
+    from src.models.User import User
+    from src.models.Class import Class
+    from src.models.Task import Task
+    from src.models.Specialization import Specialization
+    from src.models.Team import Team
+    from src.models.Task_Class import Task_Class
 
     db.create_all()
     
-from route.auth import routes_bp
+from src.route.auth import routes_bp
+from src.route.errorhandlers import errors_bp
+from src.route.user import user_bp
 app.register_blueprint(routes_bp)
+app.register_blueprint(errors_bp)
+app.register_blueprint(user_bp)
