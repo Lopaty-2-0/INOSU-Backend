@@ -13,4 +13,4 @@ class Team(db.Model):
         self.leader = leader
 
     def __repr__(self):
-        return f'<team {self.idTask, self.idUser, self.leader!r}>'
+        return f"<team {self.idTask, self.idUser, self.leader!r}>"

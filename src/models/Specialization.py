@@ -14,4 +14,4 @@ class Specialization(db.Model):
         self.lengthOfStudy = lengthOfStudy
 
     def __repr__(self):
-        return f'<specialization {self.name, self.abbrevation, self.lengthOfStudy!r}>'
+        return f"<specialization {self.name, self.abbrevation, self.lengthOfStudy!r}>"

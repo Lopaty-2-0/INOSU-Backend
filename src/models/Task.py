@@ -23,4 +23,4 @@ class Task(db.Model):
         self.guarantor = guarantor
 
     def __repr__(self):
-        return f'<task {self.name, self.startDate, self.endDate, self.task, self.guarantor!r}>'
+        return f"<task {self.name, self.startDate, self.endDate, self.task, self.guarantor!r}>"

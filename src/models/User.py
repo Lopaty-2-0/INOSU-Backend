@@ -39,4 +39,4 @@ class User(db.Model, UserMixin):
         self.idClass = idClass
     
     def __repr__(self):
-        return f'<user {self.name, self.surname, self.role, self.email, self.idClass!r}>'
+        return f"<user {self.name, self.surname, self.role, self.email, self.idClass!r}>"

@@ -14,4 +14,4 @@ class Class(db.Model):
         self.idSpecialization = idSpecialization
 
     def __repr__(self):
-        return f'<class {self.grade, self.group ,self.idSpecialization!r}>'
+        return f"<class {self.grade, self.group ,self.idSpecialization!r}>"

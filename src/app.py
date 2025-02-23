@@ -8,15 +8,15 @@ app = Flask(__name__)
 #We need Markétka in our life
 #We want Markétka in our life
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root@localhost/marketkaDB'
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root@localhost/marketkaDB"
 #must change later
-app.config['SECRET_KEY'] = 'Markétka je naše bohyně'
+app.config["SECRET_KEY"] = "Markétka je naše bohyně"
 
 db = sql(app)
 
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "login"
+login_manager.login_view = ""
 
 @login_manager.user_loader
 def load_user(user_id):
