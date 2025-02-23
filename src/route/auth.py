@@ -117,8 +117,6 @@ def update():
 
     user = flask_login.current_user
 
-    if not user:
-        return sendResponse(401, 13, {"message": "User not found"}, "error")
     #will change, probably
     if not name:
         name = user.name
