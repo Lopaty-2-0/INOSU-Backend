@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from src.utils.response import sendResponse
 from src.models.User import User
 import datetime
+import re
 
 routes_bp = Blueprint("routes", __name__)
 
@@ -17,6 +18,7 @@ def index():
 
 @routes_bp.route("/registration", methods = ["POST"])
 def registration():
+    email_regex = r"^\S+@\S+\.\S+$"
     data = request.get_json()
     name = str(data["name"])
     surname = str(data["surname"])
@@ -28,22 +30,24 @@ def registration():
     idClass = str(data["idClass"])
 
     if not name:
-        return  sendResponse(400, 3,  {"message": "Name is not entered" }, "error")
+        return sendResponse(400, 3,  {"message": "Name is not entered" }, "error")
     if not surname:
-        return  sendResponse(400, 4,  {"message": "Surname is not entered" }, "error")
+        return sendResponse(400, 4,  {"message": "Surname is not entered" }, "error")
     if not role:
-        return  sendResponse(400, 5, {"message": "Role is not entered" }, "error")
+        return sendResponse(400, 5, {"message": "Role is not entered" }, "error")
     if not password:
-        return  sendResponse(400, 6,  {"message": "Password is not entered" }, "error")
+        return sendResponse(400, 6,  {"message": "Password is not entered" }, "error")
     if len(str(password)) < 5:
         return  sendResponse(400, 7,  {"message": "Password is too short" }, "error")
     if not email:
-        return  sendResponse(400, 8,  {"message": "Email is not entered" }, "error")
+        return sendResponse(400, 8,  {"message": "Email is not entered" }, "error")
+    if not re.match(email_regex, email):
+        return sendResponse(400, 9,  {"message": "Wrong email format" }, "error")
     if User.query.filter_by(email = email).first():
-        return  sendResponse(400, 9,  {"message": "Email is already in use" }, "error")
+        return sendResponse(400, 9,  {"message": "Email is already in use" }, "error")
     if abbreviation !=  "":
         if User.query.filter_by(abbreviation = abbreviation).first():
-            return  sendResponse(400, 11,  {"message": "Abbreviation is already in use" }, "error")
+            return sendResponse(400, 11,  {"message": "Abbreviation is already in use" }, "error")
     else:
         abbreviation = None
     if not idClass:
