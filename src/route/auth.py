@@ -8,15 +8,15 @@ from src.models.User import User
 import datetime
 import re
 
-routes_bp = Blueprint("routes", __name__)
+auth_bp = Blueprint("auth", __name__)
 
 
 
-@routes_bp.route("/")
+@auth_bp.route("/")
 def index():
     return sendResponse(200, 2, {"message": "This is index", "time": datetime.datetime.now}, "succes")
 
-@routes_bp.route("/registration", methods = ["POST"])
+@auth_bp.route("/registration", methods = ["POST"])
 def registration():
     email_regex = r"^\S+@\S+\.\S+$"
     data = request.get_json()
@@ -30,24 +30,24 @@ def registration():
     idClass = str(data["idClass"])
 
     if not name:
-        return sendResponse(400, 3,  {"message": "Name is not entered" }, "error")
-    if not surname:
-        return sendResponse(400, 4,  {"message": "Surname is not entered" }, "error")
+        return sendResponse(400, 3, {"message": "Name is not entered"}, "error")
+    if  not surname:
+        return sendResponse(400, 4, {"message": "Surname is not entered"}, "error")
     if not role:
-        return sendResponse(400, 5, {"message": "Role is not entered" }, "error")
+        return sendResponse(400, 5,{"message": "Role is not entered"}, "error")
     if not password:
-        return sendResponse(400, 6,  {"message": "Password is not entered" }, "error")
+        return sendResponse(400, 6, {"message": "Password is not entered"}, "error")
     if len(str(password)) < 5:
-        return  sendResponse(400, 7,  {"message": "Password is too short" }, "error")
+        return  sendResponse(400, 7, {"message": "Password is too short"}, "error")
     if not email:
-        return sendResponse(400, 8,  {"message": "Email is not entered" }, "error")
+        return sendResponse(400, 8, {"message": "Email is not entered"}, "error")
     if not re.match(email_regex, email):
-        return sendResponse(400, 9,  {"message": "Wrong email format" }, "error")
+        return sendResponse(400, 9, {"message": "Wrong email format"}, "error")
     if User.query.filter_by(email = email).first():
-        return sendResponse(400, 9,  {"message": "Email is already in use" }, "error")
-    if abbreviation !=  "":
+        return sendResponse(400, 9, {"message": "Email is already in use"}, "error")
+    if abbreviation:
         if User.query.filter_by(abbreviation = abbreviation).first():
-            return sendResponse(400, 11,  {"message": "Abbreviation is already in use" }, "error")
+            return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
     else:
         abbreviation = None
     if not idClass:
@@ -59,14 +59,14 @@ def registration():
 
     return sendResponse(201,8,{"message" : "User created succesfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture, "email": newUser.email, "idClass": newUser.idClass}}, "succes")
 
-@routes_bp.route("/login", methods = ["POST"])
+@auth_bp.route("/login", methods = ["POST"])
 def login():
     data = request.get_json(force = True)
     login = str(data["login"])
     password = str(data["password"])
 
     if not login or not password:
-        return sendResponse(400, 10, {"message": "Email or password not entered" }, "error")
+        return sendResponse(400, 10, {"message": "Email or password not entered"}, "error")
 
     user = User.query.filter(or_(User.email == login, User.abbreviation == login)).first()
 
@@ -76,12 +76,12 @@ def login():
     flask_login.login_user(user)
     return sendResponse(200, 12, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
 
-@routes_bp.route("/logout", methods = ["POST"])
+@auth_bp.route("/logout", methods = ["POST"])
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
     return sendResponse(200, 12, {"message": "Logged out"}, "succes")
 
-@routes_bp.route("/verification")
+@auth_bp.route("/verification")
 def verification():
     return

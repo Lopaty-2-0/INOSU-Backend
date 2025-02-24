@@ -4,4 +4,4 @@ def sendResponse(statuscode, resCode, data, resType):
         "resCode": resCode,
         "data": data,
         "resType": resType
-             }
+             }, statuscode

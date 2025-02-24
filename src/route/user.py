@@ -20,7 +20,7 @@ def update():
     idClass = str(data["idClass"])
 
     if not name and not surname and not abbreviation and not role and not profilePicture and not email and not password and not idClass:
-        return sendResponse(400, 10, {"message": "Nothing entered to change" }, "error")
+        return sendResponse(400, 10, {"message": "Nothing entered to change"}, "error")
     
     change = {"name": name, "surname": surname, "abbreviation": abbreviation, "role": role, "profilePicture": profilePicture, "email": email, "idClass": idClass}
 
