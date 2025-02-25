@@ -18,6 +18,10 @@ def login():
     data = request.get_json(force = True)
     login = str(data["login"])
     password = str(data["password"])
+    stayLogged = data["stayLogged"]
+
+    if not stayLogged:
+        stayLogged = False
 
     if not login or not password:
         return sendResponse(400, 10, {"message": "Email or password not entered"}, "error")
@@ -27,7 +31,7 @@ def login():
     if not user or not check_password_hash(user.password, password):
         return sendResponse(401, 13, {"message": "Wrong login or password"}, "error")
     
-    flask_login.login_user(user)
+    flask_login.login_user(user, remember = stayLogged)
     return sendResponse(200, 12, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
 
 @auth_bp.route("/auth/logout", methods = ["DELETE"])

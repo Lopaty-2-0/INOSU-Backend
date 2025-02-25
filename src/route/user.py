@@ -54,8 +54,7 @@ def add():
         db.session.commit()
 
         return sendResponse(201,8,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture, "email": newUser.email, "idClass": newUser.idClass}}, "success")
-    else:
-        return sendResponse(400, 11, {"message": "No permission for that"}, "error")
+    return sendResponse(400, 11, {"message": "No permission for that"}, "error")
 
 @user_bp.route("/user/update", methods = ["POST"])
 @flask_login.login_required
@@ -121,10 +120,8 @@ def update():
                 db.session.commit()
 
                 return sendResponse(200, 12, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": secondUser.idClass}}, "success")
-            else:
-                return sendResponse(400, 11, {"message": "Wrong user id"}, "error")
-        else:
-            return sendResponse(400, 11, {"message": "No permission for that"}, "error")
+            return sendResponse(400, 11, {"message": "Wrong user id"}, "error")
+        return sendResponse(400, 11, {"message": "No permission for that"}, "error")
         
 @user_bp.route("/user/delete", methods = ["POST"])
 @flask_login.login_required
@@ -158,5 +155,4 @@ def delete():
                     badIds.append(id)
                 db.session.commit()
         return sendResponse(200, 12, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")
-    else:
-        return sendResponse(400, 11, {"message": "No permission for that"}, "error")
+    return sendResponse(400, 11, {"message": "No permission for that"}, "error")
