@@ -1,65 +1,19 @@
-from app import  db
+import datetime
 import flask_login
 from sqlalchemy import or_
 from flask import Blueprint, request
 from werkzeug.security import generate_password_hash, check_password_hash
 from src.utils.response import sendResponse
 from src.models.User import User
-import datetime
-import re
+from app import  db
 
 auth_bp = Blueprint("auth", __name__)
 
-
-
 @auth_bp.route("/")
 def index():
-    return sendResponse(200, 2, {"message": "This is index", "time": datetime.datetime.now}, "succes")
+    return sendResponse(200, 2, {"message": "This is index", "time": datetime.datetime.now}, "success")
 
-@auth_bp.route("/registration", methods = ["POST"])
-def registration():
-    email_regex = r"^\S+@\S+\.\S+$"
-    data = request.get_json()
-    name = str(data["name"])
-    surname = str(data["surname"])
-    abbreviation = str(data["abbreviation"])
-    role = str(data["role"])
-    profilePicture = data["profilePicture"]
-    email = str(data["email"])
-    password = str(data["password"])
-    idClass = str(data["idClass"])
-
-    if not name:
-        return sendResponse(400, 3, {"message": "Name is not entered"}, "error")
-    if  not surname:
-        return sendResponse(400, 4, {"message": "Surname is not entered"}, "error")
-    if not role:
-        return sendResponse(400, 5,{"message": "Role is not entered"}, "error")
-    if not password:
-        return sendResponse(400, 6, {"message": "Password is not entered"}, "error")
-    if len(str(password)) < 5:
-        return  sendResponse(400, 7, {"message": "Password is too short"}, "error")
-    if not email:
-        return sendResponse(400, 8, {"message": "Email is not entered"}, "error")
-    if not re.match(email_regex, email):
-        return sendResponse(400, 9, {"message": "Wrong email format"}, "error")
-    if User.query.filter_by(email = email).first():
-        return sendResponse(400, 9, {"message": "Email is already in use"}, "error")
-    if abbreviation:
-        if User.query.filter_by(abbreviation = abbreviation).first():
-            return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
-    else:
-        abbreviation = None
-    if not idClass:
-        idClass = None
-
-    newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = profilePicture, email = email, idClass = idClass)
-    db.session.add(newUser)
-    db.session.commit()
-
-    return sendResponse(201,8,{"message" : "User created succesfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture, "email": newUser.email, "idClass": newUser.idClass}}, "succes")
-
-@auth_bp.route("/login", methods = ["POST"])
+@auth_bp.route("/auth/login", methods = ["POST"])
 def login():
     data = request.get_json(force = True)
     login = str(data["login"])
@@ -76,12 +30,12 @@ def login():
     flask_login.login_user(user)
     return sendResponse(200, 12, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
 
-@auth_bp.route("/logout", methods = ["POST"])
+@auth_bp.route("/auth/logout", methods = ["DELETE"])
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
-    return sendResponse(200, 12, {"message": "Logged out"}, "succes")
+    return sendResponse(200, 12, {"message": "Logged out"}, "success")
 
-@auth_bp.route("/verification")
+@auth_bp.route("/auth/verification")
 def verification():
     return
