@@ -1,18 +1,15 @@
 import flask_login
-import os
 from src.createDB import creatussy
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
 
 try:
-
     app = Flask(__name__)
 
     #We love Markétka <3
     #We need Markétka in our life
     #We want Markétka in our life
-
 
     app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root@localhost/marketkaDB"
 
@@ -46,10 +43,9 @@ try:
     app.register_blueprint(auth_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(user_bp)
-
 except:
     try:
         creatussy()
     except:
         print("Database is not running")
-        os._exit(1)
+        exit()

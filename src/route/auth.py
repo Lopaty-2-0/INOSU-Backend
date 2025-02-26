@@ -2,10 +2,9 @@ import datetime
 import flask_login
 from sqlalchemy import or_
 from flask import Blueprint, request
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from src.utils.response import sendResponse
 from src.models.User import User
-from app import  db
 
 auth_bp = Blueprint("auth", __name__)
 
