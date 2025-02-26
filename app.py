@@ -22,7 +22,6 @@ try:
     login_manager = flask_login.LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = ""
-
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
@@ -45,7 +44,9 @@ try:
     app.register_blueprint(user_bp)
 except:
     try:
+        print("Creating database")
         creatussy()
+        print("Please run program once more")
     except:
         print("Database is not running")
-        exit()
+    exit()
