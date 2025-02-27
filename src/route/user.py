@@ -1,10 +1,14 @@
 import flask_login
+import datetime
+import random
+import re
+from src.models.Class import Class
 from src.utils.response import sendResponse
+from src.utils.encodeFile import encode_file
 from werkzeug.security import generate_password_hash
 from flask import request, Blueprint
 from app import db
 from src.models.User import User
-import re
 
 user_bp = Blueprint("user", __name__)
 
@@ -21,7 +25,6 @@ def add():
     surname = data["surname"]
     abbreviation = data["abbreviation"]
     role = data["role"]
-    profilePicture = data["profilePicture"]
     email = data["email"]
     password = data["password"]
     idClass = data["idClass"]
@@ -47,14 +50,21 @@ def add():
             return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
     else:
         abbreviation = None
-    if not idClass:
+    if idClass:
+        if not Class.query.filter_by(id = idClass).first():
+            return sendResponse(400, 7, {"message": "Wrong idClass"}, "error")   
+    else:
         idClass = None
 
-    newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = profilePicture, email = email, idClass = idClass)
+    newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), email = email, idClass = idClass)
     db.session.add(newUser)
     db.session.commit()
 
-    return sendResponse(201,8,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture, "email": newUser.email, "idClass": newUser.idClass}}, "success")
+    pictures_path = "files/profilePictures/" + newUser.profilePicture
+    
+    encoded_file = encode_file(pictures_path)
+
+    return sendResponse(201,8,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "email": newUser.email, "idClass": newUser.idClass}}, "success")
 @user_bp.route("/user/update", methods = ["POST"])
 @flask_login.login_required
 
@@ -64,12 +74,12 @@ def update():
     surname = str(data["surname"])
     abbreviation = str(data["abbreviation"])
     role = str(data["role"])
-    profilePicture = data["profilePicture"]
     email = str(data["email"])
     password = str(data["password"])
     idClass = str(data["idClass"])
     idUser = str(data["idUser"])
-    
+    profilePicture = request.files["profilePicture"]
+
     user = flask_login.current_user
 
     #will change, probably
@@ -78,7 +88,7 @@ def update():
         if not profilePicture and not password:
             return sendResponse(400, 10, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
-            user.profilePicture = profilePicture
+            user.profilePicture = profilePicture.filename
         if password:
             if len(str(password)) < 5:
                 return  sendResponse(400, 7, {"message": "Password is too short"}, "error")
@@ -104,8 +114,13 @@ def update():
             secondUser.abbreviation = abbreviation
         if role:
             secondUser.role = role
-        if profilePicture:
-            secondUser.profilePicture = profilePicture
+        if not profilePicture.filename == "":
+            if not profilePicture.filename.rsplit('.', 1)[1].lower() in {"jpg", "png"}:
+                return sendResponse(400, 7, {"message": "Wrong file format"}, "error")
+            
+            profilePicture.filename = str(datetime.datetime.now()) + chr(random.randint(65,90) + "." + profilePicture.filename.rsplit('.', 1)[1].lower())
+            profilePicture.save("files/profilePictures/" + profilePicture.filename)
+            secondUser.profilePicture = profilePicture.filename
         if email:
             if not re.match(email_regex, email):
                 return sendResponse(400, 9, {"message": "Wrong email format"}, "error")
@@ -116,6 +131,8 @@ def update():
             password = generate_password_hash(password)
             secondUser.password = password
         if idClass:
+            if not Class.query.filter_by(id = idClass).first():
+                return sendResponse(400, 7, {"message": "Wrong idClass"}, "error")
             secondUser.idClass = idClass            
 
         db.session.commit()
@@ -144,7 +161,6 @@ def delete():
         except:
             badIds.append(id)
         db.session.commit()
-        print("penis")
     except:
         for id in idUser:
             try:

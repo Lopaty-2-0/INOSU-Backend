@@ -1,5 +1,5 @@
 import mysql.connector
-def creatussy():
+def create_db():
     create_db = mysql.connector.connect(
         host = "localhost",
         user = "root",

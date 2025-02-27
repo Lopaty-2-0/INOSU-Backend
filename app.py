@@ -1,5 +1,5 @@
 import flask_login
-from src.createDB import creatussy
+from src.createDB import create_db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
@@ -12,10 +12,11 @@ try:
     #We want Markétka in our life
 
     app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root@localhost/marketkaDB"
-
     #must change later
     app.config["SECRET_KEY"] = "Markétka je naše bohyně".encode("utf-8")
+    app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
+    app.config["MAX_CONTENT_LENGTH"] = 32*1000*1000
 
     db = sql(app)
 
@@ -45,7 +46,7 @@ try:
 except:
     try:
         print("Creating database")
-        creatussy()
+        create_db()
         print("Please run program once more")
     except:
         print("Database is not running")

@@ -5,6 +5,7 @@ from flask import Blueprint, request
 from werkzeug.security import check_password_hash
 from src.utils.response import sendResponse
 from src.models.User import User
+from src.utils.encodeFile import encode_file
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -30,8 +31,12 @@ def login():
     if not user or not check_password_hash(user.password, password):
         return sendResponse(401, 13, {"message": "Wrong login or password"}, "error")
     
+    pictures_path = "files/profilePictures/" + user.profilePicture
+    
+    encoded_file = encode_file(pictures_path)
+
     flask_login.login_user(user, remember = stayLogged)
-    return sendResponse(200, 12, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+    return sendResponse(200, 12, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": encoded_file, "email": user.email, "idClass": user.idClass}}, "success")
 
 @auth_bp.route("/auth/logout", methods = ["DELETE"])
 @flask_login.login_required
