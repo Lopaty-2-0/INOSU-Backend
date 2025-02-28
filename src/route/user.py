@@ -31,7 +31,7 @@ def add():
 
     if not name:
         return sendResponse(400, 3, {"message": "Name is not entered"}, "error")
-    if  not surname:
+    if not surname:
         return sendResponse(400, 4, {"message": "Surname is not entered"}, "error")
     if not role:
         return sendResponse(400, 5,{"message": "Role is not entered"}, "error")
@@ -64,10 +64,10 @@ def add():
     
     encoded_file = encode_file(pictures_path)
 
-    return sendResponse(201,8,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "email": newUser.email, "idClass": newUser.idClass}}, "success")
+    return sendResponse(201,8,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": encoded_file,"email": newUser.email, "idClass": newUser.idClass}}, "success")
+
 @user_bp.route("/user/update", methods = ["POST"])
 @flask_login.login_required
-
 def update():
     data = request.get_json(force = True)
     name = str(data["name"])
@@ -84,7 +84,6 @@ def update():
 
     #will change, probably
     if not idUser:
-
         if not profilePicture and not password:
             return sendResponse(400, 10, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
@@ -114,11 +113,11 @@ def update():
             secondUser.abbreviation = abbreviation
         if role:
             secondUser.role = role
-        if not profilePicture.filename == "":
+        if profilePicture:
             if not profilePicture.filename.rsplit('.', 1)[1].lower() in {"jpg", "png"}:
                 return sendResponse(400, 7, {"message": "Wrong file format"}, "error")
             
-            profilePicture.filename = str(datetime.datetime.now()) + chr(random.randint(65,90) + "." + profilePicture.filename.rsplit('.', 1)[1].lower())
+            profilePicture.filename = str(datetime.datetime.now()) + chr(random.randint(65,90)) + "." + profilePicture.filename.rsplit('.', 1)[1].lower()
             profilePicture.save("files/profilePictures/" + profilePicture.filename)
             secondUser.profilePicture = profilePicture.filename
         if email:
@@ -141,7 +140,6 @@ def update():
         
 @user_bp.route("/user/delete", methods = ["POST"])
 @flask_login.login_required
-
 def delete():
     data = request.get_json(force = True)
     idUser = data["idUser"]

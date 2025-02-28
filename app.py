@@ -45,9 +45,9 @@ try:
     app.register_blueprint(user_bp)
 except:
     try:
-        print("Creating database")
         create_db()
+        print("Creating database")
         print("Please run program once more")
     except:
         print("Database is not running")
-    exit()
+    exit() 
