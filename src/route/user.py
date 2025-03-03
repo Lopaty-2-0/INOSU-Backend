@@ -52,6 +52,8 @@ def add():
         if abbreviation:
             if User.query.filter_by(abbreviation = abbreviation).first():
                 return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
+            if len(str(abbreviation)) > 4:
+                return sendResponse(400, 11, {"message": "Abbreviation is too long"}, "error")
         else:
             abbreviation = None
         if idClass:
@@ -74,8 +76,30 @@ def add():
         users = request.files.get("jsonFile")
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
             return sendResponse(400, 7, {"message": "Wrong file format"}, "error")
-        data = json.load(users)
-        return sendResponse(400, 7, {"message": "uhr"}, "error")
+        try:
+            for userData in json.load(users):
+                if not userData["name"] or not userData["surname"] or not userData["role"] or not userData["password"] or len(str(userData["password"])) < 5 or not userData["email"] or not re.match(email_regex, userData["email"]) or User.query.filter_by(email = userData["email"]).first():
+                    return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                if userData["abbreviation"]:
+                    if User.query.filter_by(abbreviation = userData["abbreviation"]).first():
+                        return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                    if len(str(userData["abbreviation"])) > 4:
+                        return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                else:
+                    userData["abbreviation"] = None
+                if userData["idClass"]:
+                    if not Class.query.filter_by(id = userData["idClass"]).first():
+                        return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                else:
+                    userData["idClass"] = None
+
+                newUser = User(name = userData["name"], surname = userData["surname"], abbreviation = userData["abbreviation"], role = userData["role"], password = generate_password_hash(userData["password"]), profilePicture = None, email = userData["email"], idClass = userData["idClass"])
+
+                db.session.add(newUser)
+            db.session.commit()
+        except:
+            return sendResponse(400, 7, {"message": "Wrong format in json????"}, "error")
+        return sendResponse (201, 10, {"message": "All users created succesfuly"}, "succes")
 
 @user_bp.route("/user/update", methods = ["POST"])
 @flask_login.login_required
@@ -125,6 +149,10 @@ def update():
         if surname:
             secondUser.surname = surname
         if abbreviation:
+            if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
+                return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
+            if len(str(abbreviation)) > 4:
+                return sendResponse(400, 11, {"message": "Abbreviation is too long"}, "error")
             secondUser.abbreviation = abbreviation
         if role:
             secondUser.role = role

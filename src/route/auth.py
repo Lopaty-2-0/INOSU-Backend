@@ -43,8 +43,3 @@ def login():
 def logout():
     flask_login.logout_user()
     return sendResponse(200, 12, {"message": "Logged out"}, "success")
-
-@auth_bp.route("/auth/verification")
-@flask_login.login_required
-def verification():
-    return 
