@@ -20,8 +20,7 @@ def login():
     password = str(data["password"])
     stayLogged = data["stayLogged"]
 
-    if not stayLogged:
-        stayLogged = False
+    stayLogged = bool(stayLogged)
 
     if not login or not password:
         return sendResponse(400, 10, {"message": "Email or password not entered"}, "error")

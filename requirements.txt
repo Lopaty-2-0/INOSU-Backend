@@ -4,3 +4,4 @@ mysql-connector
 pymysql
 cryptography
 flask_login
+python-dotenv

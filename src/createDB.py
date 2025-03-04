@@ -1,14 +1,13 @@
 import mysql.connector
-def create_db():
+def create_db(gHost, gUser, gPasswd, gDatabase):
     create_db = mysql.connector.connect(
-        host = "localhost",
-        user = "root",
-        passwd = ""
+        host = str(gHost),
+        user = str(gUser),
+        passwd = str(gPasswd)
     )
 
     cursor = create_db.cursor()
-
-    cursor.execute("CREATE DATABASE marketkaDB")
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{gDatabase}`")
 
     cursor.execute("SHOW DATABASES")
 

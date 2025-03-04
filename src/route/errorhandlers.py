@@ -19,6 +19,10 @@ def page_not_found(e):
 def method_not_allowed(e):
     return  sendResponse(405, 3, {"message": "Method Not Allowed"}, "error")
 
+@errors_bp.app_errorhandler(413)
+def method_not_allowed(e):
+    return  sendResponse(413, 3, {"message": "Payload Too Large"}, "error")
+
 @errors_bp.app_errorhandler(500)
 def server_error(e):
     return  sendResponse(500, 2, {"message": "Internal server error"}, "error")
