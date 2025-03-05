@@ -197,7 +197,6 @@ def delete():
             goodIds.append(id)
         except:
             badIds.append(id)
-        db.session.commit()
     except:
         for id in idUser:
             try:
@@ -206,6 +205,6 @@ def delete():
                 goodIds.append(id)
             except:
                 badIds.append(id)
-            db.session.commit()
+    db.session.commit()
     return sendResponse(200, 12, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")
     

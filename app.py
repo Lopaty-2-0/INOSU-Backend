@@ -16,13 +16,8 @@ secret_key = os.getenv("SECRET_KEY")
 try:
     app = Flask(__name__)
 
-    #We love Markétka <3
-    #We need Markétka in our life
-    #We want Markétka in our life
-
     app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://" + user + ":" + psw + "@" + host + "/" + database
 
-    #must change later
     app.config["SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
@@ -47,12 +42,8 @@ try:
 
         db.create_all()
         
-    from src.route.auth import auth_bp
-    from src.route.errorhandlers import errors_bp
-    from src.route.user import user_bp
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(errors_bp)
-    app.register_blueprint(user_bp)
+    from src.route.routes_bp import routes_bp
+    app.register_blueprint(routes_bp)
 except:
     try:
         create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
