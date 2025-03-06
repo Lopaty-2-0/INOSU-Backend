@@ -21,7 +21,7 @@ addUser_extensions = {"json"}
 @flask_login.login_required
 def add():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 11, {"message": "No permission for that"}, "error")
+        return sendResponse(400, 1010, {"message": "No permission for that"}, "error")
     
     try:
         data = request.get_json()
@@ -34,31 +34,39 @@ def add():
         idClass = data["idClass"]
 
         if not name:
-            return sendResponse(400, 3, {"message": "Name is not entered"}, "error")
+            return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
+        if len(name) > 100:
+            return sendResponse(400, 1030, {"message": "Name too long"}, "error")
         if not surname:
-            return sendResponse(400, 4, {"message": "Surname is not entered"}, "error")
+            return sendResponse(400, 1040, {"message": "Surname is not entered"}, "error")
+        if len(surname) > 100:
+            return sendResponse(400, 1050, {"message": "Surname too long"}, "error")
         if not role:
-            return sendResponse(400, 5,{"message": "Role is not entered"}, "error")
+            return sendResponse(400, 1060,{"message": "Role is not entered"}, "error")
+        if len(role) > 45:
+            return sendResponse(400, 1070, {"message": "Role too long"}, "error")
         if not password:
-            return sendResponse(400, 6, {"message": "Password is not entered"}, "error")
+            return sendResponse(400, 1080, {"message": "Password is not entered"}, "error")
         if len(str(password)) < 5:
-            return  sendResponse(400, 7, {"message": "Password is too short"}, "error")
+            return  sendResponse(400, 1090, {"message": "Password is too short"}, "error")
         if not email:
-            return sendResponse(400, 8, {"message": "Email is not entered"}, "error")
+            return sendResponse(400, 1100, {"message": "Email is not entered"}, "error")
         if not re.match(email_regex, email):
-            return sendResponse(400, 9, {"message": "Wrong email format"}, "error")
+            return sendResponse(400, 1110, {"message": "Wrong email format"}, "error")
+        if len(email) > 255:
+            return sendResponse(400, 1120, {"message": "Email too long"}, "error")
         if User.query.filter_by(email = email).first():
-            return sendResponse(400, 9, {"message": "Email is already in use"}, "error")
+            return sendResponse(400, 1130, {"message": "Email is already in use"}, "error")
         if abbreviation:
             if User.query.filter_by(abbreviation = abbreviation).first():
-                return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
+                return sendResponse(400, 1140, {"message": "Abbreviation is already in use"}, "error")
             if len(str(abbreviation)) > 4:
-                return sendResponse(400, 11, {"message": "Abbreviation is too long"}, "error")
+                return sendResponse(400, 1150, {"message": "Abbreviation is too long"}, "error")
         else:
             abbreviation = None
         if idClass:
             if not Class.query.filter_by(id = idClass).first():
-                return sendResponse(400, 7, {"message": "Wrong idClass"}, "error")   
+                return sendResponse(400, 1160, {"message": "Wrong idClass"}, "error")   
         else:
             idClass = None
 
@@ -69,27 +77,27 @@ def add():
         
         encoded_file = encode_file(pfp_path + newUser.profilePicture)
 
-        return sendResponse(201,8,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": encoded_file,"email": newUser.email, "idClass": newUser.idClass}}, "success")
+        return sendResponse(201,1171,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": encoded_file,"email": newUser.email, "idClass": newUser.idClass}}, "success")
     
     except:
         #must get it working
         users = request.files.get("jsonFile")
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
-            return sendResponse(400, 7, {"message": "Wrong file format"}, "error")
+            return sendResponse(400, 1140, {"message": "Wrong file format"}, "error")
         try:
             for userData in json.load(users):
                 if not userData["name"] or not userData["surname"] or not userData["role"] or not userData["password"] or len(str(userData["password"])) < 5 or not userData["email"] or not re.match(email_regex, userData["email"]) or User.query.filter_by(email = userData["email"]).first():
-                    return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                    return sendResponse (400, 1150, {"message": "Wrong user format"}, "error")
                 if userData["abbreviation"]:
                     if User.query.filter_by(abbreviation = userData["abbreviation"]).first():
-                        return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                        return sendResponse (400, 1160, {"message": "Wrong user format"}, "error")
                     if len(str(userData["abbreviation"])) > 4:
-                        return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                        return sendResponse (400, 1170, {"message": "Wrong user format"}, "error")
                 else:
                     userData["abbreviation"] = None
                 if userData["idClass"]:
                     if not Class.query.filter_by(id = userData["idClass"]).first():
-                        return sendResponse (400, 10, {"message": "Wrong user format"}, "error")
+                        return sendResponse (400, 1180, {"message": "Wrong user format"}, "error")
                 else:
                     userData["idClass"] = None
 
@@ -98,8 +106,8 @@ def add():
                 db.session.add(newUser)
             db.session.commit()
         except:
-            return sendResponse(400, 7, {"message": "Wrong format in json????"}, "error")
-        return sendResponse (201, 10, {"message": "All users created succesfuly"}, "succes")
+            return sendResponse(400, 1190, {"message": "Wrong format in json????"}, "error")
+        return sendResponse (201, 1201, {"message": "All users created succesfuly"}, "succes")
 
 @user_bp.route("/user/update", methods = ["POST"])
 @flask_login.login_required
@@ -121,61 +129,64 @@ def update():
     #checks if there is id for user
     if not idUser:
         if not profilePicture and not password:
-            return sendResponse(400, 10, {"message": "Nothing entered to change"}, "error")
+            return sendResponse(400, 2010, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return sendResponse(400, 7, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 2020, {"message": "Wrong file format"}, "error")
             pfp(pfp_path, user, profilePicture)
 
         if password:
             if len(str(password)) < 5:
-                return  sendResponse(400, 7, {"message": "Password is too short"}, "error")
+                return  sendResponse(400, 2030, {"message": "Password is too short"}, "error")
+            
             password = generate_password_hash(password)
             user.password = password
 
         db.session.commit()
-        return sendResponse(200, 12, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+
+        return sendResponse(200, 2041, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
     else:
         if not str(user.role).lower() == "admin":
-            return sendResponse(400, 11, {"message": "No permission for that"}, "error")
+            return sendResponse(400, 2050, {"message": "No permission for that"}, "error")
         if not name and not surname and not abbreviation and not role and not profilePicture and not email and not password and not idClass:
-            return sendResponse(400, 10, {"message": "Nothing entered to change"}, "error")
+            return sendResponse(400, 2060, {"message": "Nothing entered to change"}, "error")
 
         secondUser = User.query.filter_by(id = idUser).first()
+
         if not secondUser:
-            return sendResponse(400, 11, {"message": "Wrong user id"}, "error")
+            return sendResponse(400, 2070, {"message": "Wrong user id"}, "error")
         if name:
             secondUser.name = name  
         if surname:
             secondUser.surname = surname
         if abbreviation:
             if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
-                return sendResponse(400, 11, {"message": "Abbreviation is already in use"}, "error")
+                return sendResponse(400, 2080, {"message": "Abbreviation is already in use"}, "error")
             if len(str(abbreviation)) > 4:
-                return sendResponse(400, 11, {"message": "Abbreviation is too long"}, "error")
+                return sendResponse(400, 2090, {"message": "Abbreviation is too long"}, "error")
             secondUser.abbreviation = abbreviation
         if role:
             secondUser.role = role
         if profilePicture:
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return sendResponse(400, 7, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 2100, {"message": "Wrong file format"}, "error")
             pfp(pfp_path, secondUser, profilePicture)
         if email:
             if not re.match(email_regex, email):
-                return sendResponse(400, 9, {"message": "Wrong email format"}, "error")
+                return sendResponse(400, 2110, {"message": "Wrong email format"}, "error")
             secondUser.email = email
         if password:
             if len(str(password)) < 5:
-                return sendResponse(400, 7, {"message": "Password is too short"}, "error")
+                return sendResponse(400, 2120, {"message": "Password is too short"}, "error")
             secondUser.password = generate_password_hash(password)
         if idClass:
             if not Class.query.filter_by(id = idClass).first():
-                return sendResponse(400, 7, {"message": "Wrong idClass"}, "error")
+                return sendResponse(400, 2130, {"message": "Wrong idClass"}, "error")
             secondUser.idClass = idClass            
 
         db.session.commit()
 
-        return sendResponse(200, 12, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": secondUser.idClass}}, "success")
+        return sendResponse(200, 2141, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": secondUser.idClass}}, "success")
         
 @user_bp.route("/user/delete", methods = ["POST"])
 @flask_login.login_required
@@ -186,9 +197,9 @@ def delete():
     badIds = []
 
     if not flask_login.current_user.role == "admin":
-        return sendResponse(400, 11, {"message": "No permission for that"}, "error")
+        return sendResponse(400, 3010, {"message": "No permission for that"}, "error")
     if not idUser:
-        return sendResponse(400, 11, {"message": "No idUser"}, "error")
+        return sendResponse(400, 3020, {"message": "No idUser"}, "error")
     try:
         id = int(idUser)
         try:
@@ -205,6 +216,7 @@ def delete():
                 goodIds.append(id)
             except:
                 badIds.append(id)
+
     db.session.commit()
-    return sendResponse(200, 12, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")
-    
+
+    return sendResponse(200, 3031, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")

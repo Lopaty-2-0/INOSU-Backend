@@ -11,7 +11,7 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/")
 def index():
-    return sendResponse(200, 2, {"message": "This is index", "time": datetime.datetime.now}, "success")
+    return sendResponse(200, 6011, {"message": "This is index", "time": datetime.datetime.now}, "success")
 
 @auth_bp.route("/auth/login", methods = ["POST"])
 def login():
@@ -23,22 +23,21 @@ def login():
     stayLogged = bool(stayLogged)
 
     if not login or not password:
-        return sendResponse(400, 10, {"message": "Email or password not entered"}, "error")
+        return sendResponse(400, 7010, {"message": "Email or password not entered"}, "error")
 
     user = User.query.filter(or_(User.email == login, User.abbreviation == login)).first()
 
     if not user or not check_password_hash(user.password, password):
-        return sendResponse(401, 13, {"message": "Wrong login or password"}, "error")
+        return sendResponse(401, 7020, {"message": "Wrong login or password"}, "error")
     
     pictures_path = "files/profilePictures/" + user.profilePicture
-    
     encoded_file = encode_file(pictures_path)
-
     flask_login.login_user(user, remember = stayLogged)
-    return sendResponse(200, 12, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": encoded_file, "email": user.email, "idClass": user.idClass}}, "success")
+
+    return sendResponse(200, 7031, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": encoded_file, "email": user.email, "idClass": user.idClass}}, "success")
 
 @auth_bp.route("/auth/logout", methods = ["DELETE"])
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
-    return sendResponse(200, 12, {"message": "Logged out"}, "success")
+    return sendResponse(200, 8011, {"message": "Logged out"}, "success")
