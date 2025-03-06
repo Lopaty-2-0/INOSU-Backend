@@ -109,7 +109,7 @@ def add():
             return sendResponse(400, 1190, {"message": "Wrong format in json????"}, "error")
         return sendResponse (201, 1201, {"message": "All users created succesfuly"}, "succes")
 
-@user_bp.route("/user/update", methods = ["POST"])
+@user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required
 def update():
     #gets data (json)
@@ -130,14 +130,13 @@ def update():
     if not idUser:
         if not profilePicture and not password:
             return sendResponse(400, 2010, {"message": "Nothing entered to change"}, "error")
-        if profilePicture:
-            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return sendResponse(400, 2020, {"message": "Wrong file format"}, "error")
-            pfp(pfp_path, user, profilePicture)
-
         if password:
             if len(str(password)) < 5:
-                return  sendResponse(400, 2030, {"message": "Password is too short"}, "error")
+                return  sendResponse(400, 2020, {"message": "Password is too short"}, "error")
+        if profilePicture:
+            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
+                return sendResponse(400, 2030, {"message": "Wrong file format"}, "error")
+            pfp(pfp_path, user, profilePicture)
             
             password = generate_password_hash(password)
             user.password = password
@@ -167,28 +166,32 @@ def update():
             secondUser.abbreviation = abbreviation
         if role:
             secondUser.role = role
-        if profilePicture:
-            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return sendResponse(400, 2100, {"message": "Wrong file format"}, "error")
-            pfp(pfp_path, secondUser, profilePicture)
         if email:
             if not re.match(email_regex, email):
-                return sendResponse(400, 2110, {"message": "Wrong email format"}, "error")
+                return sendResponse(400, 2100, {"message": "Wrong email format"}, "error")
+            if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
+                return sendResponse(400, 2110, {"message": "Email is already in use"}, "error")
+            if len(email) > 255:
+                return sendResponse(400, 2120, {"message": "Email too long"}, "error")
             secondUser.email = email
         if password:
             if len(str(password)) < 5:
-                return sendResponse(400, 2120, {"message": "Password is too short"}, "error")
+                return sendResponse(400, 2130, {"message": "Password is too short"}, "error")
             secondUser.password = generate_password_hash(password)
         if idClass:
             if not Class.query.filter_by(id = idClass).first():
-                return sendResponse(400, 2130, {"message": "Wrong idClass"}, "error")
-            secondUser.idClass = idClass            
+                return sendResponse(400, 2140, {"message": "Wrong idClass"}, "error")
+            secondUser.idClass = idClass
+        if profilePicture:
+            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
+                return sendResponse(400, 2150, {"message": "Wrong file format"}, "error")
+            pfp(pfp_path, secondUser, profilePicture)            
 
         db.session.commit()
 
-        return sendResponse(200, 2141, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": secondUser.idClass}}, "success")
+        return sendResponse(200, 2161, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": secondUser.idClass}}, "success")
         
-@user_bp.route("/user/delete", methods = ["POST"])
+@user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
     data = request.get_json(force = True)

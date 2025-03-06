@@ -42,7 +42,7 @@ def add():
 
     return sendResponse (201, 9091, {"message": "Class created succesfuly"}, "succes")
 
-@class_bp.route("/class/delete", methods = ["POST"])
+@class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
     if flask_login.current_user.role != "admin":

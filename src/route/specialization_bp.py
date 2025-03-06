@@ -43,7 +43,7 @@ def add():
 
     return sendResponse (201, 4101, {"message": "Specialization created succesfuly"}, "succes")
 
-@specialization_bp.route("/specialization/delete", methods = ["POST"])
+@specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
     if flask_login.current_user.role != "admin":
