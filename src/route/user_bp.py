@@ -25,12 +25,12 @@ def add():
     
     try:
         data = request.get_json()
-        name = data["name"]
-        surname = data["surname"]
-        abbreviation = data["abbreviation"]
-        role = data["role"]
-        email = data["email"]
-        password = data["password"]
+        name = str(data["name"])
+        surname = str(data["surname"])
+        abbreviation = str(data["abbreviation"])
+        role = str(data["role"])
+        email = str(data["email"])
+        password = str(data["password"])
         idClass = data["idClass"]
 
         if not name:
@@ -47,7 +47,7 @@ def add():
             return sendResponse(400, 1070, {"message": "Role too long"}, "error")
         if not password:
             return sendResponse(400, 1080, {"message": "Password is not entered"}, "error")
-        if len(str(password)) < 5:
+        if len(password) < 5:
             return  sendResponse(400, 1090, {"message": "Password is too short"}, "error")
         if not email:
             return sendResponse(400, 1100, {"message": "Email is not entered"}, "error")
@@ -58,9 +58,9 @@ def add():
         if User.query.filter_by(email = email).first():
             return sendResponse(400, 1130, {"message": "Email is already in use"}, "error")
         if abbreviation:
-            if User.query.filter_by(abbreviation = abbreviation).first():
+            if User.query.filter_by(abbreviation = abbreviation.upper()).first():
                 return sendResponse(400, 1140, {"message": "Abbreviation is already in use"}, "error")
-            if len(str(abbreviation)) > 4:
+            if len(abbreviation) > 4:
                 return sendResponse(400, 1150, {"message": "Abbreviation is too long"}, "error")
         else:
             abbreviation = None
@@ -70,7 +70,7 @@ def add():
         else:
             idClass = None
 
-        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
+        newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
 
         db.session.add(newUser)
         db.session.commit()
@@ -86,22 +86,30 @@ def add():
             return sendResponse(400, 1140, {"message": "Wrong file format"}, "error")
         try:
             for userData in json.load(users):
-                if not userData["name"] or not userData["surname"] or not userData["role"] or not userData["password"] or len(str(userData["password"])) < 5 or not userData["email"] or not re.match(email_regex, userData["email"]) or User.query.filter_by(email = userData["email"]).first():
+                name = str(userData["name"])
+                surname = str(userData["surname"])
+                abbreviation = str(userData["abbreviation"])
+                role = str(userData["role"])
+                email = str(userData["email"])
+                password = str(userData["password"])
+                idClass = userData["idClass"]
+
+                if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1150, {"message": "Wrong user format"}, "error")
-                if userData["abbreviation"]:
-                    if User.query.filter_by(abbreviation = userData["abbreviation"]).first():
+                if abbreviation:
+                    if User.query.filter_by(abbreviation = abbreviation.upper()).first():
                         return sendResponse (400, 1160, {"message": "Wrong user format"}, "error")
-                    if len(str(userData["abbreviation"])) > 4:
+                    if len(abbreviation) > 4:
                         return sendResponse (400, 1170, {"message": "Wrong user format"}, "error")
                 else:
-                    userData["abbreviation"] = None
-                if userData["idClass"]:
-                    if not Class.query.filter_by(id = userData["idClass"]).first():
+                    abbreviation = None
+                if idClass:
+                    if not Class.query.filter_by(id = idClass).first():
                         return sendResponse (400, 1180, {"message": "Wrong user format"}, "error")
                 else:
-                    userData["idClass"] = None
+                    idClass = None
 
-                newUser = User(name = userData["name"], surname = userData["surname"], abbreviation = userData["abbreviation"], role = userData["role"], password = generate_password_hash(userData["password"]), profilePicture = None, email = userData["email"], idClass = userData["idClass"])
+                newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
 
                 db.session.add(newUser)
             db.session.commit()

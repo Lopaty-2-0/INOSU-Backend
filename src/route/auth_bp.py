@@ -25,7 +25,7 @@ def login():
     if not login or not password:
         return sendResponse(400, 7010, {"message": "Email or password not entered"}, "error")
 
-    user = User.query.filter(or_(User.email == login, User.abbreviation == login)).first()
+    user = User.query.filter(or_(User.email == login, User.abbreviation == login.upper())).first()
 
     if not user or not check_password_hash(user.password, password):
         return sendResponse(401, 7020, {"message": "Wrong login or password"}, "error")

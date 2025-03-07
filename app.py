@@ -7,11 +7,11 @@ from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
 
 load_dotenv()
-host = os.getenv("HOST")
-user = os.getenv("USER")
-psw = os.getenv("PSW")
-database = os.getenv("DATABASE")
-secret_key = os.getenv("SECRET_KEY")
+host = os.getenv("DB_HOST")
+user = os.getenv("DB_USER")
+psw = os.getenv("DB_PSW")
+database = os.getenv("DB_NAME")
+secret_key = os.getenv("DB_SECRET_KEY")
 
 try:
     app = Flask(__name__)
