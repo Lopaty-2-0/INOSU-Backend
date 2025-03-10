@@ -11,7 +11,7 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/auth", methods = ["GET"])
 def index():
-    return sendResponse(200, 6011, {"message": "This is auth index", "time": datetime.datetime.now}, "success")
+    return sendResponse(200, 6011, {"message": "This is auth index route", "time": datetime.datetime.now}, "success")
 
 @auth_bp.route("/auth/login", methods = ["POST"])
 def login():
