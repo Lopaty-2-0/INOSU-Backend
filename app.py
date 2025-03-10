@@ -5,13 +5,14 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
+from werkzeug.security import generate_password_hash
 
 load_dotenv()
 host = os.getenv("DB_HOST")
 user = os.getenv("DB_USER")
 psw = os.getenv("DB_PSW")
 database = os.getenv("DB_NAME")
-secret_key = os.getenv("DB_SECRET_KEY")
+secret_key = os.getenv("SECRET_KEY")
 
 try:
     app = Flask(__name__)
@@ -41,6 +42,11 @@ try:
         from src.models.Task_Class import Task_Class
 
         db.create_all()
+
+        if not User.query.filter_by(role = "admin").first():
+            newUser = User(name = "admin", surname = "admin", abbreviation = "", role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz", idClass = None)
+            db.session.add(newUser)
+            db.session.commit()
         
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)
