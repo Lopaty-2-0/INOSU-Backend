@@ -25,4 +25,4 @@ def method_not_allowed(e):
 
 @errors_bp.app_errorhandler(500)
 def server_error(e):
-    return  sendResponse(500, "E11060", {"message": "Internal server error 1"}, "error")
+    return  sendResponse(500, "E11060", {"message": "Internal server error"}, "error")
