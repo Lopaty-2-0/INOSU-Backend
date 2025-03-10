@@ -9,16 +9,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Deploy using ssh
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        script: |
-          cd /home/INOSU-Backend
-          git pull origin main
-          source /home/INOSU-Backend/env/bin/activate
-          pip install -r requirements.txt
-          systemctl restart inosu_backend
+      - uses: actions/checkout@v2
+      
+      - name: Deploy using ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /home/INOSU-Backend
+            git pull origin main
+            source /home/INOSU-Backend/env/bin/activate
+            pip install -r requirements.txt
+            systemctl restart inosu_backend
