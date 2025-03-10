@@ -17,7 +17,7 @@ def page_not_found(e):
 
 @errors_bp.app_errorhandler(405)
 def method_not_allowed(e):
-    return  sendResponse(405, "E11040", {"message": "Method Not Allowed 1"}, "error")
+    return  sendResponse(405, "E11040", {"message": "Method Not Allowed 2"}, "error")
 
 @errors_bp.app_errorhandler(413)
 def method_not_allowed(e):
