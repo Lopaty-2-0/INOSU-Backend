@@ -5,7 +5,7 @@ from src.utils.pfp import pfp
 from src.models.Class import Class
 from src.utils.response import sendResponse
 from src.utils.encodeFile import encode_file
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
 from app import db
 from src.models.User import User
@@ -136,19 +136,12 @@ def update():
 
     #checks if there is id for user
     if not idUser:
-        if not profilePicture and not password:
+        if not profilePicture:
             return sendResponse(400, 2010, {"message": "Nothing entered to change"}, "error")
-        if password:
-            if len(str(password)) < 5:
-                return  sendResponse(400, 2020, {"message": "Password is too short"}, "error")
-        if profilePicture:
-            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return sendResponse(400, 2030, {"message": "Wrong file format"}, "error")
-            pfp(pfp_path, user, profilePicture)
-            
-            password = generate_password_hash(password)
-            user.password = password
-
+        if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
+            return sendResponse(400, 2030, {"message": "Wrong file format"}, "error")
+        pfp(pfp_path, user, profilePicture)
+        
         db.session.commit()
 
         return sendResponse(200, 2041, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
@@ -231,3 +224,24 @@ def delete():
     db.session.commit()
 
     return sendResponse(200, 3031, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")
+
+@user_bp.route("/user/passwordReset", methods = ["PUT"])
+@flask_login.login_required
+def passwordReset():
+    data = request.get_json(force = True)
+    oldPassword = data["oldPassword"]
+    newPassword = data["newPassword"]
+
+    if not oldPassword:
+        return sendResponse(400, 11010, {"message": "Old password not entered"}, "error")
+    if not newPassword:
+        return sendResponse(400, 11020, {"message": "New password not entered"}, "error")
+    if not check_password_hash(flask_login.current_user.password, oldPassword):
+        return sendResponse(400, 11030, {"message": "Wrong password"}, "error")
+    if len(str(newPassword)) < 5:
+        return sendResponse(400, 11040, {"message": "Password is too short"}, "error")
+    
+    flask_login.current_user.password = generate_password_hash(newPassword)
+    db.session.commit()
+
+    return sendResponse(200, 11051, {"message": "Password changed succesfuly"}, "success")

@@ -12,7 +12,7 @@ class_bp = Blueprint("class", __name__)
 @flask_login.login_required
 def add():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 9010, {"message": "No permission for that"}, "error")
+        return sendResponse(400, 8010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     grade = data["grade"]
@@ -20,43 +20,43 @@ def add():
     idSpecialization = data["idSpecialization"]
 
     if not grade:
-        return sendResponse(400, 9020, {"message": "Grade missing"}, "error")
+        return sendResponse(400, 8020, {"message": "Grade missing"}, "error")
     try:
         grade = int(grade)
     except:
-        return sendResponse(400, 9030, {"message": "Grade not integer"}, "error")
+        return sendResponse(400, 8030, {"message": "Grade not integer"}, "error")
     if not group:
-        return sendResponse(400, 9040, {"message": "Group missing"}, "error")
+        return sendResponse(400, 8040, {"message": "Group missing"}, "error")
     if len(group) > 1:
-        return sendResponse(400, 9050, {"message": "Group too long"}, "error")
+        return sendResponse(400, 8050, {"message": "Group too long"}, "error")
     if not idSpecialization:
-        return sendResponse(400, 9060, {"message": "idSpecialization missing"}, "error")
+        return sendResponse(400, 8060, {"message": "idSpecialization missing"}, "error")
     if not Specialization.query.filter_by(id = idSpecialization).first():
-        return sendResponse(400, 9070, {"message": "Wrong idSpecialization"}, "error")
+        return sendResponse(400, 8070, {"message": "Wrong idSpecialization"}, "error")
     if int(Specialization.query.filter_by(id = idSpecialization).first().lengthOfStudy) < grade:
-        return sendResponse(400, 9080, {"message": "Grade is too much"}, "error")
+        return sendResponse(400, 8080, {"message": "Grade is too much"}, "error")
     
     newClass = Class(grade = grade, group = group, idSpecialization = idSpecialization)
     db.session.add(newClass)
     db.session.commit()
 
-    return sendResponse (201, 9091, {"message": "Class created succesfuly"}, "succes")
+    return sendResponse (201, 8091, {"message": "Class created succesfuly"}, "succes")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 10010, {"message": "No permission for that"}, "error")
+        return sendResponse(400, 9010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     idClass = data["idClass"]
 
     if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 10020, {"message": "Wrong idClass"}, "error")
+        return sendResponse(400, 9020, {"message": "Wrong idClass"}, "error")
     if User.query.filter_by(idClass = idClass).first():
-        return sendResponse(400, 10030, {"message": "Some student still uses this specialization"}, "error")
+        return sendResponse(400, 9030, {"message": "Some student still uses this specialization"}, "error")
     
     db.session.delete(Class.query.filter_by(id = idClass).first())
     db.session.commit()
 
-    return sendResponse (201, 10041, {"message": "Class deleted succesfuly"}, "succes")
+    return sendResponse (201, 9041, {"message": "Class deleted succesfuly"}, "succes")

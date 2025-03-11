@@ -5,24 +5,24 @@ errors_bp = Blueprint("errors", __name__)
 
 @errors_bp.app_errorhandler(400)
 def bad_request(e):
-    return sendResponse(400, "E11010", {"message": "Bad request"}, "error")
+    return sendResponse(400, "E10010", {"message": "Bad request"}, "error")
 
 @errors_bp.app_errorhandler(401)
 def unauthorized(e):
-    return sendResponse(401, "E11010", {"message": "Unauthorized"}, "error")
+    return sendResponse(401, "E10010", {"message": "Unauthorized"}, "error")
 
 @errors_bp.app_errorhandler(404)
 def page_not_found(e):
-    return sendResponse(404, "E11030", {"message": "Page not found"}, "error")
+    return sendResponse(404, "E10030", {"message": "Page not found"}, "error")
 
 @errors_bp.app_errorhandler(405)
 def method_not_allowed(e):
-    return  sendResponse(405, "E11040", {"message": "Method Not Allowed"}, "error")
+    return  sendResponse(405, "E10040", {"message": "Method Not Allowed"}, "error")
 
 @errors_bp.app_errorhandler(413)
 def method_not_allowed(e):
-    return  sendResponse(413, "E11050", {"message": "Payload Too Large"}, "error")
+    return  sendResponse(413, "E10050", {"message": "Payload Too Large"}, "error")
 
 @errors_bp.app_errorhandler(500)
 def server_error(e):
-    return  sendResponse(500, "E11060", {"message": "Internal server error"}, "error")
+    return  sendResponse(500, "E10060", {"message": "Internal server error"}, "error")
