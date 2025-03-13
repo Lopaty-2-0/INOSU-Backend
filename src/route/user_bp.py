@@ -4,7 +4,6 @@ import json
 from src.utils.pfp import pfp
 from src.models.Class import Class
 from src.utils.response import sendResponse
-from src.utils.encodeFile import encode_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
 from app import db
@@ -74,10 +73,8 @@ def add():
 
         db.session.add(newUser)
         db.session.commit()
-        
-        encoded_file = encode_file(pfp_path + newUser.profilePicture)
 
-        return sendResponse(201,1171,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": encoded_file,"email": newUser.email, "idClass": newUser.idClass}}, "success")
+        return sendResponse(201,1171,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": newUser.idClass}}, "success")
     
     except:
         #must get it working
@@ -225,7 +222,7 @@ def delete():
 
     return sendResponse(200, 3031, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 
-@user_bp.route("/user/passwordReset", methods = ["PUT"])
+@user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required
 def passwordReset():
     data = request.get_json(force = True)
@@ -245,3 +242,27 @@ def passwordReset():
     db.session.commit()
 
     return sendResponse(200, 11051, {"message": "Password changed succesfuly"}, "success")
+
+@user_bp.route("/user/password/reset", methods = ["POST"])
+@flask_login.login_required
+def passwordRes():
+    data = request.get_json(force = True)
+    email = data["email"]
+
+    if not re.match(email_regex, email):
+        return sendResponse(400, 2100, {"message": "Wrong email format"}, "error")
+    if not User.query.filter_by(email = email).first():
+        return sendResponse(400, 2100, {"message": "No user with that email addres"}, "error")
+    
+    
+    return sendResponse(200, 11051, {"message": "JWT snedl jsem bitch"}, "success")
+
+@user_bp.route("/user/password/verify", methods = ["PUT"])
+@flask_login.login_required
+def passwordVerify():
+    return sendResponse(200, 11051, {"message": "Verified succesfuly"}, "success")
+
+@user_bp.route("/user/password/new", methods = ["PUT"])
+@flask_login.login_required
+def passwordNew():
+    return sendResponse(200, 11051, {"message": "Password reseted succesfuly"}, "success")

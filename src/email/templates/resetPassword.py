@@ -1,0 +1,2 @@
+def emailResetPasswordTemplate():
+    return "penis"
