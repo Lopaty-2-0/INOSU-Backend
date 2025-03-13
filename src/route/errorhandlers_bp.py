@@ -26,3 +26,7 @@ def method_not_allowed(e):
 @errors_bp.app_errorhandler(500)
 def server_error(e):
     return  sendResponse(500, "E10060", {"message": "Internal server error"}, "error")
+
+@errors_bp.app_errorhandler(504)
+def timeout(e):
+    return  sendResponse(504, "E10070", {"message": "Gateway Time-out"}, "error")

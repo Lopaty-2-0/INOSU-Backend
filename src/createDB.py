@@ -3,7 +3,8 @@ def create_db(gHost, gUser, gPasswd, gDatabase):
     create_db = mysql.connector.connect(
         host = str(gHost),
         user = str(gUser),
-        passwd = str(gPasswd)
+        passwd = str(gPasswd),
+        auth_plugin = "mysql_native_password"
     )
 
     cursor = create_db.cursor()
