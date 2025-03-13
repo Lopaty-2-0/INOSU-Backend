@@ -6,6 +6,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
 from werkzeug.security import generate_password_hash
+from flask_jwt_extended import JWTManager
 
 load_dotenv()
 host = os.getenv("DB_HOST")
@@ -20,11 +21,13 @@ try:
     app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://" + user + ":" + psw + "@" + host + "/" + database
 
     app.config["SECRET_KEY"] = secret_key.encode("utf-8")
+    app.config["JWT_SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
 
     db = sql(app)
+    jwt = JWTManager(app)
 
     login_manager = flask_login.LoginManager()
     login_manager.init_app(app)

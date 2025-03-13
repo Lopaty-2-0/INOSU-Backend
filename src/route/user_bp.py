@@ -1,12 +1,18 @@
 import flask_login
 import re
 import json
+import flask_jwt_extended
+import datetime
+import smtplib, ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from src.email.templates.resetPassword import emailResetPasswordTemplate
 from src.utils.pfp import pfp
 from src.models.Class import Class
 from src.utils.response import sendResponse
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db
+from app import db, jwt
 from src.models.User import User
 
 user_bp = Blueprint("user", __name__)
@@ -244,18 +250,34 @@ def passwordReset():
     return sendResponse(200, 11051, {"message": "Password changed succesfuly"}, "success")
 
 @user_bp.route("/user/password/reset", methods = ["POST"])
-@flask_login.login_required
 def passwordRes():
     data = request.get_json(force = True)
     email = data["email"]
 
     if not re.match(email_regex, email):
-        return sendResponse(400, 2100, {"message": "Wrong email format"}, "error")
+        return sendResponse(400, 12010, {"message": "Wrong email format"}, "error")
     if not User.query.filter_by(email = email).first():
-        return sendResponse(400, 2100, {"message": "No user with that email addres"}, "error")
+        return sendResponse(400, 12020, {"message": "No user with that email addres"}, "error")
     
-    
-    return sendResponse(200, 11051, {"message": "JWT snedl jsem bitch"}, "success")
+    token = flask_jwt_extended.create_access_token(identity = email, expires_delta = datetime.timedelta(hours = 1))
+    link = "http://89.203.248.163/password/forget/reset?token=" + token
+    name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
+
+    #will get email and password from some file
+    sender_email = ""
+    password = ""
+    #will add plain text email
+    message = MIMEMultipart("alternative")
+    message["Subject"] = "Password reset"
+    message["From"] = sender_email
+    message["To"] = email
+    message.attach(MIMEText(emailResetPasswordTemplate(name = name, link = link), "html"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as server:
+        server.login(sender_email, password)
+        server.sendmail(sender_email, email, message.as_string())
+
+    return sendResponse(200, 12031, {"message": "Token created succesfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["PUT"])
 @flask_login.login_required
