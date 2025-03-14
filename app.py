@@ -1,5 +1,6 @@
 import flask_login
 import os
+from src.utils.response import sendResponse
 from src.createDB import create_db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
@@ -33,6 +34,10 @@ try:
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+    
+    @jwt.expired_token_loader
+    def tokenExpired(token_header, token_contents):
+        return sendResponse(401,14010,{"message": "Token is expired"}, "error")
 
     with app.app_context():
         from src.models.User import User

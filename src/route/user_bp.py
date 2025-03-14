@@ -257,21 +257,23 @@ def passwordRes():
     if not User.query.filter_by(email = email).first():
         return sendResponse(400, 12020, {"message": "No user with that email addres"}, "error")
     
-    token = flask_jwt_extended.create_access_token(identity = email, expires_delta = datetime.timedelta(hours = 1))
+    token = flask_jwt_extended.create_access_token(fresh = True, expires_delta = datetime.timedelta(hours = 1), additional_claims = email) 
     link = "http://89.203.248.163/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = emailResetPasswordTemplate(name, link)
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
-    sendEmail(email, "Password reset", html, text)
+    sendEmail("votaon@seznam.cz", "Password reset", html, text)
 
     return sendResponse(200, 12031, {"message": "Token created succesfuly and send to email"}, "success")
 
-@user_bp.route("/user/password/verify", methods = ["PUT"])
-@flask_login.login_required
+@user_bp.route("/user/password/verify", methods = ["POST"])
+@flask_jwt_extended.jwt_required(optional=True)
 def passwordVerify():
-    return sendResponse(200, 11051, {"message": "Verified succesfuly"}, "success")
+    data = request.get_json(force = True)
+    token = data["token"]
+    decoded_token = flask_jwt_extended.decode_token(token)
+    return sendResponse(200, 11051, {"message": "Verified succesfuly", "email": decoded_token["sub"]}, "success")
 
-@user_bp.route("/user/password/new", methods = ["PUT"])
-@flask_login.login_required
+@user_bp.route("/user/password/new", methods = ["POST"])
 def passwordNew():
     return sendResponse(200, 11051, {"message": "Password reseted succesfuly"}, "success")
