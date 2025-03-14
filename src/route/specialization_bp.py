@@ -14,9 +14,9 @@ def add():
         return sendResponse(400, 4010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    name = data["name"]
-    abbrevation = data["abbrevation"]
-    lengthOfStudy = data["lengthOfStudy"]
+    name = data.get("name", None)
+    abbrevation = data.get("abbrevation", None)
+    lengthOfStudy = data.get("lengthOfStudy", None)
 
     if not lengthOfStudy:
         return sendResponse(400, 4020, {"message": "lengthOfStudy missing"}, "error")
@@ -50,14 +50,16 @@ def delete():
         return sendResponse(400, 5010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    idSpecialization = data["idSpecialization"]
+    idSpecialization = data.get("idSpecialization", None)
 
+    if not idSpecialization:
+        return sendResponse(400, 5020, {"message": "IdSpecialization is missing"}, "error")
     if not Specialization.query.filter_by(id = idSpecialization).first():
-        return sendResponse(400, 5020, {"message": "Wrong idSpecialization"}, "error")
+        return sendResponse(400, 5030, {"message": "Wrong idSpecialization"}, "error")
     if Class.query.filter_by(idSpecialization = idSpecialization).first():
-        return sendResponse(400, 5030, {"message": "Some class still uses this specialization"}, "error")
+        return sendResponse(400, 5040, {"message": "Some class still uses this specialization"}, "error")
     
     db.session.delete(Specialization.query.filter_by(id = idSpecialization).first())
     db.session.commit()
     
-    return sendResponse (201, 5041, {"message": "Specialization deleted succesfuly"}, "succes")
+    return sendResponse (201, 5051, {"message": "Specialization deleted succesfuly"}, "succes")

@@ -28,13 +28,13 @@ def add():
     
     try:
         data = request.get_json()
-        name = str(data["name"])
-        surname = str(data["surname"])
-        abbreviation = str(data["abbreviation"])
-        role = str(data["role"])
-        email = str(data["email"])
-        password = str(data["password"])
-        idClass = data["idClass"]
+        name = data.get("name", None)
+        surname = data.get("surname", None)
+        abbreviation = data.get("abbreviation", None)
+        role = data.get("role", None)
+        email = data.get("email", None)
+        password = data.get("password", None)
+        idClass = data.get("idClass", None)
 
         if not name:
             return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
@@ -87,13 +87,14 @@ def add():
             return sendResponse(400, 1140, {"message": "Wrong file format"}, "error")
         try:
             for userData in json.load(users):
-                name = str(userData["name"])
-                surname = str(userData["surname"])
-                abbreviation = str(userData["abbreviation"])
-                role = str(userData["role"])
-                email = str(userData["email"])
-                password = str(userData["password"])
-                idClass = userData["idClass"]
+                data = request.get_json()
+                name = data.get("name", None)
+                surname = data.get("surname", None)
+                abbreviation = data.get("abbreviation", None)
+                role = data.get("role", None)
+                email = data.get("email", None)
+                password = data.get("password", None)
+                idClass = data.get("idClass", None)
 
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1150, {"message": "Wrong user format"}, "error")
@@ -122,14 +123,14 @@ def add():
 @flask_login.login_required
 def update():
     #gets data (json)
-    name = request.form.get("name")
-    surname = request.form.get("surname")
-    abbreviation = request.form.get("abbreviation")
-    role = request.form.get("role")
-    email = request.form.get("email")
-    password = request.form.get("password")
-    idClass = request.form.get("idClass")
-    idUser = request.form.get("idUser")
+    name = request.form.get("name", None)
+    surname = request.form.get("surname", None)
+    abbreviation = request.form.get("abbreviation", None)
+    role = request.form.get("role", None)
+    email = request.form.get("email", None)
+    password = request.form.get("password", None)
+    idClass = request.form.get("idClass", None)
+    idUser = request.form.get("idUser", None)
     
     #gets profile picture
     profilePicture = request.files.get("profilePicture")
@@ -197,7 +198,7 @@ def update():
 @flask_login.login_required
 def delete():
     data = request.get_json(force = True)
-    idUser = data["idUser"]
+    idUser = data.get("idUser", None)
     goodIds = []
     badIds = []
 
@@ -230,8 +231,8 @@ def delete():
 @flask_login.login_required
 def passwordReset():
     data = request.get_json(force = True)
-    oldPassword = data["oldPassword"]
-    newPassword = data["newPassword"]
+    oldPassword = data.get("oldPassword", None)
+    newPassword = data.get("newPassword", None)
 
     if not oldPassword:
         return sendResponse(400, 11010, {"message": "Old password not entered"}, "error")
@@ -250,30 +251,34 @@ def passwordReset():
 @user_bp.route("/user/password/reset", methods = ["POST"])
 def passwordRes():
     data = request.get_json(force = True)
-    email = data["email"]
-
+    email = data.get("email", None)
+    
+    if not email:
+        return sendResponse(400, 12010, {"message": "Email is missing"}, "error")
     if not re.match(email_regex, email):
-        return sendResponse(400, 12010, {"message": "Wrong email format"}, "error")
+        return sendResponse(400, 12020, {"message": "Wrong email format"}, "error")
     if not User.query.filter_by(email = email).first():
-        return sendResponse(400, 12020, {"message": "No user with that email addres"}, "error")
+        return sendResponse(400, 12030, {"message": "No user with that email addres"}, "error")
     
     token = flask_jwt_extended.create_access_token(fresh = True, expires_delta = datetime.timedelta(hours = 1), additional_claims = email) 
     link = "http://89.203.248.163/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = emailResetPasswordTemplate(name, link)
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
-    sendEmail("votaon@seznam.cz", "Password reset", html, text)
+    sendEmail(email, "Password reset", html, text)
 
-    return sendResponse(200, 12031, {"message": "Token created succesfuly and send to email"}, "success")
+    return sendResponse(200, 12041, {"message": "Token created succesfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["POST"])
 @flask_jwt_extended.jwt_required(optional=True)
 def passwordVerify():
     data = request.get_json(force = True)
-    token = data["token"]
+    token = data.get("token", None)
+    if not token:
+        return sendResponse(400, 13010, {"message": "Token is missing"}, "error")
     decoded_token = flask_jwt_extended.decode_token(token)
-    return sendResponse(200, 11051, {"message": "Verified succesfuly", "email": decoded_token["sub"]}, "success")
+    return sendResponse(200, 13021, {"message": "Verified succesfuly", "email": decoded_token["sub"]}, "success")
 
 @user_bp.route("/user/password/new", methods = ["POST"])
 def passwordNew():
-    return sendResponse(200, 11051, {"message": "Password reseted succesfuly"}, "success")
+    return sendResponse(200, 14051, {"message": "Password reseted succesfuly"}, "success")

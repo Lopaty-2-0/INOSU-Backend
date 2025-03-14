@@ -15,9 +15,9 @@ def add():
         return sendResponse(400, 8010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    grade = data["grade"]
-    group = data["group"]
-    idSpecialization = data["idSpecialization"]
+    grade = data.get("grade", None)
+    group = data.get("group", None)
+    idSpecialization = data.get("idSpecialization")
 
     if not grade:
         return sendResponse(400, 8020, {"message": "Grade missing"}, "error")
@@ -49,14 +49,16 @@ def delete():
         return sendResponse(400, 9010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    idClass = data["idClass"]
+    idClass = data.get("idClass", None)
 
+    if not idClass:
+        return sendResponse(400, 9020, {"message": "IdClass is missing"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 9020, {"message": "Wrong idClass"}, "error")
+        return sendResponse(400, 9030, {"message": "Wrong idClass"}, "error")
     if User.query.filter_by(idClass = idClass).first():
-        return sendResponse(400, 9030, {"message": "Some student still uses this specialization"}, "error")
+        return sendResponse(400, 9040, {"message": "Some student still uses this specialization"}, "error")
     
     db.session.delete(Class.query.filter_by(id = idClass).first())
     db.session.commit()
 
-    return sendResponse (201, 9041, {"message": "Class deleted succesfuly"}, "succes")
+    return sendResponse (201, 9051, {"message": "Class deleted succesfuly"}, "succes")

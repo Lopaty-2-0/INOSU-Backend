@@ -10,9 +10,9 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/auth/login", methods = ["POST"])
 def login():
     data = request.get_json(force = True)
-    login = str(data["login"])
-    password = str(data["password"])
-    stayLogged = data["stayLogged"]
+    login = data.get("login", None)
+    password = data.get("password", None)
+    stayLogged = data.get("stayLogged", None)
 
     stayLogged = bool(stayLogged)
 
