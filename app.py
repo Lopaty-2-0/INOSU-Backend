@@ -1,14 +1,12 @@
 import flask_login
 import os
 from src.createDB import create_db
-from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
 
-load_dotenv()
 host = os.getenv("DB_HOST")
 user = os.getenv("DB_USER")
 psw = os.getenv("DB_PSW")

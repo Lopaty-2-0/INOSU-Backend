@@ -3,13 +3,11 @@ import re
 import json
 import flask_jwt_extended
 import datetime
-import smtplib, ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from src.email.templates.resetPassword import emailResetPasswordTemplate
 from src.utils.pfp import pfp
 from src.models.Class import Class
 from src.utils.response import sendResponse
+from src.utils.sendEmail import sendEmail
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
 from app import db, jwt
@@ -262,20 +260,9 @@ def passwordRes():
     token = flask_jwt_extended.create_access_token(identity = email, expires_delta = datetime.timedelta(hours = 1))
     link = "http://89.203.248.163/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
-
-    #will get email and password from some file
-    sender_email = ""
-    password = ""
-    #will add plain text email
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Password reset"
-    message["From"] = sender_email
-    message["To"] = email
-    message.attach(MIMEText(emailResetPasswordTemplate(name = name, link = link), "html"))
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as server:
-        server.login(sender_email, password)
-        server.sendmail(sender_email, email, message.as_string())
+    html = emailResetPasswordTemplate(name, link)
+    text = "Pro resetování hesla zkopírujte tento odkaz: " + link
+    sendEmail(email, "Password reset", html, text)
 
     return sendResponse(200, 12031, {"message": "Token created succesfuly and send to email"}, "success")
 
