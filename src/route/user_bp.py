@@ -10,7 +10,7 @@ from src.utils.response import sendResponse
 from src.utils.sendEmail import sendEmail
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db, jwt
+from app import db
 from src.models.User import User
 
 user_bp = Blueprint("user", __name__)
