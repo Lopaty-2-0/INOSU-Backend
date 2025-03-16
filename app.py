@@ -8,6 +8,7 @@ from datetime import timedelta
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 host = os.getenv("DB_HOST")
@@ -29,6 +30,7 @@ try:
 
     db = sql(app)
     jwt = JWTManager(app)
+    cors = CORS(app)
 
     login_manager = flask_login.LoginManager()
     login_manager.init_app(app)
