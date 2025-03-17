@@ -17,7 +17,7 @@ def login():
     stayLogged = bool(stayLogged)
 
     if not login or not password:
-        return sendResponse(400, 6010, {"message": "Email or password not entered"}, "error")
+        return sendResponse(400, 6010, {"message": "Login or password not entered"}, "error")
 
     user = User.query.filter(or_(User.email == login, User.abbreviation == login.upper())).first()
 

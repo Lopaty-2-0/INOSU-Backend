@@ -5,15 +5,15 @@ errors_bp = Blueprint("errors", __name__)
 
 @errors_bp.app_errorhandler(400)
 def bad_request(e):
-    return sendResponse(400, "E10010", {"message": "Bad request"}, "error")
+    return sendResponse(400, "E10010", {"message": "Bad Request"}, "error")
 
 @errors_bp.app_errorhandler(401)
 def unauthorized(e):
-    return sendResponse(401, "E10010", {"message": "Unauthorized"}, "error")
+    return sendResponse(401, "E10020", {"message": "Unauthorized"}, "error")
 
 @errors_bp.app_errorhandler(404)
 def page_not_found(e):
-    return sendResponse(404, "E10030", {"message": "Page not found"}, "error")
+    return sendResponse(404, "E10030", {"message": "Page Not Found"}, "error")
 
 @errors_bp.app_errorhandler(405)
 def method_not_allowed(e):
@@ -25,7 +25,7 @@ def method_not_allowed(e):
 
 @errors_bp.app_errorhandler(500)
 def server_error(e):
-    return  sendResponse(500, "E10060", {"message": "Internal server error"}, "error")
+    return  sendResponse(500, "E10060", {"message": "Internal Server Error"}, "error")
 
 @errors_bp.app_errorhandler(504)
 def timeout(e):
