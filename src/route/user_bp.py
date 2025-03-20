@@ -132,6 +132,9 @@ def update():
     idUser = request.form.get("idUser", None)
     
     #gets profile picture
+    fileSize = request.content_length
+    if fileSize != None and fileSize > 2*1024*1024:
+        return sendResponse(400, 2010, {"message": "File exceeded max size of 2MB"}, "error")
     profilePicture = request.files.get("profilePicture", None)
     user = flask_login.current_user
 
@@ -241,7 +244,7 @@ def passwordReset():
     flask_login.current_user.password = generate_password_hash(newPassword)
     db.session.commit()
 
-    return sendResponse(200, 11051, {"message": "Password changed succesfuly"}, "success")
+    return sendResponse(200, 11051, {"message": "Password changed successfuly"}, "success")
 
 @user_bp.route("/user/password/new", methods = ["POST"])
 def passwordRes():
@@ -255,14 +258,14 @@ def passwordRes():
     if not User.query.filter_by(email = email).first():
         return sendResponse(400, 12030, {"message": "No user with that email addres"}, "error")
     
-    token = flask_jwt_extended.create_access_token(identity = email, additional_claims = {"email": email, "experies": str(datetime.datetime.now() + datetime.timedelta(hours = 1))}) 
+    token = flask_jwt_extended.create_access_token(fresh=False, identity = email, additional_claims = {"email": email, "experies": str(datetime.datetime.now() + datetime.timedelta(hours = 1))}) 
     link = "http://89.203.248.163/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = emailResetPasswordTemplate(name, link)
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
     sendEmail(email, "Password reset", html, text)
 
-    return sendResponse(200, 12041, {"message": "Token created succesfuly and send to email"}, "success")
+    return sendResponse(200, 12041, {"message": "Token created successfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["POST"])
 def passwordVerify():
@@ -285,4 +288,4 @@ def passwordNew():
         return sendResponse(400, 14010, {"message": "Wrong email"}, "error")
     user.password = generate_password_hash(newPassword)
     db.session.commit()
-    return sendResponse(200, 14021, {"message": "Password reseted succesfuly"}, "success")
+    return sendResponse(200, 14021, {"message": "Password reseted successfuly"}, "success")
