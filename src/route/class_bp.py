@@ -40,7 +40,7 @@ def add():
     db.session.add(newClass)
     db.session.commit()
 
-    return sendResponse (201, 8091, {"message": "Class created succesfuly"}, "succes")
+    return sendResponse (201, 8091, {"message": "Class created succesfuly"}, "success")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -56,9 +56,9 @@ def delete():
     if not Class.query.filter_by(id = idClass).first():
         return sendResponse(400, 9030, {"message": "Wrong idClass"}, "error")
     if User.query.filter_by(idClass = idClass).first():
-        return sendResponse(400, 9040, {"message": "Some student still uses this specialization"}, "error")
+        return sendResponse(400, 9040, {"message": "Some user still uses this specialization"}, "error")
     
     db.session.delete(Class.query.filter_by(id = idClass).first())
     db.session.commit()
 
-    return sendResponse (201, 9051, {"message": "Class deleted succesfuly"}, "succes")
+    return sendResponse (201, 9051, {"message": "Class deleted successfuly"}, "success")

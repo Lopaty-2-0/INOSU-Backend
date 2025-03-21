@@ -41,7 +41,7 @@ def add():
     db.session.add(newSpecialization)
     db.session.commit()
 
-    return sendResponse (201, 4101, {"message": "Specialization created succesfuly"}, "succes")
+    return sendResponse (201, 4101, {"message": "Specialization created successfuly"}, "success")
 
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -62,4 +62,4 @@ def delete():
     db.session.delete(Specialization.query.filter_by(id = idSpecialization).first())
     db.session.commit()
     
-    return sendResponse (201, 5051, {"message": "Specialization deleted succesfuly"}, "succes")
+    return sendResponse (201, 5051, {"message": "Specialization deleted successfuly"}, "success")

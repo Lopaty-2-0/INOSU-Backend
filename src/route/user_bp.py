@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
 from app import db
 from src.models.User import User
+from src.utils.checkFileSize import checkFileSize
 
 user_bp = Blueprint("user", __name__)
 
@@ -116,11 +117,12 @@ def add():
                 db.session.add(newUser)
             db.session.commit()
         except:
-            return sendResponse(400, 1230, {"message": "Wrong format in json????"}, "error")
-        return sendResponse (201, 1241, {"message": "All users created succesfuly"}, "succes")
+            return sendResponse(400, 1230, {"message": "Something wrong in json"}, "error")
+        return sendResponse (201, 1241, {"message": "All users created successfuly"}, "success")
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required
+@checkFileSize(2*1024*1024)
 def update():
     #gets data (json)
     name = request.form.get("name", None)
@@ -132,9 +134,6 @@ def update():
     idUser = request.form.get("idUser", None)
     
     #gets profile picture
-    fileSize = request.content_length
-    if fileSize != None and fileSize > 2*1024*1024:
-        return sendResponse(400, 2010, {"message": "File exceeded max size of 2MB"}, "error")
     profilePicture = request.files.get("profilePicture", None)
     user = flask_login.current_user
 
