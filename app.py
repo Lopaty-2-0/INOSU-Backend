@@ -38,6 +38,14 @@ try:
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+    
+    @jwt.expired_token_loader
+    def expired_token(expiredToken, nn):
+        return sendResponse(401, "JWT16010", {"message": "Token is expired"}, "error")
+    
+    @jwt.invalid_token_loader
+    def invalid_token(e):
+        return sendResponse(422, "JWT16020", {"message": e}, "error")
 
     with app.app_context():
         from src.models.User import User

@@ -257,7 +257,7 @@ def passwordRes():
     if not User.query.filter_by(email = email).first():
         return sendResponse(400, 12030, {"message": "No user with that email addres"}, "error")
     
-    token = flask_jwt_extended.create_access_token(fresh=False, identity = email, additional_claims = {"email": email, "experies": str(datetime.datetime.now() + datetime.timedelta(hours = 1))}) 
+    token = flask_jwt_extended.create_access_token(fresh = True, identity = email, expires_delta= datetime.timedelta(hours = 1),additional_claims = {"email": email})
     link = "http://89.203.248.163/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = emailResetPasswordTemplate(name, link)
@@ -273,9 +273,7 @@ def passwordVerify():
     if not token:
         return sendResponse(400, 13010, {"message": "Token is missing"}, "error")
     decoded_token = flask_jwt_extended.decode_token(token)
-    if str(datetime.datetime.now()) > decoded_token["experies"]:
-        return sendResponse(401,13020,{"message": "Token is expired"}, "error")
-    return sendResponse(200, 13031, {"message": "Verified successfuly", "email":decoded_token["email"]}, "success")
+    return sendResponse(200, 13021, {"message": "Verified successfuly", "email":decoded_token["email"]}, "success")
 
 @user_bp.route("/user/password/reset", methods = ["POST"])
 def passwordNew():
