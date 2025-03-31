@@ -270,9 +270,12 @@ def passwordRes():
 def passwordVerify():
     data = request.get_json(force = True)
     token = data.get("token", None)
+
     if not token:
         return sendResponse(400, 13010, {"message": "Token is missing"}, "error")
+    
     decoded_token = flask_jwt_extended.decode_token(token)
+
     return sendResponse(200, 13021, {"message": "Verified successfuly", "email":decoded_token["email"]}, "success")
 
 @user_bp.route("/user/password/reset", methods = ["POST"])
@@ -281,8 +284,13 @@ def passwordNew():
     email = data.get("email", None)
     newPassword = data.get("newPassword", None)
     user = User.query.filter_by(email = email).first()
+
     if not user:
         return sendResponse(400, 14010, {"message": "Wrong email"}, "error")
+    if len(str(newPassword)) < 5:
+        return sendResponse(400, 14020, {"message": "Password too short"}, "error")
+    
     user.password = generate_password_hash(newPassword)
     db.session.commit()
-    return sendResponse(200, 14021, {"message": "Password reseted successfuly"}, "success")
+    
+    return sendResponse(200, 14031, {"message": "Password reseted successfuly"}, "success")
