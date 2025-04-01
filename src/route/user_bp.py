@@ -287,10 +287,12 @@ def passwordNew():
 
     if not user:
         return sendResponse(400, 14010, {"message": "Wrong email"}, "error")
+    if not newPassword:
+        return sendResponse(400, 14020, {"message": "Password missing"}, "error")
     if len(str(newPassword)) < 5:
-        return sendResponse(400, 14020, {"message": "Password too short"}, "error")
+        return sendResponse(400, 14030, {"message": "Password too short"}, "error")
     
     user.password = generate_password_hash(newPassword)
     db.session.commit()
     
-    return sendResponse(200, 14031, {"message": "Password reseted successfuly"}, "success")
+    return sendResponse(200, 14041, {"message": "Password reseted successfuly"}, "success")
