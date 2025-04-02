@@ -30,7 +30,7 @@ try:
 
     db = sql(app)
     jwt = JWTManager(app)
-    cors = CORS(app)
+    cors = CORS(app, supports_credentials=True)
 
     login_manager = flask_login.LoginManager()
     login_manager.init_app(app)
