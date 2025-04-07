@@ -285,25 +285,60 @@ def passwordNew():
     data = request.get_json(force=True)
     email = data.get("email", None)
     newPassword = data.get("newPassword", None)
+
+    if not re.match(email_regex, email):
+        return sendResponse(400, 14010, {"message": "Wrong email format"}, "error")
     user = User.query.filter_by(email = email).first()
 
     if not user:
-        return sendResponse(400, 14010, {"message": "Wrong email"}, "error")
+        return sendResponse(400, 14020, {"message": "Wrong email"}, "error")
     if not newPassword:
-        return sendResponse(400, 14020, {"message": "Password missing"}, "error")
+        return sendResponse(400, 14030, {"message": "Password missing"}, "error")
     if len(str(newPassword)) < 5:
-        return sendResponse(400, 14030, {"message": "Password too short"}, "error")
+        return sendResponse(400, 14040, {"message": "Password too short"}, "error")
     
     user.password = generate_password_hash(newPassword)
     db.session.commit()
     
-    return sendResponse(200, 14041, {"message": "Password reseted successfuly"}, "success")
+    return sendResponse(200, 14051, {"message": "Password reseted successfuly"}, "success")
 
-def getUser(finder):
-    users = User.query.filter(or_(User.id == finder, User.email == finder, User.role == finder, User.idClass == finder))
-    skibidi = []
+def getUserById(id):
+    user = User.query.filter_by(id = id).first()
+    
+    if not user:
+        return sendResponse(400, "U18010", {"message": "User not found"}, "error")
+    
+    return sendResponse(200, "U18021", {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+
+def getUserByEmail(email):
+    if not re.match(email_regex, email):
+        return sendResponse(400, "U19010", {"message": "Wrong email format"}, "error")
+    
+    user = User.query.filter_by(email = email).first()
+    
+    if not user:
+        return sendResponse(400, "U19020", {"message": "User not found"}, "error")
+    
+    return sendResponse(200, "U19031", {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+
+def getUsersByRole(role):
+    users = User.query.filter_by(role = role)
+    all_users = []
+
     for user in users:
-        skibidi.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
-    if not skibidi:
-        return "skibidi"
-    return skibidi
+        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
+    if not all_users:
+        return sendResponse(400, "U20010", {"message": "Users not found"}, "error")
+    
+    return sendResponse(200, "U20021", {"message": "Users found", "users": all_users}, "success")
+
+def getUsersByIdClass(idClass):
+    users = User.query.filter_by(idClass = idClass)
+    all_users = []
+
+    for user in users:
+        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
+    if not all_users:
+        return sendResponse(400, "U21010", {"message": "Users not found"}, "error")
+    
+    return sendResponse(200, "U21021", {"message": "Users found", "users": all_users}, "success")

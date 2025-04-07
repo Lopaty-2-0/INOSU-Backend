@@ -62,3 +62,22 @@ def delete():
     db.session.commit()
 
     return sendResponse (201, 9051, {"message": "Class deleted successfuly"}, "success")
+
+def getClassById(id):
+    all_class = Class.query.filter_by(id = id).first()
+    
+    if not all_class:
+        return sendResponse(400, "C22010", {"message": "Class not found"}, "error")
+    
+    return sendResponse(200, "C22021", {"message": "Class found", "user": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "idSpecialization": all_class.idSpecialization}}, "success")
+
+def getClasses():
+    classes = Class.query.filter_by()
+    all_class = []
+
+    for cl in classes:
+        all_class.append({"id": cl.id, "grade": cl.grade, "group": cl.group, "idSpecialization": cl.idSpecialization})
+    if not all_class:
+        return sendResponse(400, "C23010", {"message": "Classes not found"}, "error")
+    
+    return sendResponse(200, "C23021", {"message": "Classes found", "users": all_class}, "success")
