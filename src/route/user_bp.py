@@ -13,6 +13,7 @@ from flask import request, Blueprint
 from app import db
 from src.models.User import User
 from src.utils.checkFileSize import checkFileSize
+from sqlalchemy import or_
 
 user_bp = Blueprint("user", __name__)
 
@@ -66,6 +67,7 @@ def add():
                 return sendResponse(400, 1140, {"message": "Abbreviation is already in use"}, "error")
             if len(abbreviation) > 4:
                 return sendResponse(400, 1150, {"message": "Abbreviation is too long"}, "error")
+            abbreviation = abbreviation.upper()
         else:
             abbreviation = None
         if idClass:
@@ -74,7 +76,7 @@ def add():
         else:
             idClass = None
 
-        newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
+        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
 
         db.session.add(newUser)
         db.session.commit()
@@ -296,3 +298,12 @@ def passwordNew():
     db.session.commit()
     
     return sendResponse(200, 14041, {"message": "Password reseted successfuly"}, "success")
+
+def getUser(finder):
+    users = User.query.filter(or_(User.id == finder, User.email == finder, User.role == finder, User.idClass == finder))
+    skibidi = []
+    for user in users:
+        skibidi.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
+    if not skibidi:
+        return "skibidi"
+    return skibidi

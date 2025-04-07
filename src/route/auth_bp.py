@@ -5,6 +5,8 @@ from werkzeug.security import check_password_hash
 from src.utils.response import sendResponse
 from src.models.User import User
 
+from src.route.user_bp import getUser
+    
 auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/auth/login", methods = ["POST"])
@@ -12,9 +14,9 @@ def login():
     data = request.get_json(force = True)
     login = data.get("login", None)
     password = data.get("password", None)
-    stayLogged = data.get("stayLogged", None)
+    stayLogged = bool(data.get("stayLogged", None))
 
-    stayLogged = bool(stayLogged)
+    print(getUser(""))
 
     if not login or not password:
         return sendResponse(400, 6010, {"message": "Login or password not entered"}, "error")
