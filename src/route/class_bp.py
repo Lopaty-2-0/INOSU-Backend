@@ -63,14 +63,24 @@ def delete():
 
     return sendResponse (201, 9051, {"message": "Class deleted successfuly"}, "success")
 
-def getClassById(id):
+@class_bp.route("/class/get/id", methods=["GET"])
+@flask_login.login_required
+def getClassById():
+    data = request.get_json(force=True)
+    id = data.get("id", None)
+
+    if not id:
+        return sendResponse(400, 22010, {"message": "Id not entered"}, "error")
+
     all_class = Class.query.filter_by(id = id).first()
     
     if not all_class:
-        return sendResponse(400, "C22010", {"message": "Class not found"}, "error")
+        return sendResponse(400, 22020, {"message": "Class not found"}, "error")
     
-    return sendResponse(200, "C22021", {"message": "Class found", "user": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "idSpecialization": all_class.idSpecialization}}, "success")
+    return sendResponse(200, 22031, {"message": "Class found", "user": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "idSpecialization": all_class.idSpecialization}}, "success")
 
+@class_bp.route("/class/get", methods=["GET"])
+@flask_login.login_required
 def getClasses():
     classes = Class.query.filter_by()
     all_class = []
@@ -78,6 +88,6 @@ def getClasses():
     for cl in classes:
         all_class.append({"id": cl.id, "grade": cl.grade, "group": cl.group, "idSpecialization": cl.idSpecialization})
     if not all_class:
-        return sendResponse(400, "C23010", {"message": "Classes not found"}, "error")
+        return sendResponse(400, 23010, {"message": "Classes not found"}, "error")
     
-    return sendResponse(200, "C23021", {"message": "Classes found", "users": all_class}, "success")
+    return sendResponse(200, 23021, {"message": "Classes found", "classes": all_class}, "success")

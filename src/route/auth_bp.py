@@ -11,7 +11,7 @@ auth_bp = Blueprint("auth", __name__)
 def login():
     data = request.get_json(force = True)
     login = data.get("login", None)
-    password = data.get("password", None)
+    password = str(data.get("password", None))
     stayLogged = bool(data.get("stayLogged", None))
 
     if not login or not password:

@@ -35,7 +35,7 @@ def add():
         abbreviation = data.get("abbreviation", None)
         role = data.get("role", None)
         email = data.get("email", None)
-        password = data.get("password", None)
+        password = str(data.get("password", None))
         idClass = data.get("idClass", None)
 
         if not name:
@@ -96,7 +96,7 @@ def add():
                 abbreviation = data.get("abbreviation", None)
                 role = data.get("role", None)
                 email = data.get("email", None)
-                password = data.get("password", None)
+                password = str(data.get("password", None))
                 idClass = data.get("idClass", None)
 
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
@@ -230,8 +230,8 @@ def delete():
 @flask_login.login_required
 def passwordReset():
     data = request.get_json(force = True)
-    oldPassword = data.get("oldPassword", None)
-    newPassword = data.get("newPassword", None)
+    oldPassword = str(data.get("oldPassword", None))
+    newPassword = str(data.get("newPassword", None))
 
     if not oldPassword:
         return sendResponse(400, 11010, {"message": "Old password not entered"}, "error")
@@ -284,7 +284,7 @@ def passwordVerify():
 def passwordNew():
     data = request.get_json(force=True)
     email = data.get("email", None)
-    newPassword = data.get("newPassword", None)
+    newPassword = str(data.get("newPassword", None))
 
     if not re.match(email_regex, email):
         return sendResponse(400, 14010, {"message": "Wrong email format"}, "error")
@@ -302,43 +302,75 @@ def passwordNew():
     
     return sendResponse(200, 14051, {"message": "Password reseted successfuly"}, "success")
 
-def getUserById(id):
+@user_bp.route("/user/get/id", methods = ["GET"])
+@flask_login.login_required
+def getUserById():
+    data = request.get_json(force=True)
+    id = data.get("id", None)
+
+    if not id:
+        return sendResponse(400, 18010, {"message": "Id not entered"}, "error")
+
     user = User.query.filter_by(id = id).first()
     
     if not user:
-        return sendResponse(400, "U18010", {"message": "User not found"}, "error")
+        return sendResponse(400, 18020, {"message": "User not found"}, "error")
     
-    return sendResponse(200, "U18021", {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+    return sendResponse(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
 
-def getUserByEmail(email):
+@user_bp.route("/user/get/email", methods = ["GET"])
+@flask_login.login_required
+def getUserByEmail():
+    data = request.get_json(force=True)
+    email = data.get("email", None)
+
+    if not email:
+        return sendResponse(400, 19010, {"message": "Email not entered"}, "error")
     if not re.match(email_regex, email):
-        return sendResponse(400, "U19010", {"message": "Wrong email format"}, "error")
+        return sendResponse(400, 19020, {"message": "Wrong email format"}, "error")
     
     user = User.query.filter_by(email = email).first()
     
     if not user:
-        return sendResponse(400, "U19020", {"message": "User not found"}, "error")
+        return sendResponse(400, 19030, {"message": "User not found"}, "error")
     
-    return sendResponse(200, "U19031", {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+    return sendResponse(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
 
-def getUsersByRole(role):
+@user_bp.route("/user/get/role", methods = ["GET"])
+@flask_login.login_required
+def getUsersByRole():
+    data = request.get_json(force=True)
+    role = data.get("role", None)
+    all_users = []
+
+    if not role:
+        return sendResponse(400, 20010, {"message": "Role not entered"}, "error")
+    
     users = User.query.filter_by(role = role)
-    all_users = []
 
     for user in users:
         all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
     if not all_users:
-        return sendResponse(400, "U20010", {"message": "Users not found"}, "error")
+        return sendResponse(400, 20020, {"message": "Users not found"}, "error")
     
-    return sendResponse(200, "U20021", {"message": "Users found", "users": all_users}, "success")
+    return sendResponse(200, 20031, {"message": "Users found", "users": all_users}, "success")
 
-def getUsersByIdClass(idClass):
+@user_bp.route("/user/get/idClass", methods = ["GET"])
+@flask_login.login_required
+def getUsersByIdClass():
+    data = request.get_json(force=True)
+    idClass = data.get("idClass", None)
+    all_users = []
+
+    if not idClass:
+        return sendResponse(400, 21010, {"message": "IdClass not entered"}, "error")
+    
     users = User.query.filter_by(idClass = idClass)
-    all_users = []
+    
 
     for user in users:
         all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
     if not all_users:
-        return sendResponse(400, "U21010", {"message": "Users not found"}, "error")
+        return sendResponse(400, 21020, {"message": "Users not found"}, "error")
     
-    return sendResponse(200, "U21021", {"message": "Users found", "users": all_users}, "success")
+    return sendResponse(200, 21021, {"message": "Users found", "users": all_users}, "success")
