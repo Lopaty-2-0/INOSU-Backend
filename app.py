@@ -37,7 +37,7 @@ try:
         app,
         supports_credentials=True,
         origins=["http://localhost:3000"],
-        allow_headers=["Content-Type", "Authorization"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
 
