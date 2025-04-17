@@ -29,6 +29,7 @@ try:
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_SECURE"] = False # HTTPS is not used
     app.config["REMEMBER_COOKIE_SAMESITE"] = None
+    app.config["SESSION_COOKIE_SAMESITE"] = None
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
 
     db = sql(app)
@@ -36,7 +37,7 @@ try:
     cors = CORS(
         app,
         supports_credentials=True,
-        origins=["http://localhost:3000"],
+        origins=["http://localhost:3000", "http://89.203.248.163"],
         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
