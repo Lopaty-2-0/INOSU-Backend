@@ -31,15 +31,16 @@ try:
     app.config["REMEMBER_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = False
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
 
     db = sql(app)
     jwt = JWTManager(app)
-    cors = CORS(
+    CORS(
         app,
         supports_credentials=True,
-        origins=["http://localhost:3000"],
-        allow_headers=["Content-Type", "Authorization", "X-Requested-With" "Content-Length", "Set-Cookie"],
+        origins=["http://localhost:3000", "http://89.203.248.163"],
+        allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
 
