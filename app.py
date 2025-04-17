@@ -37,8 +37,8 @@ try:
     cors = CORS(
         app,
         supports_credentials=True,
-        origins=["http://localhost:3000", "http://89.203.248.163"],
-        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+        origins=["http://localhost:3000"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With" "Content-Length", "Set-Cookie"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
 
