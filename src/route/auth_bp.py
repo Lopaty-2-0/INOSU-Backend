@@ -33,6 +33,7 @@ def logout():
     return sendResponse(200, 7011, {"message": "Logged out"}, "success")
 
 @auth_bp.route("/auth/verify", methods=["GET"])
+@flask_login.login_required
 def verifyUser():
     if not flask_login.current_user.is_authenticated:
         state = False
