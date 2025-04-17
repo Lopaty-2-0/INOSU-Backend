@@ -26,6 +26,9 @@ try:
     app.config["JWT_SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
+    app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = False # HTTPS is not used
+    app.config["REMEMBER_COOKIE_SAMESITE"] = None
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
 
     db = sql(app)
@@ -33,7 +36,7 @@ try:
     cors = CORS(
         app,
         supports_credentials=True,
-        origins=["http://localhost:3000", "http://localhost:5000", "http://89.203.248.163"],
+        origins=["http://localhost:3000"],
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
