@@ -8,3 +8,4 @@ python-dotenv
 mysql-connector-python
 flask-jwt-extended
 flask-cors
+paramiko

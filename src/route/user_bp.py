@@ -18,12 +18,13 @@ from sqlalchemy import or_
 user_bp = Blueprint("user", __name__)
 
 email_regex = r"^\S+@\S+\.\S+$"
-pfp_path = "files/profilePictures/"
+pfp_path = "/home/filemanager/files/profilePictures/"
 pfp_extensions = {"jpg", "png", "jpeg"}
 addUser_extensions = {"json"}
 
 @user_bp.route("/user/add", methods = ["POST"])
 @flask_login.login_required
+@checkFileSize(4*1024*1024)
 def add():
     if flask_login.current_user.role != "admin":
         return sendResponse(400, 1010, {"message": "No permission for that"}, "error")

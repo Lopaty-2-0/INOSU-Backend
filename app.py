@@ -1,6 +1,7 @@
 import flask_login
 import os
 from src.utils.response import sendResponse
+from src.utils.ssh_connect import ssh_connect
 from src.createDB import create_db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
@@ -33,7 +34,8 @@ try:
     app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
-
+    
+    ssh = ssh_connect()
     db = sql(app)
     jwt = JWTManager(app)
     CORS(
