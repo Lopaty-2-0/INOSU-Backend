@@ -3,6 +3,7 @@ import re
 import json
 import flask_jwt_extended
 import datetime
+import asyncio
 from src.email.templates.resetPassword import emailResetPasswordTemplate
 from src.utils.pfp import pfp
 from src.models.Class import Class
@@ -123,10 +124,10 @@ def add():
             return sendResponse(400, 1230, {"message": "Something wrong in json"}, "error")
         return sendResponse (201, 1241, {"message": "All users created successfuly"}, "success")
 
-@user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required
 @checkFileSize(2*1024*1024)
-def update():
+@user_bp.route("/user/update", methods = ["PUT"])
+async def update():
     #gets data (json)
     name = request.form.get("name", None)
     surname = request.form.get("surname", None)
@@ -146,7 +147,7 @@ def update():
             return sendResponse(400, 2010, {"message": "Nothing entered to change"}, "error")
         if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
             return sendResponse(400, 2020, {"message": "Wrong file format"}, "error")
-        pfp(pfp_path, user, profilePicture)
+        await pfp(pfp_path, user, profilePicture)
         
         db.session.commit()
 
@@ -188,7 +189,7 @@ def update():
         if profilePicture:
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return sendResponse(400, 2130, {"message": "Wrong file format"}, "error")
-            pfp(pfp_path, secondUser, profilePicture)            
+            await pfp(pfp_path, secondUser, profilePicture)            
 
         db.session.commit()
 

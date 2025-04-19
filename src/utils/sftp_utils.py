@@ -1,3 +1,4 @@
+import asyncio
 def sftp_remove(ssh, file_path):
     sftp = ssh.open_sftp()
     sftp.remove(file_path)
@@ -26,3 +27,15 @@ def sftp_stat(ssh, file_stat):
         return None
     finally:
         sftp.close()
+
+async def sftp_remove_async(ssh, file_path):
+    await asyncio.to_thread(sftp_remove, ssh, file_path)
+
+async def sftp_put_async(ssh, file_put, file_path):
+    await asyncio.to_thread(sftp_put, ssh, file_put, file_path)
+
+async def sftp_get_async(ssh, file_get, file_path):
+    return await asyncio.to_thread(sftp_get, ssh, file_get, file_path)
+
+async def sftp_stat_async(ssh, file_stat):
+    return await asyncio.to_thread(sftp_stat, ssh, file_stat)
