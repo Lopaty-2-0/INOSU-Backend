@@ -6,6 +6,7 @@ from src.createDB import create_db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
+from sqlalchemy.exc import OperationalError
 from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
@@ -78,11 +79,15 @@ try:
         
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)
-except:
+except OperationalError as db_error:
     try:
         create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
         print("Creating database")
         print("Please run program once more")
     except Exception as e:
         print(f"Error while creating database: {e}")
-    exit() 
+    finally:
+        exit()
+except Exception as e:
+    print(f"Error while starting aplication: {e}")
+    exit()
