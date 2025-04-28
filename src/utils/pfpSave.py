@@ -5,7 +5,7 @@ import asyncio
 from src.utils.sftp_utils import sftp_remove_async, sftp_put_async, sftp_stat_async
 from app import ssh
 
-async def pfp(file_path, user, file):
+async def pfpSave(file_path, user, file):
     state = True
     
     if not user.profilePicture == "default.jpg":

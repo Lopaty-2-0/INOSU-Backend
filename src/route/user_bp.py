@@ -5,7 +5,7 @@ import flask_jwt_extended
 import datetime
 import asyncio
 from src.email.templates.resetPassword import emailResetPasswordTemplate
-from src.utils.pfp import pfp
+from utils.pfpSave import pfpSave
 from src.models.Class import Class
 from src.utils.response import sendResponse
 from src.utils.sendEmail import sendEmail
@@ -147,7 +147,7 @@ async def update():
             return sendResponse(400, 2010, {"message": "Nothing entered to change"}, "error")
         if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
             return sendResponse(400, 2020, {"message": "Wrong file format"}, "error")
-        await pfp(pfp_path, user, profilePicture)
+        await pfpSave(pfp_path, user, profilePicture)
         
         db.session.commit()
 
@@ -189,7 +189,7 @@ async def update():
         if profilePicture:
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return sendResponse(400, 2130, {"message": "Wrong file format"}, "error")
-            await pfp(pfp_path, secondUser, profilePicture)            
+            await pfpSave(pfp_path, secondUser, profilePicture)            
 
         db.session.commit()
 
