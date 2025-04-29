@@ -5,7 +5,7 @@ import flask_jwt_extended
 import datetime
 import asyncio
 from src.email.templates.resetPassword import emailResetPasswordTemplate
-from utils.pfpSave import pfpSave
+from src.utils.pfpSave import pfpSave
 from src.models.Class import Class
 from src.utils.response import sendResponse
 from src.utils.sendEmail import sendEmail
