@@ -37,5 +37,8 @@ async def add():
     if not startDate:
         startDate = datetime.now()
 
-    taskName = await taskSave(task_path, task)
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=guarantor, task=taskName)
+    taskFileName = await taskSave(task_path, task)
+    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=guarantor, task=taskFileName)
+
+    db.session.add(newTask)
+    db.session.commit()

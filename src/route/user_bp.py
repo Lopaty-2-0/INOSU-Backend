@@ -124,9 +124,9 @@ def add():
             return sendResponse(400, 1230, {"message": "Something wrong in json"}, "error")
         return sendResponse (201, 1241, {"message": "All users created successfuly"}, "success")
 
-@flask_login.login_required
-@checkFileSize(2*1024*1024)
 @user_bp.route("/user/update", methods = ["PUT"])
+@checkFileSize(2*1024*1024)
+@flask_login.login_required
 async def update():
     #gets data (json)
     name = request.form.get("name", None)
@@ -376,3 +376,15 @@ def getUsersByIdClass():
         return sendResponse(400, 21020, {"message": "Users not found"}, "error")
     
     return sendResponse(200, 21021, {"message": "Users found", "users": all_users}, "success")
+
+#cestu vymyslíme jindy
+@user_bp.route("/user/get/number", methods = ["GET"])
+@flask_login.login_required
+def getNumberOfUsers():
+    number = 0
+    users = User.query.all()
+
+    for user in users:
+        number += 1
+
+    return sendResponse(200, 21021, {"message": "Number of users", "users": number}, "success")
