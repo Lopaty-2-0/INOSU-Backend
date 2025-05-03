@@ -307,8 +307,7 @@ def passwordNew():
 @user_bp.route("/user/get/id", methods = ["GET"])
 @flask_login.login_required
 def getUserById():
-    data = request.get_json(force=True)
-    id = data.get("id", None)
+    id = request.args.get("id", None)
 
     if not id:
         return sendResponse(400, 18010, {"message": "Id not entered"}, "error")
@@ -323,8 +322,7 @@ def getUserById():
 @user_bp.route("/user/get/email", methods = ["GET"])
 @flask_login.login_required
 def getUserByEmail():
-    data = request.get_json(force=True)
-    email = data.get("email", None)
+    email = request.args.get("email", None)
 
     if not email:
         return sendResponse(400, 19010, {"message": "Email not entered"}, "error")
@@ -341,8 +339,7 @@ def getUserByEmail():
 @user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
 def getUsersByRole():
-    data = request.get_json(force=True)
-    role = data.get("role", None)
+    role = request.args.get("role", None)
     all_users = []
 
     if not role:
@@ -360,8 +357,7 @@ def getUsersByRole():
 @user_bp.route("/user/get/idClass", methods = ["GET"])
 @flask_login.login_required
 def getUsersByIdClass():
-    data = request.get_json(force=True)
-    idClass = data.get("idClass", None)
+    idClass = request.args.get("idClass", None)
     all_users = []
 
     if not idClass:
