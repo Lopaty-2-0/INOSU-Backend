@@ -8,7 +8,7 @@ from src.models.Task import Task
 from datetime import datetime
 from app import db
 
-task_bp = Blueprint("user", __name__)
+task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html"]
 task_path = "/home/filemanager/files/tasks/"
 
@@ -21,6 +21,12 @@ async def add():
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
+    lastTask = Task.query.order_by(Task.id.desc()).first()
+    if lastTask:
+        id = lastTask.id + 1
+    else:
+        id = 1
+    print(id)
 
     if not taskName:
         return sendResponse(400, 14010, {"message": "Name not entered"}, "error")
@@ -36,6 +42,7 @@ async def add():
         return sendResponse(400, 1, {"message":"Nonexistent user"}, "error")
     if not startDate:
         startDate = datetime.now()
+
 
     taskFileName = await taskSave(task_path, task)
     newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=guarantor, task=taskFileName)

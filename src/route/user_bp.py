@@ -383,4 +383,17 @@ def getNumberOfUsers():
     for user in users:
         number += 1
 
-    return sendResponse(200, 21021, {"message": "Number of users", "users": number}, "success")
+    return sendResponse(200, 24011, {"message": "Number of users", "users": number}, "success")
+
+@user_bp.route("/user/get/roles", methods = ["GET"])
+@flask_login.login_required
+def getRoles():
+    roles = []
+    users = User.query.all()
+
+    for user in users:
+        role = user.role
+        if not role in roles:
+            roles.append(role)
+
+    return sendResponse(200, 25011, {"message": "All roles", "roles": roles}, "success")

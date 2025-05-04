@@ -66,7 +66,7 @@ def delete():
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
 def getClassById():
-    data = request.get_json(force=True)
+    data = request.args.get(force=True)
     id = data.get("id", None)
 
     if not id:
