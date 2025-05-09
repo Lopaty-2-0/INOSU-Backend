@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flask_migrate import Migrate
 
 load_dotenv()
 host = os.getenv("DB_HOST")
@@ -28,18 +29,19 @@ try:
     app.config["JWT_SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
-    """ app.config["REMEMBER_COOKIE_HTTPONLY"] = True
-        app.config["REMEMBER_COOKIE_SECURE"] = True
-        app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
-        app.config["SESSION_COOKIE_SAMESITE"] = "None"
-        app.config["SESSION_COOKIE_SECURE"] = True
-        app.config["SESSION_COOKIE_HTTPONLY"] = True"""
+    app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = True
+    app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
     
     ssh = ssh_connect()
     db = sql(app)
     jwt = JWTManager(app)
-    CORS(
+    migrattion = Migrate(app, db)
+    CORS( 
         app,
         supports_credentials=True,
         origins=["http://localhost:3000", "http://89.203.248.163"],

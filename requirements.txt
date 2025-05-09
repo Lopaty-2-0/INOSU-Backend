@@ -10,3 +10,4 @@ flask-jwt-extended
 flask-cors
 paramiko
 flask[async]
+Flask-Migrate
