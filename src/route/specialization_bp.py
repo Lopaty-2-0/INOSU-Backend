@@ -62,4 +62,4 @@ def delete():
     db.session.delete(Specialization.query.filter_by(id = idSpecialization).first())
     db.session.commit()
     
-    return sendResponse (201, 5051, {"message": "Specialization deleted successfuly"}, "success")
+    return sendResponse (200, 5051, {"message": "Specialization deleted successfuly"}, "success")

@@ -15,7 +15,6 @@ class User(db.Model, UserMixin):
     password = db.Column(db.Text, nullable = False)
     profilePicture = db.Column(db.VARCHAR(255), server_default="default.jpg")
     email = db.Column(db.VARCHAR(255), unique = True, nullable = False)
-    idClass = db.Column(db.Integer, db.ForeignKey("class.id"), nullable = True)
 
     @property
     def hash_password(self):
@@ -28,7 +27,7 @@ class User(db.Model, UserMixin):
     def verify_password(self, password):
         return check_password_hash(self.password, password)
 
-    def __init__(self, name, surname, role, password, profilePicture, email, idClass = None, abbreviation = None):
+    def __init__(self, name, surname, role, password, profilePicture, email, abbreviation = None):
         self.name = name
         self.surname = surname
         self.abbreviation = abbreviation
@@ -36,7 +35,6 @@ class User(db.Model, UserMixin):
         self.password = password
         self.profilePicture = profilePicture
         self.email = email
-        self.idClass = idClass
     
     def __repr__(self):
-        return f"<user {self.name, self.surname, self.role, self.email, self.idClass!r}>"
+        return f"<user {self.name, self.surname, self.role, self.email!r}>"

@@ -65,6 +65,7 @@ try:
         return sendResponse(422, "JWT16020", {"message": e}, "error")
 
     with app.app_context():
+        from src.models.User_Class import User_Class
         from src.models.User import User
         from src.models.Class import Class
         from src.models.Task import Task

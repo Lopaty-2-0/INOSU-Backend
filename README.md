@@ -14,3 +14,7 @@ python -m flask db init
 ```
 python -m flask db migrate -m "Example message"
 ```
+#### To apply the change to database
+```
+python -m flask db upgrade
+```
