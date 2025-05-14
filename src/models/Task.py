@@ -9,17 +9,14 @@ class Task(db.Model):
     startDate = db.Column(db.DateTime, default = datetime.datetime.now,nullable = False)
     endDate = db.Column(db.DateTime, nullable = False)
     task = db.Column(db.VARCHAR(255), nullable = False)
-    elaboration = db.Column(db.VARCHAR(255))
-    review = db.Column(db.VARCHAR(255))
     guarantor = db.Column(db.Integer, db.ForeignKey("user.id"),nullable = False)
+    approve = db.Column(db.BOOLEAN, nullable = False)
 
-    def __init__(self, name, startDate, endDate, task, elaboration, review, guarantor):
+    def __init__(self, name, startDate, endDate, task, guarantor):
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
         self.task = task
-        self.elaboration = elaboration
-        self.review = review
         self.guarantor = guarantor
 
     def __repr__(self):

@@ -70,13 +70,13 @@ try:
         from src.models.Class import Class
         from src.models.Task import Task
         from src.models.Specialization import Specialization
-        from src.models.Team import Team
+        from src.models.User_Task import User_Task
         from src.models.Task_Class import Task_Class
 
         db.create_all()
 
         if not User.query.filter_by(role = "admin").first():
-            newUser = User(name = "admin", surname = "admin", abbreviation = "", role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz", idClass = None)
+            newUser = User(name = "admin", surname = "admin", abbreviation = "", role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
             db.session.add(newUser)
             db.session.commit()
         

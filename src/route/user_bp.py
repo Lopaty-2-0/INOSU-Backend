@@ -6,7 +6,7 @@ import datetime
 import asyncio
 from src.email.templates.resetPassword import emailResetPasswordTemplate
 from src.utils.pfpSave import pfpSave
-from src.models.Class import Class
+from src.utils.allUserClasses import allUserClasses
 from src.utils.response import sendResponse
 from src.utils.sendEmail import sendEmail
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,7 +14,6 @@ from flask import request, Blueprint
 from app import db
 from src.models.User import User
 from src.utils.checkFileSize import checkFileSize
-from sqlalchemy import or_
 
 user_bp = Blueprint("user", __name__)
 
@@ -38,7 +37,6 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
-        idClass = data.get("idClass", None)
 
         if not name:
             return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
@@ -72,18 +70,13 @@ def add():
             abbreviation = abbreviation.upper()
         else:
             abbreviation = None
-        if idClass:
-            if not Class.query.filter_by(id = idClass).first():
-                return sendResponse(400, 1160, {"message": "Wrong idClass"}, "error")   
-        else:
-            idClass = None
 
-        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
+        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = None, email = email)
 
         db.session.add(newUser)
         db.session.commit()
 
-        return sendResponse(201,1171,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": newUser.idClass}}, "success")
+        return sendResponse(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": allUserClasses(newUser.id)}}, "success")
     
     except:
         #must get it working
@@ -99,7 +92,6 @@ def add():
                 role = data.get("role", None)
                 email = data.get("email", None)
                 password = str(data.get("password", None))
-                idClass = data.get("idClass", None)
 
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1190, {"message": "Wrong user format"}, "error")
@@ -110,19 +102,14 @@ def add():
                         return sendResponse (400, 1210, {"message": "Wrong user format"}, "error")
                 else:
                     abbreviation = None
-                if idClass:
-                    if not Class.query.filter_by(id = idClass).first():
-                        return sendResponse (400, 1220, {"message": "Wrong user format"}, "error")
-                else:
-                    idClass = None
 
-                newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email, idClass = idClass)
+                newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email)
 
                 db.session.add(newUser)
             db.session.commit()
         except:
-            return sendResponse(400, 1230, {"message": "Something wrong in json"}, "error")
-        return sendResponse (201, 1241, {"message": "All users created successfuly"}, "success")
+            return sendResponse(400, 1220, {"message": "Something wrong in json"}, "error")
+        return sendResponse (201, 1231, {"message": "All users created successfuly"}, "success")
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @checkFileSize(2*1024*1024)
@@ -134,7 +121,6 @@ async def update():
     abbreviation = request.form.get("abbreviation", None)
     role = request.form.get("role", None)
     email = request.form.get("email", None)
-    idClass = request.form.get("idClass", None)
     idUser = request.form.get("idUser", None)
     
     #gets profile picture
@@ -151,11 +137,11 @@ async def update():
         
         db.session.commit()
 
-        return sendResponse(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+        return sendResponse(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)}}, "success")
     else:
         if not str(user.role).lower() == "admin":
             return sendResponse(400, 2040, {"message": "No permission for that"}, "error")
-        if not name and not surname and not abbreviation and not role and not profilePicture and not email and not idClass:
+        if not name and not surname and not abbreviation and not role and not profilePicture and not email:
             return sendResponse(400, 2050, {"message": "Nothing entered to change"}, "error")
 
         secondUser = User.query.filter_by(id = idUser).first()
@@ -182,18 +168,14 @@ async def update():
             if len(email) > 255:
                 return sendResponse(400, 2110, {"message": "Email too long"}, "error")
             secondUser.email = email
-        if idClass:
-            if not Class.query.filter_by(id = idClass).first():
-                return sendResponse(400, 2120, {"message": "Wrong idClass"}, "error")
-            secondUser.idClass = idClass
         if profilePicture:
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return sendResponse(400, 2130, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 2120, {"message": "Wrong file format"}, "error")
             await pfpSave(pfp_path, secondUser, profilePicture)            
 
         db.session.commit()
 
-        return sendResponse(200, 2141, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": secondUser.idClass}}, "success")
+        return sendResponse(200, 2131, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": allUserClasses(secondUser.id)}}, "success")
         
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -317,7 +299,7 @@ def getUserById():
     if not user:
         return sendResponse(400, 18020, {"message": "User not found"}, "error")
     
-    return sendResponse(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+    return sendResponse(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)}}, "success")
 
 @user_bp.route("/user/get/email", methods = ["GET"])
 @flask_login.login_required
@@ -334,7 +316,7 @@ def getUserByEmail():
     if not user:
         return sendResponse(400, 19030, {"message": "User not found"}, "error")
     
-    return sendResponse(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+    return sendResponse(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)}}, "success")
 
 @user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
@@ -353,25 +335,6 @@ def getUsersByRole():
         return sendResponse(400, 20020, {"message": "Users not found"}, "error")
     
     return sendResponse(200, 20031, {"message": "Users found", "users": all_users}, "success")
-
-@user_bp.route("/user/get/idClass", methods = ["GET"])
-@flask_login.login_required
-def getUsersByIdClass():
-    idClass = request.args.get("idClass", None)
-    all_users = []
-
-    if not idClass:
-        return sendResponse(400, 21010, {"message": "IdClass not entered"}, "error")
-    
-    users = User.query.filter_by(idClass = idClass)
-    
-
-    for user in users:
-        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
-    if not all_users:
-        return sendResponse(400, 21020, {"message": "Users not found"}, "error")
-    
-    return sendResponse(200, 21021, {"message": "Users found", "users": all_users}, "success")
 
 #cestu vymyslíme jindy
 @user_bp.route("/user/get/number", methods = ["GET"])

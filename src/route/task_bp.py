@@ -5,7 +5,7 @@ from src.utils.checkFileSize import checkFileSize
 from src.utils.taskSave import taskSave
 from src.models.User import User
 from src.models.Task import Task
-from datetime import datetime, timedelta
+from datetime import datetime
 from app import db
 from src.utils.taskDelete import taskDelete
 
@@ -22,8 +22,6 @@ async def taskAdd():
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
-    review = request.form.get("review", None)
-    elaboration = request.form.get("elaboration", None)
     lastTask = Task.query.order_by(Task.id.desc()).first()
 
     if lastTask:
@@ -36,6 +34,8 @@ async def taskAdd():
         return sendResponse(400, 26010, {"message": "Name not entered"}, "error")
     if not startDate:
         startDate = datetime.now()
+    else:
+        startDate = datetime.fromtimestamp(int(startDate)/1000000)
     if not endDate:
         return sendResponse(400, 26020, {"message": "endDate  not entered"}, "error")
     try:
@@ -54,12 +54,12 @@ async def taskAdd():
         return sendResponse(400, 26080, {"message":"Nonexistent user"}, "error")
 
     taskFileName = await taskSave(task_path, task, id)
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=guarantor, task=taskFileName, review=review, elaboration=elaboration)
+    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=guarantor, task=taskFileName)
 
     db.session.add(newTask)
     db.session.commit()
 
-    return sendResponse(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": newTask.guarantor, "review": newTask.review, "elaboration": newTask.elaboration}}, "success")
+    return sendResponse(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": newTask.guarantor}}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
@@ -69,7 +69,7 @@ def getAllTasks():
 
     for task in tasks:
         if task:
-            all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": task.guarantor, "review": task.review, "elaboration": task.elaboration})
+            all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": task.guarantor})
 
     return sendResponse(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
 

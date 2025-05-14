@@ -4,6 +4,7 @@ from flask import Blueprint, request
 from werkzeug.security import check_password_hash
 from src.utils.response import sendResponse
 from src.models.User import User
+from src.utils.allUserClasses import allUserClasses
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -24,7 +25,7 @@ def login():
     
     flask_login.login_user(user, remember = stayLogged)
 
-    return sendResponse(200, 6031, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass}}, "success")
+    return sendResponse(200, 6031, {"message": "Login successful", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)}}, "success")
 
 @auth_bp.route("/auth/logout", methods = ["DELETE"])
 @flask_login.login_required
