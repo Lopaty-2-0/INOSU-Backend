@@ -1,6 +1,6 @@
 import flask_login
 from src.models.Class import Class
-from src.models.User import User
+from src.models.User_Class import User_Class
 from src.models.Specialization import Specialization
 from src.utils.response import sendResponse
 from flask import request, Blueprint
@@ -37,10 +37,11 @@ def add():
         return sendResponse(400, 8080, {"message": "Grade is too much"}, "error")
     
     newClass = Class(grade = grade, group = group, idSpecialization = idSpecialization)
+    specialization = Specialization.query.filter_by(id=idSpecialization).first()
     db.session.add(newClass)
     db.session.commit()
 
-    return sendResponse (201, 8091, {"message": "Class created succesfuly"}, "success")
+    return sendResponse (201, 8091, {"message": "Class created succesfuly", "class": {"id": newClass.id, "grade": newClass.grade, "group": newClass.group, "specialization": specialization.abbrevation}}, "success")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -55,8 +56,8 @@ def delete():
         return sendResponse(400, 9020, {"message": "IdClass is missing"}, "error")
     if not Class.query.filter_by(id = idClass).first():
         return sendResponse(400, 9030, {"message": "Wrong idClass"}, "error")
-    if User.query.filter_by(idClass = idClass).first():
-        return sendResponse(400, 9040, {"message": "Some user still uses this specialization"}, "error")
+    if User_Class.query.filter_by(idClass = idClass).first():
+        return sendResponse(400, 9040, {"message": "Some user still uses this class"}, "error")
     
     db.session.delete(Class.query.filter_by(id = idClass).first())
     db.session.commit()
@@ -77,7 +78,9 @@ def getClassById():
     if not all_class:
         return sendResponse(400, 22020, {"message": "Class not found"}, "error")
     
-    return sendResponse(200, 22031, {"message": "Class found", "user": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "idSpecialization": all_class.idSpecialization}}, "success")
+    specialization = Specialization.query.filter_by(id=all_class.idSpecialization).first()
+    
+    return sendResponse(200, 22031, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "specialization": specialization.abbrevation}}, "success")
 
 @class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required

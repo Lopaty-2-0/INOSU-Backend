@@ -22,6 +22,7 @@ async def taskAdd():
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
+    needApprove = bool(request.form.get("approve", None))
     lastTask = Task.query.order_by(Task.id.desc()).first()
 
     if lastTask:
@@ -50,8 +51,10 @@ async def taskAdd():
         return sendResponse(400, 26060, {"message": "Wrong file format"}, "error")
     if not guarantor:
         return sendResponse(400, 26070, {"message":"Guarantor not entered"}, "error")
+    if not needApprove:
+        return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
     if not User.query.filter_by(id = guarantor).first():
-        return sendResponse(400, 26080, {"message":"Nonexistent user"}, "error")
+        return sendResponse(400, 26090, {"message":"Nonexistent user"}, "error")
 
     taskFileName = await taskSave(task_path, task, id)
     newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=guarantor, task=taskFileName)
@@ -59,7 +62,7 @@ async def taskAdd():
     db.session.add(newTask)
     db.session.commit()
 
-    return sendResponse(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": newTask.guarantor}}, "success")
+    return sendResponse(201, 26101, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": newTask.guarantor}}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
