@@ -10,12 +10,14 @@ from src.utils.response import sendResponse
 
 user_task_bp = Blueprint("user_task", __name__)
 
-@user_task_bp.route("/task_class/add", methods=["POST"])
+@user_task_bp.route("/user_task/add", methods=["POST"])
 @flask_login.login_required
 def task_classAdd():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
+    badIds = []
+    goodIds = []
 
     if not idTask:
         return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
@@ -23,22 +25,38 @@ def task_classAdd():
         return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
         return sendResponse(400, 26010, {"message": "Nonexistent task"}, "error")
-    if not User.query.filter_by(id=idUser).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent user"}, "error")
-    if User_Class.query.filter_by(id=idUser).first().idClass != Task_Class.query.filter_by(id=idTask).first().idClass:
-        return sendResponse(400, 26010, {"message": "Task not for this users class"}, "error")
+    if not Task_Class.query.filter_by(idTask=idTask).first():
+        return sendResponse(400, 26010, {"message": "This task isnt assigned to a class"}, "error")
     if Task.query.filter_by(id = idTask).first().approve:
         status = "pending"
     else:
         status = "approved"
-    
-    newUser_Task = User_Task(idUser=idUser, idTask=idTask, elaboration=None, review=None, status=status)
-    db.session.add(newUser_Task)
+    #udělej to ještě pro int
+    tc = Task_Class.query.filter_by(idTask=idTask)
+    for idU in idUser:
+        if not User.query.filter_by(id=idU).first():
+            badIds.append(idU)
+            continue
+
+        cl = User_Class.query.filter_by(idUser=idU)
+        status = False
+
+        for c in cl:
+            for t in tc:
+                if c.idClass == t.idClass:
+                    newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                    db.session.add(newUser_Task)
+                    goodIds.append(idU)
+                    status = True
+                    break
+        if not status:
+            badIds.append(idU)
+
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "Task_class created successfuly","user_task":{ "idTask": newUser_Task.idTask, "idUser":newUser_Task.idUser, "elaboration": newUser_Task.elaboration, "review": newUser_Task.review, "status":newUser_Task.status}}, "success")
+    return sendResponse(200, 26010, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
 
-@user_task_bp.route("/task_class/delete", methods=["DELETE"])
+@user_task_bp.route("/user_task/delete", methods=["DELETE"])
 @flask_login.login_required
 def task_classDelete():
     data = request.get_json(force=True)

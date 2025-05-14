@@ -14,6 +14,8 @@ def user_classAdd():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
+    badIds = []
+    goodIds = []
 
     if not idUser:
         return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
@@ -23,14 +25,18 @@ def user_classAdd():
         return sendResponse(400, 26010, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
         return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
-    if User_Class.query.filter_by(idUser = idUser, idClass = idClass).first():
-        return sendResponse(400, 26010, {"message": "This user is already in this class"}, "error")
     
-    user_cl = User_Class(idUser=idUser, idClass=idClass)
-    db.session.add(user_cl)
-    db.session.commit()
+    for id in idClass:
+        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = idClass).first():
+            badIds.append(id)
+        else:
+            newUserClass = User_Class(idUser=idUser, idClass=id)
+            db.session.add(newUserClass)
+            goodIds.append(id)
 
-    return sendResponse(400, 26010, {"message": "User added to this class","user_class":{ "idUser": user_cl.idUser, "idClass":user_cl.idClass}}, "success")
+    db.session.commit()
+    
+    return sendResponse(400, 26010, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required

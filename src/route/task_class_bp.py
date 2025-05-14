@@ -28,8 +28,8 @@ def task_classAdd():
         if not Class.query.filter_by(id=id).first():
             badIds.append(id)
         else:
-            newMichal = Task_Class(idTask=idTask, idClass=id)
-            db.session.add(newMichal)
+            newTaskClass = Task_Class(idTask=idTask, idClass=id)
+            db.session.add(newTaskClass)
             goodIds.append(id)
 
     db.session.commit()
