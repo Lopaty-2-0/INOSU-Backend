@@ -330,7 +330,7 @@ def getUsersByRole():
     users = User.query.filter_by(role = role)
 
     for user in users:
-        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": user.idClass})
+        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)})
     if not all_users:
         return sendResponse(400, 20020, {"message": "Users not found"}, "error")
     
