@@ -7,7 +7,7 @@ class Class(db.Model):
     grade = db.Column(db.Integer, nullable = False)
     group = db.Column(db.CHAR(1), nullable = False)
     idSpecialization = db.Column(db.Integer, db.ForeignKey("specialization.id"), nullable = False)
-    name = db.Column(db.VARCHAR(255), nullable = False)
+    name = db.Column(db.VARCHAR(255), nullable = False, unique=True)
 
     def __init__(self, grade, group, idSpecialization, name):
         self.grade = grade
