@@ -13,6 +13,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
 from app import db
 from src.models.User import User
+from src.models.Class import Class
+from src.models.User_Class import User_Class
 from src.utils.checkFileSize import checkFileSize
 
 user_bp = Blueprint("user", __name__)
@@ -29,6 +31,9 @@ def add():
     if flask_login.current_user.role != "admin":
         return sendResponse(400, 1010, {"message": "No permission for that"}, "error")
     
+    badIds = []
+    goodIds = []
+    
     try:
         data = request.get_json()
         name = data.get("name", None)
@@ -37,6 +42,7 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
+        idClass = data.get("idClass", None)
 
         if not name:
             return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
@@ -74,13 +80,24 @@ def add():
         newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = None, email = email)
 
         db.session.add(newUser)
+
+        if idClass:
+            for id in idClass:
+                if not Class.query.filter_by(id=id).first():
+                    badIds.append(id)
+                    continue
+
+                newUser_Class = User_Class(newUser.id, id)
+                goodIds.append(id)
+                db.session.add(newUser_Class)
+
         db.session.commit()
 
-        return sendResponse(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": allUserClasses(newUser.id)}}, "success")
-    
+        return sendResponse(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": allUserClasses(newUser.id)}, "goodIds":goodIds, "badIds":badIds}, "success")
+
     except:
         #must get it working
-        users = request.files.get("jsonFile")
+        users = request.files.get("jsonFile", None)
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
             return sendResponse(400, 1180, {"message": "Wrong file format"}, "error")
         try:
@@ -92,6 +109,7 @@ def add():
                 role = data.get("role", None)
                 email = data.get("email", None)
                 password = str(data.get("password", None))
+                idClass = data.get("idClass", None)
 
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1190, {"message": "Wrong user format"}, "error")
@@ -104,8 +122,19 @@ def add():
                     abbreviation = None
 
                 newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email)
-
                 db.session.add(newUser)
+
+                if idClass:
+                    for id in idClass:
+                        if not Class.query.filter_by(id=id).first():
+                            badIds.append(id)
+                            continue
+
+                        newUser_Class = User_Class(newUser.id, id)
+                        goodIds.append(id)
+                        db.session.add(newUser_Class)
+
+
             db.session.commit()
         except:
             return sendResponse(400, 1220, {"message": "Something wrong in json"}, "error")
@@ -122,10 +151,13 @@ async def update():
     role = request.form.get("role", None)
     email = request.form.get("email", None)
     idUser = request.form.get("idUser", None)
+    idClass = request.form.get("idClass", None)
     
     #gets profile picture
     profilePicture = request.files.get("profilePicture", None)
     user = flask_login.current_user
+    badIds = []
+    goodIds = []
 
     #checks if there is id for user
     if not idUser:
@@ -141,7 +173,7 @@ async def update():
     else:
         if not str(user.role).lower() == "admin":
             return sendResponse(400, 2040, {"message": "No permission for that"}, "error")
-        if not name and not surname and not abbreviation and not role and not profilePicture and not email:
+        if not name and not surname and not abbreviation and not role and not profilePicture and not email and not idClass:
             return sendResponse(400, 2050, {"message": "Nothing entered to change"}, "error")
 
         secondUser = User.query.filter_by(id = idUser).first()
@@ -171,11 +203,24 @@ async def update():
         if profilePicture:
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return sendResponse(400, 2120, {"message": "Wrong file format"}, "error")
-            await pfpSave(pfp_path, secondUser, profilePicture)            
+            await pfpSave(pfp_path, secondUser, profilePicture)
+
+        if idClass:
+            for id in allUserClasses(secondUser.id):
+                db.session.delete(User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first())
+
+            for id in idClass:
+                if not Class.query.filter_by(id=id).first():
+                    badIds.append(id)
+                    continue
+
+                newUser_Class = User_Class(secondUser.id, id)
+                goodIds.append(id)
+                db.session.add(newUser_Class)     
 
         db.session.commit()
 
-        return sendResponse(200, 2131, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": allUserClasses(secondUser.id)}}, "success")
+        return sendResponse(200, 2131, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": allUserClasses(secondUser.id)}, "badIds":badIds, "goodIds":goodIds}, "success")
         
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
