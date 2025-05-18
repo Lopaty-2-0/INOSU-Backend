@@ -418,3 +418,8 @@ def getRoles():
             roles.append(role)
 
     return sendResponse(200, 25011, {"message": "All roles", "roles": roles}, "success")
+
+@user_bp.route("/user/get/currentRole", methods=["GET"])
+@flask_login.login_required
+def getCurrentRole():
+    return sendResponse(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
