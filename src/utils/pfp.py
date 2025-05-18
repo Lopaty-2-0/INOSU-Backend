@@ -25,3 +25,10 @@ async def pfpSave(file_path, user, file):
             os.remove("files/" + fileName)
             user.profilePicture = fileName
             state = False
+
+async def pfpDelete(file_path, user):
+    if not user.profilePicture == "default.jpg":
+        try:
+            await sftp_remove_async(ssh, file_path + user.profilePicture)  
+        except:
+            return

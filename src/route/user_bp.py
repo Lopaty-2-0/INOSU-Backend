@@ -5,7 +5,7 @@ import flask_jwt_extended
 import datetime
 import asyncio
 from src.email.templates.resetPassword import emailResetPasswordTemplate
-from src.utils.pfpSave import pfpSave
+from src.utils.pfp import pfpSave, pfpDelete
 from src.utils.allUserClasses import allUserClasses
 from src.utils.response import sendResponse
 from src.utils.sendEmail import sendEmail
@@ -15,6 +15,7 @@ from app import db
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
+from src.models.User_Task import User_Task
 from src.utils.checkFileSize import checkFileSize
 
 user_bp = Blueprint("user", __name__)
@@ -210,8 +211,10 @@ async def update():
         if idClass:
             if secondUser.role.lower() == "student":
                 for id in allUserClasses(secondUser.id):
+                    for task in User_Task.query.filter_by(idUser = secondUser.id, idClass = id):
+                        db.session.delete(task)
                     db.session.delete(User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first())
-
+                
                 for id in idClass:
                     if not Class.query.filter_by(id=id).first():
                         badIds.append(id)
@@ -231,7 +234,7 @@ async def update():
         
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
-def delete():
+async def delete():
     data = request.get_json(force = True)
     idUser = data.get("idUser", None)
     goodIds = []
@@ -246,22 +249,44 @@ def delete():
 
         if flask_login.current_user.id == id:
             return sendResponse(400, 3030, {"message": "Can not delete yourself"}, "error")
-        try:
-            delUser = User.query.filter_by(id = id).first()
+        
+        delUser = User.query.filter_by(id = id).first()
+
+        if delUser:
+            cl = User_Class.query.filter_by(idUser = id)
+            ta = User_Task.query.filter_by(idUser = id)
+
+            for c in cl:
+                db.session.delete(c)
+            for t in ta:
+                db.session.delete(t)
+            
+            await pfpDelete(pfp_path, delUser)
             db.session.delete(delUser)
             goodIds.append(id)
-        except:
+        else:
             badIds.append(id)
     except:
         for id in idUser:
             if flask_login.current_user.id == id:
                 badIds.append(id)
                 continue
-            try:
-                delUser = User.query.filter_by(id = id).first()
+
+            delUser = User.query.filter_by(id = id).first()
+
+            if delUser:
+                cl = User_Class.query.filter_by(idUser = id)
+                ta = User_Task.query.filter_by(idUser = id)
+
+                for c in cl:
+                    db.session.delete(c)
+                for t in ta:
+                    db.session.delete(t)
+
+                await pfpDelete(pfp_path, delUser)
                 db.session.delete(delUser)
                 goodIds.append(id)
-            except:
+            else:
                 badIds.append(id)
 
     db.session.commit()

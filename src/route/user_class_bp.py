@@ -5,6 +5,7 @@ from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User import User
 from src.utils.response import sendResponse
+from src.utils.allUserClasses import allUserClasses
 
 user_class_bp = Blueprint("user_class", __name__)
 
@@ -36,7 +37,7 @@ def user_classAdd():
 
     db.session.commit()
     
-    return sendResponse(400, 26010, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(201, 26010, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -58,16 +59,18 @@ def user_classDelete():
     db.session.delete(user_cl)
     db.session.commit()
 
-    return sendResponse(400, 26010, {"message": "User deleted from this class"}, "success")
+    return sendResponse(200, 26010, {"message": "User deleted from this class"}, "success")
 
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
 def user_classGetUsers():
     idClass = request.args.get("idClass", None)
-    classes = User_Class.query.filter_by(idClass)
+    classes = User_Class.query.filter_by(idClass = idClass)
     users = []
-
+    if not Class.query.filter_by(id = idClass).first():
+        return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
     for cl in classes:
-        users.append(cl.idUser)
+        user = User.query.filter_by(id = cl.idUser).first()
+        users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)})
 
-    return sendResponse(400, 26010, {"message": "Users found", "users":users}, "success")
+    return sendResponse(200, 26010, {"message": "Users found", "users":users}, "success")
