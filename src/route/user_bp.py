@@ -77,19 +77,20 @@ def add():
         else:
             abbreviation = None
 
-        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = role, password = generate_password_hash(password), profilePicture = None, email = email)
+        newUser = User(name = str(name), surname = str(surname), abbreviation = str(abbreviation), role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
 
         db.session.add(newUser)
 
         if idClass:
-            for id in idClass:
-                if not Class.query.filter_by(id=id).first():
-                    badIds.append(id)
-                    continue
+            if newUser.role.lower() == "student":
+                for id in idClass:
+                    if not Class.query.filter_by(id=id).first():
+                        badIds.append(id)
+                        continue
 
-                newUser_Class = User_Class(newUser.id, id)
-                goodIds.append(id)
-                db.session.add(newUser_Class)
+                    newUser_Class = User_Class(newUser.id, id)
+                    goodIds.append(id)
+                    db.session.add(newUser_Class)
 
         db.session.commit()
 
@@ -121,18 +122,19 @@ def add():
                 else:
                     abbreviation = None
 
-                newUser = User(name = name, surname = surname, abbreviation = abbreviation.upper(), role = role, password = generate_password_hash(password), profilePicture = None, email = email)
+                newUser = User(name = str(name), surname = str(surname), abbreviation = str(abbreviation).upper(), role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
                 db.session.add(newUser)
 
                 if idClass:
-                    for id in idClass:
-                        if not Class.query.filter_by(id=id).first():
-                            badIds.append(id)
-                            continue
+                    if newUser.role.lower() == "student":
+                        for id in idClass:
+                            if not Class.query.filter_by(id=id).first():
+                                badIds.append(id)
+                                continue
 
-                        newUser_Class = User_Class(newUser.id, id)
-                        goodIds.append(id)
-                        db.session.add(newUser_Class)
+                            newUser_Class = User_Class(newUser.id, id)
+                            goodIds.append(id)
+                            db.session.add(newUser_Class)
 
 
             db.session.commit()
@@ -181,17 +183,17 @@ async def update():
         if not secondUser:
             return sendResponse(400, 2060, {"message": "Wrong user id"}, "error")
         if name:
-            secondUser.name = name  
+            secondUser.name = str(name)  
         if surname:
-            secondUser.surname = surname
+            secondUser.surname = str(surname)
         if abbreviation:
             if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
                 return sendResponse(400, 2070, {"message": "Abbreviation is already in use"}, "error")
             if len(str(abbreviation)) > 4:
                 return sendResponse(400, 2080, {"message": "Abbreviation is too long"}, "error")
-            secondUser.abbreviation = abbreviation
+            secondUser.abbreviation = str(abbreviation).upper()
         if role:
-            secondUser.role = role
+            secondUser.role = str(role)
         if email:
             if not re.match(email_regex, email):
                 return sendResponse(400, 2090, {"message": "Wrong email format"}, "error")
@@ -206,17 +208,22 @@ async def update():
             await pfpSave(pfp_path, secondUser, profilePicture)
 
         if idClass:
-            for id in allUserClasses(secondUser.id):
-                db.session.delete(User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first())
+            if secondUser.role.lower() == "student":
+                for id in allUserClasses(secondUser.id):
+                    db.session.delete(User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first())
 
-            for id in idClass:
-                if not Class.query.filter_by(id=id).first():
-                    badIds.append(id)
-                    continue
+                for id in idClass:
+                    if not Class.query.filter_by(id=id).first():
+                        badIds.append(id)
+                        continue
 
-                newUser_Class = User_Class(secondUser.id, id)
-                goodIds.append(id)
-                db.session.add(newUser_Class)     
+                    newUser_Class = User_Class(secondUser.id, id)
+                    goodIds.append(id)
+                    db.session.add(newUser_Class)     
+            else:
+                User_class = User_Class.query.filter_by(idUser = secondUser.id)
+                for cl in User_class:
+                    db.session.delete(cl)
 
         db.session.commit()
 
