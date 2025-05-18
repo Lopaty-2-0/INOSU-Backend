@@ -236,6 +236,9 @@ def delete():
         return sendResponse(400, 3020, {"message": "No idUser"}, "error")
     try:
         id = int(idUser)
+
+        if flask_login.current_user.id == id:
+            return sendResponse(400, 3030, {"message": "Can not delete yourself"}, "error")
         try:
             delUser = User.query.filter_by(id = id).first()
             db.session.delete(delUser)
@@ -244,6 +247,9 @@ def delete():
             badIds.append(id)
     except:
         for id in idUser:
+            if flask_login.current_user.id == id:
+                badIds.append(id)
+                continue
             try:
                 delUser = User.query.filter_by(id = id).first()
                 db.session.delete(delUser)
@@ -253,7 +259,7 @@ def delete():
 
     db.session.commit()
 
-    return sendResponse(200, 3031, {"deletedIds": goodIds, "notdeletedIds": badIds}, "success")
+    return sendResponse(200, 3041, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 
 @user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required
