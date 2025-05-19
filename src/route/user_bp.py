@@ -16,12 +16,14 @@ from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Task import User_Task
+from src.utils.task import taskDeleteSftp
 from src.utils.checkFileSize import checkFileSize
 
 user_bp = Blueprint("user", __name__)
 
 email_regex = r"^\S+@\S+\.\S+$"
 pfp_path = "/home/filemanager/files/profilePictures/"
+task_path = "/home/filemanager/files/tasks/"
 pfp_extensions = {"jpg", "png", "jpeg"}
 addUser_extensions = {"json"}
 
@@ -31,12 +33,12 @@ addUser_extensions = {"json"}
 def add():
     if flask_login.current_user.role != "admin":
         return sendResponse(400, 1010, {"message": "No permission for that"}, "error")
+    data = request.get_json()
     
     badIds = []
     goodIds = []
     
-    try:
-        data = request.get_json()
+    if data:
         name = data.get("name", None)
         surname = data.get("surname", None)
         abbreviation = data.get("abbreviation", None)
@@ -70,15 +72,15 @@ def add():
         if User.query.filter_by(email = email).first():
             return sendResponse(400, 1130, {"message": "Email is already in use"}, "error")
         if abbreviation:
-            if User.query.filter_by(abbreviation = abbreviation.upper()).first():
+            abbreviation = str(abbreviation).upper()
+            if User.query.filter_by(abbreviation = abbreviation).first():
                 return sendResponse(400, 1140, {"message": "Abbreviation is already in use"}, "error")
             if len(abbreviation) > 4:
                 return sendResponse(400, 1150, {"message": "Abbreviation is too long"}, "error")
-            abbreviation = abbreviation.upper()
         else:
             abbreviation = None
 
-        newUser = User(name = str(name), surname = str(surname), abbreviation = str(abbreviation), role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
+        newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
 
         db.session.add(newUser)
 
@@ -97,7 +99,7 @@ def add():
 
         return sendResponse(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": allUserClasses(newUser.id)}, "goodIds":goodIds, "badIds":badIds}, "success")
 
-    except:
+    else:
         #must get it working
         users = request.files.get("jsonFile", None)
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
@@ -116,14 +118,15 @@ def add():
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1190, {"message": "Wrong user format"}, "error")
                 if abbreviation:
-                    if User.query.filter_by(abbreviation = abbreviation.upper()).first():
+                    abbreviation = str(abbreviation).upper()
+                    if User.query.filter_by(abbreviation = abbreviation).first():
                         return sendResponse (400, 1200, {"message": "Wrong user format"}, "error")
                     if len(abbreviation) > 4:
                         return sendResponse (400, 1210, {"message": "Wrong user format"}, "error")
                 else:
                     abbreviation = None
 
-                newUser = User(name = str(name), surname = str(surname), abbreviation = str(abbreviation).upper(), role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
+                newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
                 db.session.add(newUser)
 
                 if idClass:
@@ -259,6 +262,7 @@ async def delete():
             for c in cl:
                 db.session.delete(c)
             for t in ta:
+                await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
                 db.session.delete(t)
             
             await pfpDelete(pfp_path, delUser)
@@ -269,9 +273,7 @@ async def delete():
     except:
         for id in idUser:
             if flask_login.current_user.id == id:
-                badIds.append(id)
-                continue
-
+                return sendResponse(400, 3040, {"message": "Can not delete yourself"}, "error")
             delUser = User.query.filter_by(id = id).first()
 
             if delUser:
@@ -281,6 +283,7 @@ async def delete():
                 for c in cl:
                     db.session.delete(c)
                 for t in ta:
+                    await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
                     db.session.delete(t)
 
                 await pfpDelete(pfp_path, delUser)
@@ -291,7 +294,7 @@ async def delete():
 
     db.session.commit()
 
-    return sendResponse(200, 3041, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
+    return sendResponse(200, 3051, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 
 @user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required

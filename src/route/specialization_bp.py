@@ -11,7 +11,7 @@ specialization_bp = Blueprint("specialization", __name__)
 @flask_login.login_required
 def add():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 4010, {"message": "No permission for that"}, "error")
+        return sendResponse(403, 4010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     name = data.get("name", None)
@@ -47,7 +47,7 @@ def add():
 @flask_login.login_required
 def delete():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 5010, {"message": "No permission for that"}, "error")
+        return sendResponse(403, 5010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     idSpecialization = data.get("idSpecialization", None)

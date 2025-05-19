@@ -1,6 +1,7 @@
 import flask_login
 from src.models.Class import Class
 from src.models.User_Class import User_Class
+from src.models.Task_Class import Task_Class
 from src.models.Specialization import Specialization
 from src.utils.response import sendResponse
 from flask import request, Blueprint
@@ -12,7 +13,7 @@ class_bp = Blueprint("class", __name__)
 @flask_login.login_required
 def add():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 8010, {"message": "No permission for that"}, "error")
+        return sendResponse(403, 8010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     grade = data.get("grade", None)
@@ -52,7 +53,7 @@ def add():
 @flask_login.login_required
 def delete():
     if flask_login.current_user.role != "admin":
-        return sendResponse(400, 9010, {"message": "No permission for that"}, "error")
+        return sendResponse(403, 9010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     idClass = data.get("idClass", None)
@@ -63,11 +64,13 @@ def delete():
         return sendResponse(400, 9030, {"message": "Wrong idClass"}, "error")
     if User_Class.query.filter_by(idClass = idClass).first():
         return sendResponse(400, 9040, {"message": "Some user still uses this class"}, "error")
+    if Task_Class.query.filter_by(idClass = idClass).first():
+        return sendResponse(400, 9050, {"message": "Some task still uses this class"}, "error")
     
     db.session.delete(Class.query.filter_by(id = idClass).first())
     db.session.commit()
 
-    return sendResponse (201, 9051, {"message": "Class deleted successfuly"}, "success")
+    return sendResponse (200, 9061, {"message": "Class deleted successfuly"}, "success")
 
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required

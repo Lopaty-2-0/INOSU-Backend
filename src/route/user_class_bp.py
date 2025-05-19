@@ -3,11 +3,15 @@ import flask_login
 from app import db
 from src.models.User_Class import User_Class
 from src.models.Class import Class
+from src.models.User_Task import User_Task
+from src.models.Task_Class import Task_Class
 from src.models.User import User
+from src.utils.task import taskDeleteSftp
 from src.utils.response import sendResponse
 from src.utils.allUserClasses import allUserClasses
 
 user_class_bp = Blueprint("user_class", __name__)
+task_path = "/home/filemanager/files/tasks/"
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
@@ -18,6 +22,8 @@ def user_classAdd():
     badIds = []
     goodIds = []
 
+    if flask_login.current_user.role == "student":
+        return sendResponse(403, 26010, {"message": "Permission denied"}, "error")
     if not idUser:
         return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
     if not idClass:
@@ -35,26 +41,40 @@ def user_classAdd():
             db.session.add(newUserClass)
             goodIds.append(id)
 
+    if not goodIds:
+        return sendResponse(400, 26010, {"message": "Nothing created"}, "error")
+
     db.session.commit()
     
     return sendResponse(201, 26010, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
-def user_classDelete():
+async def user_classDelete():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
 
+    if flask_login.current_user.role == "student":
+        return sendResponse(403, 26010, {"message": "Permission denied"}, "error")
     if not idUser:
         return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
     if not idClass:
         return sendResponse(400, 26010, {"message": "idClass not entered"}, "error")
     
     user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
+    user_t = User_Task.query.filter_by(idUser = idUser)
 
     if not user_cl:
         return sendResponse(400, 26010, {"message": "This user is not in this class"}, "error")
+    
+    for t in user_t:
+        task = Task_Class.query.filter_by(idTask = t.idTask).first()
+        
+        if task:
+            if task.idClass == idClass:
+                await taskDeleteSftp(task_path + str(t.idTask) + "/", idUser)
+                db.session.delete(t)
     
     db.session.delete(user_cl)
     db.session.commit()
@@ -67,6 +87,9 @@ def user_classGetUsers():
     idClass = request.args.get("idClass", None)
     classes = User_Class.query.filter_by(idClass = idClass)
     users = []
+
+    if flask_login.current_user.role == "student":
+        return sendResponse(403, 26010, {"message":"Students can not make tasks"}, "error")
     if not Class.query.filter_by(id = idClass).first():
         return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
     for cl in classes:
