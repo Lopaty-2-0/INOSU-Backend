@@ -57,20 +57,30 @@ def delete():
     
     data = request.get_json(force=True)
     idClass = data.get("idClass", None)
+    goodIds = []
+    badIds = []
+    userIds = []
+    taskIds = []
 
     if not idClass:
         return sendResponse(400, 9020, {"message": "IdClass is missing"}, "error")
-    if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 9030, {"message": "Wrong idClass"}, "error")
-    if User_Class.query.filter_by(idClass = idClass).first():
-        return sendResponse(400, 9040, {"message": "Some user still uses this class"}, "error")
-    if Task_Class.query.filter_by(idClass = idClass).first():
-        return sendResponse(400, 9050, {"message": "Some task still uses this class"}, "error")
+    if not isinstance(idClass, list):
+        idClass = [idClass]
     
-    db.session.delete(Class.query.filter_by(id = idClass).first())
+    for id in idClass:
+        if not Class.query.filter_by(id = idClass).first():
+            badIds.append(id)
+        if User_Class.query.filter_by(idClass = idClass).first():
+            userIds.append(id)
+        if Task_Class.query.filter_by(idClass = idClass).first():
+            taskIds.append(id)
+
+        db.session.delete(Class.query.filter_by(id = id).first())
+        goodIds.append(id)
+
     db.session.commit()
 
-    return sendResponse (200, 9061, {"message": "Class deleted successfuly"}, "success")
+    return sendResponse (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds, "userIds":userIds, "taskIds": taskIds}, "success")
 
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
