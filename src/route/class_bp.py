@@ -68,12 +68,15 @@ def delete():
         idClass = [idClass]
     
     for id in idClass:
-        if not Class.query.filter_by(id = idClass).first():
+        if not Class.query.filter_by(id = id).first():
             badIds.append(id)
-        if User_Class.query.filter_by(idClass = idClass).first():
+            continue
+        if User_Class.query.filter_by(idClass = id).first():
             userIds.append(id)
-        if Task_Class.query.filter_by(idClass = idClass).first():
+            continue
+        if Task_Class.query.filter_by(idClass = id).first():
             taskIds.append(id)
+            continue
 
         db.session.delete(Class.query.filter_by(id = id).first())
         goodIds.append(id)
