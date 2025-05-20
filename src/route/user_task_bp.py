@@ -38,13 +38,15 @@ def user_taskAdd():
         status = "approved"
     #udělej to ještě pro int
     tc = Task_Class.query.filter_by(idTask=idTask)
+    if not isinstance(idUser, list):
+        idUser = [idUser]
     for idU in idUser:
-        if not User.query.filter_by(id=idU).first():
+        if not User.query.filter_by(id=idU).first() or User_Task.query.filter_by(idUser = idU, idTask = idTask).first():
             badIds.append(idU)
             continue
 
         cl = User_Class.query.filter_by(idUser=idU)
-        status = False
+        status1 = False
 
         for c in cl:
             for t in tc:
@@ -54,12 +56,14 @@ def user_taskAdd():
                     goodIds.append(idU)
                     status = True
                     break
-        if not status:
+        if not status1:
             badIds.append(idU)
+    if not goodIds:
+        return sendResponse(400, 26010, {"message": "Nothing created"}, "error")
 
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(201, 26010, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_task_bp.route("/user_task/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -98,8 +102,6 @@ async def user_taskUpdate():
         return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
     if not idUser:
         idUser = currentUser.id
-    if not status and not elaboration and not review:
-        return sendResponse(400, 26010, {"message": "Nothing entered to change"}, "error")
     
     task = Task.query.filter_by(id = idTask).first()
     user_task = User_Task.query.filter_by(idUser = idUser, idTask = idTask).first()
@@ -112,9 +114,11 @@ async def user_taskUpdate():
         return sendResponse(400, 26010, {"message": "Nonexistent user_task"}, "error")
             
     if currentUser.id == task.guarantor:
+        if not review and not status:
+            return sendResponse(400, 26010, {"message": "Nothing entered to change"}, "error")
         if task.approve:
             if user_task.status == "pending" and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
-                user_task.status = str(status).lower()
+                user_task.status = status.lower()
         if review:
             if not review.filename.rsplit(".", 1)[1].lower() in task_extensions:
                 return sendResponse(400, 26070, {"message": "Wrong file format"}, "error")
@@ -125,6 +129,8 @@ async def user_taskUpdate():
             user_task.review = filename
 
     elif currentUser.id == user_task.idUser and user_task.status == "approved":
+        if not elaboration:
+            return sendResponse(400, 26010, {"message": "Nothing entered to change"}, "error")
         if elaboration:
             if not elaboration.filename.rsplit(".", 1)[1].lower() in task_extensions:
                 return sendResponse(400, 26070, {"message": "Wrong file format"}, "error")

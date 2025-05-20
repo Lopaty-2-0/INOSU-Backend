@@ -16,6 +16,7 @@ from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Task import User_Task
+from src.models.Task_Class import Task_Class
 from src.utils.task import taskDeleteSftp
 from src.utils.checkFileSize import checkFileSize
 
@@ -214,8 +215,9 @@ async def update():
         if idClass:
             if secondUser.role.lower() == "student":
                 for id in allUserClasses(secondUser.id):
-                    for task in User_Task.query.filter_by(idUser = secondUser.id, idClass = id):
-                        db.session.delete(task)
+                    for task in User_Task.query.filter_by(idUser = secondUser.id):
+                        if Task_Class.query.filter_by(idTask = task.idTask, idClass = id).first():
+                            db.session.delete(task)
                     db.session.delete(User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first())
                 
                 for id in idClass:
@@ -247,12 +249,11 @@ async def delete():
         return sendResponse(400, 3010, {"message": "No permission for that"}, "error")
     if not idUser:
         return sendResponse(400, 3020, {"message": "No idUser"}, "error")
-    try:
-        id = int(idUser)
-
+    if not isinstance(idUser, list):
+        idUser = [idUser]
+    for id in idUser:
         if flask_login.current_user.id == id:
             return sendResponse(400, 3030, {"message": "Can not delete yourself"}, "error")
-        
         delUser = User.query.filter_by(id = id).first()
 
         if delUser:
@@ -264,33 +265,14 @@ async def delete():
             for t in ta:
                 await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
                 db.session.delete(t)
-            
+
             await pfpDelete(pfp_path, delUser)
             db.session.delete(delUser)
             goodIds.append(id)
         else:
             badIds.append(id)
-    except:
-        for id in idUser:
-            if flask_login.current_user.id == id:
-                return sendResponse(400, 3040, {"message": "Can not delete yourself"}, "error")
-            delUser = User.query.filter_by(id = id).first()
-
-            if delUser:
-                cl = User_Class.query.filter_by(idUser = id)
-                ta = User_Task.query.filter_by(idUser = id)
-
-                for c in cl:
-                    db.session.delete(c)
-                for t in ta:
-                    await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
-                    db.session.delete(t)
-
-                await pfpDelete(pfp_path, delUser)
-                db.session.delete(delUser)
-                goodIds.append(id)
-            else:
-                badIds.append(id)
+    if not goodIds:
+        return sendResponse(400, 3040, {"message": "Nothing deleted"}, "error")
 
     db.session.commit()
 

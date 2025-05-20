@@ -1,6 +1,6 @@
 import os
 import asyncio
-from src.utils.sftp_utils import sftp_put_async, sftp_stat_async, sftp_remove_async, sftp_removeDir_async
+from src.utils.sftp_utils import sftp_put_async, sftp_stat_async, sftp_removeDir_async
 from app import ssh
 
 async def taskSaveSftp(file_path, file, id):

@@ -3,12 +3,13 @@ import flask_login
 from src.utils.response import sendResponse
 from src.utils.checkFileSize import checkFileSize
 from src.utils.task import taskSaveSftp, taskDeleteSftp
+from src.utils.sftp_utils import sftp_stat_async
 from src.models.User import User
 from src.models.Task import Task
 from src.models.Task_Class import Task_Class
 from src.models.User_Task import User_Task
 from datetime import datetime
-from app import db
+from app import db, ssh
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -56,6 +57,10 @@ async def taskAdd():
         return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
     
     user = flask_login.current_user
+
+    if await sftp_stat_async(ssh, task_path + str(id)):
+        await taskDeleteSftp(task_path, id)
+        
     taskFileName = await taskSaveSftp(task_path, task, id)
     newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task=taskFileName, approve = needApprove)
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}

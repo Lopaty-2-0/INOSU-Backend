@@ -93,7 +93,7 @@ def getClassById():
 @class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required
 def getClasses():
-    classes = Class.query.filter_by()
+    classes = Class.query.all()
     all_class = []
 
     for cl in classes:

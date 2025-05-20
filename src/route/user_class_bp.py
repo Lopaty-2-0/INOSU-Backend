@@ -32,6 +32,8 @@ def user_classAdd():
         return sendResponse(400, 26010, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
         return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
+    if not isinstance(idClass, list):
+        idClass = [idClass]
     
     for id in idClass:
         if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = idClass).first():
