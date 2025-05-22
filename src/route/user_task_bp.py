@@ -25,13 +25,13 @@ def user_taskAdd():
     goodIds = []
 
     if not idTask:
-        return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 36010, {"message": "idTask not entered"}, "error")
     if not idUser:
-        return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
+        return sendResponse(400, 36020, {"message": "idUser not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 36030, {"message": "Nonexistent task"}, "error")
     if not Task_Class.query.filter_by(idTask=idTask).first():
-        return sendResponse(400, 26010, {"message": "This task isnt assigned to a class"}, "error")
+        return sendResponse(400, 36040, {"message": "This task isnt assigned to a class"}, "error")
     if Task.query.filter_by(id = idTask).first().approve:
         status = "pending"
     else:
@@ -59,11 +59,11 @@ def user_taskAdd():
         if not status1:
             badIds.append(idU)
     if not goodIds:
-        return sendResponse(400, 26010, {"message": "Nothing created"}, "error")
+        return sendResponse(400, 36050, {"message": "Nothing created"}, "error")
 
     db.session.commit()
 
-    return sendResponse(201, 26010, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(201, 36061, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_task_bp.route("/user_task/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -73,19 +73,19 @@ def user_taskDelete():
     idUser = data.get("idUser", None)
 
     if not idTask:
-        return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 37010, {"message": "idTask not entered"}, "error")
     if not idUser:
-        return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
+        return sendResponse(400, 37020, {"message": "idUser not entered"}, "error")
     
     user_task = User_Task.query.filter_by(idTask = idTask, idUser = idUser).first()
 
     if not user_task:
-        return sendResponse(400, 26010, {"message": "Nonexistent user_task"}, "error")
+        return sendResponse(400, 37030, {"message": "Nonexistent user_task"}, "error")
 
     db.session.delete(user_task)
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "User_task deleted successfuly"}, "success")
+    return sendResponse(200, 37041, {"message": "User_task deleted successfuly"}, "success")
 
 @user_task_bp.route("/user_task/update", methods=["PUT"])
 @checkFileSize(32 * 1024 * 1024)
@@ -99,7 +99,7 @@ async def user_taskUpdate():
     currentUser = flask_login.current_user
 
     if not idTask:
-        return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 38010, {"message": "idTask not entered"}, "error")
     if not idUser:
         idUser = currentUser.id
     
@@ -107,21 +107,21 @@ async def user_taskUpdate():
     user_task = User_Task.query.filter_by(idUser = idUser, idTask = idTask).first()
 
     if not User.query.filter_by(id = idUser).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent user"}, "error") 
+        return sendResponse(400, 38020, {"message": "Nonexistent user"}, "error") 
     if not task:
-        return sendResponse(400, 26010, {"message": "Nonexistent task"}, "error") 
+        return sendResponse(400, 38030, {"message": "Nonexistent task"}, "error") 
     if not user_task:
-        return sendResponse(400, 26010, {"message": "Nonexistent user_task"}, "error")
+        return sendResponse(400, 38040, {"message": "Nonexistent user_task"}, "error")
             
     if currentUser.id == task.guarantor:
         if not review and not status:
-            return sendResponse(400, 26010, {"message": "Nothing entered to change"}, "error")
+            return sendResponse(400, 38050, {"message": "Nothing entered to change"}, "error")
         if task.approve:
             if user_task.status == "pending" and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
                 user_task.status = status.lower()
         if review:
             if not review.filename.rsplit(".", 1)[1].lower() in task_extensions:
-                return sendResponse(400, 26070, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 38060, {"message": "Wrong file format"}, "error")
             if user_task.review:
                 await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
 
@@ -130,21 +130,21 @@ async def user_taskUpdate():
 
     elif currentUser.id == user_task.idUser and user_task.status == "approved":
         if not elaboration:
-            return sendResponse(400, 26010, {"message": "Nothing entered to change"}, "error")
+            return sendResponse(400, 38070, {"message": "Nothing entered to change"}, "error")
         if elaboration:
             if not elaboration.filename.rsplit(".", 1)[1].lower() in task_extensions:
-                return sendResponse(400, 26070, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 38080, {"message": "Wrong file format"}, "error")
             if user_task.elaboration:
                 await taskDeleteSftp(task_path + str(task.id) + "/", currentUser.id)
 
             filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, currentUser.id)
             user_task.elaboration = filename
     else:
-        return sendResponse(403, 26010, {"message": "Permission denied"}, "error")
+        return sendResponse(403, 38090, {"message": "Permission denied"}, "error")
     
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "User_Task successfuly updated"}, "success") 
+    return sendResponse(200, 38101, {"message": "User_Task successfuly updated"}, "success") 
 
 @user_task_bp.route("/user_task/get", methods=["GET"])
 @flask_login.login_required
@@ -153,13 +153,13 @@ def user_taskGet():
     tasks = []
 
     if not idUser:
-        return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
+        return sendResponse(400, 39010, {"message": "idUser not entered"}, "error")
     if not User.query.filter_by(id = idUser).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent user"}, "error")
+        return sendResponse(400, 39020, {"message": "Nonexistent user"}, "error")
     
     task = User_Task.query.filter_by(idUser = idUser)
 
     for t in task:
         tasks.append(allUserTasks(t.idUser))
 
-    return sendResponse(200, 26010, {"message": "Tasks found", "tasks":tasks}, "success")
+    return sendResponse(200, 39031, {"message": "Tasks found", "tasks":tasks}, "success")

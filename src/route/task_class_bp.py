@@ -22,14 +22,14 @@ def task_classAdd():
     goodIds = []
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 26010, {"message":"Students can not make tasks"}, "error")
+        return sendResponse(403, 30010, {"message":"Students can not make tasks"}, "error")
 
     if not idTask:
-        return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 30020, {"message": "idTask not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 26010, {"message": "idClass not entered"}, "error")
+        return sendResponse(400, 30030, {"message": "idClass not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 30040, {"message": "Nonexistent task"}, "error")
     
     for id in idClass:
         if not Class.query.filter_by(id=id).first():
@@ -44,9 +44,9 @@ def task_classAdd():
     db.session.commit()
 
     if not goodIds:
-        return sendResponse(400, 26010, {"message": "Nothing created"}, "error")
+        return sendResponse(400, 30050, {"message": "Nothing created"}, "error")
     
-    return sendResponse(201, 26010, {"message": "Task_class created successfuly", "badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(201, 30061, {"message": "Task_class created successfuly", "badIds":badIds, "goodIds":goodIds}, "success")
 
 @task_class_bp.route("/task_class/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -60,18 +60,18 @@ def task_classDelete():
     if not isinstance(idClass, list):
         idClass = [idClass]
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 26010, {"message":"Students can not make tasks"}, "error")
+        return sendResponse(403, 31010, {"message":"Students can not delete tasks"}, "error")
 
     if not idTask:
-        return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 31020, {"message": "idTask not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 26010, {"message": "idClass not entered"}, "error")
+        return sendResponse(400, 31030, {"message": "idClass not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 31040, {"message": "Nonexistent task"}, "error")
 
     for id in idClass:
         if not Class.query.filter_by(id=id).first():
-            return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
+            return sendResponse(400, 31050, {"message": "Nonexistent class"}, "error")
         
         task_class = Task_Class.query.filter_by(idTask = idTask, idClass = id).first()
 
@@ -83,11 +83,11 @@ def task_classDelete():
         goodIds.append(id)
 
     if not goodIds:
-        return sendResponse(400, 26010, {"message": "Nothing deleted"}, "error")
+        return sendResponse(400, 31060, {"message": "Nothing deleted"}, "error")
     
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "Task_class deleted successfuly"}, "success")
+    return sendResponse(200, 31071, {"message": "Task_class deleted successfuly"}, "success")
 
 @task_class_bp.route("/task_class/update", methods=["PUT"])
 @flask_login.login_required
@@ -100,13 +100,13 @@ async def task_classUpdate():
     userClass = []
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 26010, {"message": "No permission"}, "error")
+        return sendResponse(403, 32010, {"message": "No permission"}, "error")
     if not idTask:
-        return sendResponse(400, 26010, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 32020, {"message": "idTask not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 26010, {"message": "idClass not entered"}, "error")
+        return sendResponse(400, 32030, {"message": "idClass not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 32040, {"message": "Nonexistent task"}, "error")
     
     task_class = Task_Class.query.filter_by(idTask = idTask)
 
@@ -124,7 +124,7 @@ async def task_classUpdate():
         goodIds.append(id)
 
     if not goodIds:
-        return sendResponse(400, 26010, {"message": "Nothing updated"}, "error")
+        return sendResponse(400, 32050, {"message": "Nothing updated"}, "error")
     
     for user in User_Task.query.filter_by(idTask = idTask):
         for cl in User_Class.query.filter_by(idUser = user.idUser):
@@ -137,4 +137,4 @@ async def task_classUpdate():
 
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(200, 32061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")

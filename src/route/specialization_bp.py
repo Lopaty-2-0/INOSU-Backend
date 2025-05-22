@@ -74,6 +74,6 @@ def get():
         return sendResponse (400, 29010, {"message": "No specialization found"}, "error")
     
     for s in specialization:
-        specializations.append({"id":s.id,"name":s.id, "abbreviation":s.abbreviation, "lengthOfStudy":s.lenghtOfStudy})
+        specializations.append({"id":s.id,"name":s.name, "abbreviation":s.abbreviation, "lengthOfStudy":s.lengthOfStudy})
 
     return sendResponse (200, 29021, {"message": "Specializations found", "specializations":specializations}, "success")

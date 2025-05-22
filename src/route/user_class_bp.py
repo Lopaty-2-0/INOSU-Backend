@@ -23,15 +23,15 @@ def user_classAdd():
     goodIds = []
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 26010, {"message": "Permission denied"}, "error")
+        return sendResponse(403, 33010, {"message": "Permission denied"}, "error")
     if not idUser:
-        return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
+        return sendResponse(400, 33020, {"message": "idUser not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 26010, {"message": "idClass not entered"}, "error")
+        return sendResponse(400, 33030, {"message": "idClass not entered"}, "error")
     if not User.query.filter_by(id = idUser).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent user"}, "error")
+        return sendResponse(400, 33040, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
+        return sendResponse(400, 33050, {"message": "Nonexistent class"}, "error")
     if not isinstance(idClass, list):
         idClass = [idClass]
     
@@ -44,11 +44,11 @@ def user_classAdd():
             goodIds.append(id)
 
     if not goodIds:
-        return sendResponse(400, 26010, {"message": "Nothing created"}, "error")
+        return sendResponse(400, 33060, {"message": "Nothing created"}, "error")
 
     db.session.commit()
     
-    return sendResponse(201, 26010, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(201, 33071, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -58,17 +58,17 @@ async def user_classDelete():
     idClass = data.get("idClass", None)
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 26010, {"message": "Permission denied"}, "error")
+        return sendResponse(403, 34010, {"message": "Permission denied"}, "error")
     if not idUser:
-        return sendResponse(400, 26010, {"message": "idUser not entered"}, "error")
+        return sendResponse(400, 34020, {"message": "idUser not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 26010, {"message": "idClass not entered"}, "error")
+        return sendResponse(400, 34030, {"message": "idClass not entered"}, "error")
     
     user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
     user_t = User_Task.query.filter_by(idUser = idUser)
 
     if not user_cl:
-        return sendResponse(400, 26010, {"message": "This user is not in this class"}, "error")
+        return sendResponse(400, 34040, {"message": "This user is not in this class"}, "error")
     
     for t in user_t:
         task = Task_Class.query.filter_by(idTask = t.idTask).first()
@@ -81,7 +81,7 @@ async def user_classDelete():
     db.session.delete(user_cl)
     db.session.commit()
 
-    return sendResponse(200, 26010, {"message": "User deleted from this class"}, "success")
+    return sendResponse(200, 34051, {"message": "User deleted from this class"}, "success")
 
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
@@ -90,12 +90,10 @@ def user_classGetUsers():
     classes = User_Class.query.filter_by(idClass = idClass)
     users = []
 
-    if flask_login.current_user.role == "student":
-        return sendResponse(403, 26010, {"message":"Students can not make tasks"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 26010, {"message": "Nonexistent class"}, "error")
+        return sendResponse(400, 35010, {"message": "Nonexistent class"}, "error")
     for cl in classes:
         user = User.query.filter_by(id = cl.idUser).first()
         users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)})
 
-    return sendResponse(200, 26010, {"message": "Users found", "users":users}, "success")
+    return sendResponse(200, 35021, {"message": "Users found", "users":users}, "success")

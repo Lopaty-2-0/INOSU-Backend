@@ -21,9 +21,7 @@ def upgrade():
     op.drop_table('team')
     with op.batch_alter_table('specialization', schema=None) as batch_op:
         batch_op.add_column(sa.Column('abbreviation', sa.CHAR(length=1), nullable=False))
-        batch_op.drop_index('abbrevation')
         batch_op.create_unique_constraint(None, ['abbreviation'])
-        batch_op.drop_column('abbrevation')
 
     # ### end Alembic commands ###
 
@@ -36,15 +34,4 @@ def downgrade():
         batch_op.create_index('abbrevation', ['abbrevation'], unique=True)
         batch_op.drop_column('abbreviation')
 
-    op.create_table('team',
-    sa.Column('idUser', mysql.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('idTask', mysql.INTEGER(), autoincrement=False, nullable=False),
-    sa.Column('leader', mysql.TINYINT(display_width=1), autoincrement=False, nullable=False),
-    sa.ForeignKeyConstraint(['idTask'], ['task.id'], name='team_ibfk_2'),
-    sa.ForeignKeyConstraint(['idUser'], ['user.id'], name='team_ibfk_1'),
-    sa.PrimaryKeyConstraint('idUser', 'idTask'),
-    mysql_collate='utf8mb4_0900_ai_ci',
-    mysql_default_charset='utf8mb4',
-    mysql_engine='InnoDB'
-    )
     # ### end Alembic commands ###
