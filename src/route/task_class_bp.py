@@ -57,6 +57,8 @@ def task_classDelete():
     badIds = []
     goodIds = []
 
+    if not isinstance(idClass, list):
+        idClass = [idClass]
     if flask_login.current_user.role == "student":
         return sendResponse(403, 26010, {"message":"Students can not make tasks"}, "error")
 

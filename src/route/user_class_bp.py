@@ -36,7 +36,7 @@ def user_classAdd():
         idClass = [idClass]
     
     for id in idClass:
-        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = idClass).first():
+        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = idClass).first() or User.query.filter_by(id = idUser).first().role:
             badIds.append(id)
         else:
             newUserClass = User_Class(idUser=idUser, idClass=id)

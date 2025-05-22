@@ -15,7 +15,7 @@ def add():
     
     data = request.get_json(force=True)
     name = data.get("name", None)
-    abbrevation = data.get("abbrevation", None)
+    abbreviation = data.get("abbreviation", None)
     lengthOfStudy = data.get("lengthOfStudy", None)
 
     if not lengthOfStudy:
@@ -24,12 +24,12 @@ def add():
         lengthOfStudy = int(lengthOfStudy)
     except:
         return sendResponse(400, 4030, {"message": "lengthOfStudy not integer"}, "error")
-    if not abbrevation:
-        return sendResponse(400, 4040, {"message": "abbrevation missing"}, "error")
-    if len(abbrevation) > 1:
-        return sendResponse(400, 4050, {"message": "abbrevation too long"}, "error")
-    if Specialization.query.filter_by(abbrevation = abbrevation).first():
-        return sendResponse(400, 4060, {"message": "abbrevation already in use"}, "error")
+    if not abbreviation:
+        return sendResponse(400, 4040, {"message": "abbreviation missing"}, "error")
+    if len(abbreviation) > 1:
+        return sendResponse(400, 4050, {"message": "abbreviation too long"}, "error")
+    if Specialization.query.filter_by(abbreviation = abbreviation).first():
+        return sendResponse(400, 4060, {"message": "abbreviation already in use"}, "error")
     if not name:
         return sendResponse(400, 4070, {"message": "name missing"}, "error")
     if len(name) > 100:
@@ -37,11 +37,11 @@ def add():
     if Specialization.query.filter_by(name = name).first():
         return sendResponse(400, 4090, {"message": "name already in use"}, "error")
     
-    newSpecialization = Specialization(lengthOfStudy = lengthOfStudy, abbrevation = abbrevation, name = name)
+    newSpecialization = Specialization(lengthOfStudy = lengthOfStudy, abbreviation = abbreviation, name = name)
     db.session.add(newSpecialization)
     db.session.commit()
 
-    return sendResponse (201, 4101, {"message": "Specialization created successfuly", "specialization":{"lengthOfStudy":newSpecialization.lengthOfStudy, "abbrevation":newSpecialization.abbrevation, "name":newSpecialization.name}}, "success")
+    return sendResponse (201, 4101, {"message": "Specialization created successfuly", "specialization":{"lengthOfStudy":newSpecialization.lengthOfStudy, "abbreviation":newSpecialization.abbreviation, "name":newSpecialization.name}}, "success")
 
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -63,3 +63,17 @@ def delete():
     db.session.commit()
     
     return sendResponse (200, 5051, {"message": "Specialization deleted successfuly"}, "success")
+
+@specialization_bp.route("/specialization/get", methods = ["GET"])
+@flask_login.login_required
+def get():
+    specialization = Specialization.query.all()
+    specializations = []
+
+    if not specialization:
+        return sendResponse (400, 29010, {"message": "No specialization found"}, "error")
+    
+    for s in specialization:
+        specializations.append({"id":s.id,"name":s.id, "abbreviation":s.abbreviation, "lengthOfStudy":s.lenghtOfStudy})
+
+    return sendResponse (200, 29021, {"message": "Specializations found", "specializations":specializations}, "success")

@@ -38,7 +38,9 @@ def verifyUser():
     if not flask_login.current_user.is_authenticated:
         state = False
         message = "User not logged in"
+        role = None
     else:
         state = True
         message = "User logged in"
-    return sendResponse(200, 17011, {"message":message,"logged": state}, "success")
+        role = flask_login.current_user.role
+    return sendResponse(200, 17011, {"message":message,"logged": state, "role":role}, "success")
