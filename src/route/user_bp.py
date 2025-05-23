@@ -46,7 +46,7 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
-        idClass = json.loads(data.get("idClass", None))
+        idClass = json.loads(data.get("idClass", "[]"))
 
         if not name:
             return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
@@ -158,7 +158,7 @@ async def update():
     role = request.form.get("role", None)
     email = request.form.get("email", None)
     idUser = request.form.get("idUser", None)
-    idClass = json.loads(request.form.get("idClass", None))
+    idClass = json.loads(request.form.get("idClass", "[]"))
     
     #gets profile picture
     profilePicture = request.files.get("profilePicture", None)
