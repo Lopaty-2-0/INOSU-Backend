@@ -46,7 +46,7 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
-        idClass = data.get("idClass", None)
+        idClass = json.loads(data.get("idClass", None))
 
         if not name:
             return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
@@ -81,7 +81,7 @@ def add():
         else:
             abbreviation = None
 
-        newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
+        newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role).lower(), password = generate_password_hash(password), profilePicture = None, email = email)
 
         db.session.add(newUser)
 
@@ -127,7 +127,7 @@ def add():
                 else:
                     abbreviation = None
 
-                newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role), password = generate_password_hash(password), profilePicture = None, email = email)
+                newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role).lower(), password = generate_password_hash(password), profilePicture = None, email = email)
                 db.session.add(newUser)
 
                 if idClass:
@@ -158,7 +158,7 @@ async def update():
     role = request.form.get("role", None)
     email = request.form.get("email", None)
     idUser = request.form.get("idUser", None)
-    idClass = request.form.get("idClass", None)
+    idClass = json.loads(request.form.get("idClass", None))
     
     #gets profile picture
     profilePicture = request.files.get("profilePicture", None)
@@ -198,7 +198,7 @@ async def update():
                 return sendResponse(400, 2080, {"message": "Abbreviation is too long"}, "error")
             secondUser.abbreviation = str(abbreviation).upper()
         if role:
-            secondUser.role = str(role)
+            secondUser.role = str(role).lower()
         if email:
             if not re.match(email_regex, email):
                 return sendResponse(400, 2090, {"message": "Wrong email format"}, "error")
@@ -437,11 +437,11 @@ def getCurrentRole():
 @user_bp.route("/user/get/noClass", methods =["GET"])
 @flask_login.login_required
 def getNoClass():
-    user = User.query.all()
+    user = User.query.filter_by(role = "student")
     users = []
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
             users.append({"id": s.id, "name": s.name, "surname": s.surname, "abbreviation": s.abbreviation, "role": s.role, "profilePicture": s.profilePicture, "email": s.email})
 
-    return sendResponse(200, 40011, {"message": "All users without class", "users": users}, "success")
+    return sendResponse(200, 40011, {"message": "All students without class", "users": users}, "success")
