@@ -46,6 +46,10 @@ def add():
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
+    badIds = []
+    classIds = []
+    goodIds = []
+    
     if flask_login.current_user.role != "admin":
         return sendResponse(403, 5010, {"message": "No permission for that"}, "error")
     
@@ -54,15 +58,26 @@ def delete():
 
     if not idSpecialization:
         return sendResponse(400, 5020, {"message": "IdSpecialization is missing"}, "error")
-    if not Specialization.query.filter_by(id = idSpecialization).first():
-        return sendResponse(400, 5030, {"message": "Wrong idSpecialization"}, "error")
-    if Class.query.filter_by(idSpecialization = idSpecialization).first():
-        return sendResponse(400, 5040, {"message": "Some class still uses this specialization"}, "error")
+    if not isinstance(idSpecialization, list):
+        idSpecialization = [idSpecialization]
     
-    db.session.delete(Specialization.query.filter_by(id = idSpecialization).first())
+    for id in idSpecialization:
+        if not Specialization.query.filter_by(id = id).first():
+            badIds.append(id)
+            continue
+        if Class.query.filter_by(idSpecialization = id).first():
+            classIds.append(id)
+            continue
+
+        db.session.delete(Specialization.query.filter_by(id = id).first())
+        goodIds.append(id)
+
     db.session.commit()
     
-    return sendResponse (200, 5051, {"message": "Specialization deleted successfuly"}, "success")
+    if not goodIds:
+        return sendResponse (400, 5030, {"message": "No deletion"}, "error")
+    
+    return sendResponse (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds, "classIds":classIds}, "success")
 
 @specialization_bp.route("/specialization/get", methods = ["GET"])
 @flask_login.login_required

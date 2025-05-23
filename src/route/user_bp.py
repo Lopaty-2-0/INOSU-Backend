@@ -433,3 +433,15 @@ def getRoles():
 @flask_login.login_required
 def getCurrentRole():
     return sendResponse(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
+
+@user_bp.route("/user/get/noClass", methods =["GET"])
+@flask_login.login_required
+def getNoClass():
+    user = User.query.all()
+    users = []
+
+    for s in user:
+        if not User_Class.query.filter_by(idUser = s.id).first():
+            users.append({"id": s.id, "name": s.name, "surname": s.surname, "abbreviation": s.abbreviation, "role": s.role, "profilePicture": s.profilePicture, "email": s.email})
+
+    return sendResponse(200, 40011, {"message": "All users without class", "users": users}, "success")
