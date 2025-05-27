@@ -10,6 +10,8 @@ from src.utils.response import sendResponse
 from src.utils.allUserTasks import allUserTasks
 from src.utils.task import taskDeleteSftp, taskSaveSftp
 from src.utils.checkFileSize import checkFileSize
+from src.utils.allUserClasses import allUserClasses
+import json
 
 user_task_bp = Blueprint("user_task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -54,7 +56,7 @@ def user_taskAdd():
                     newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
                     db.session.add(newUser_Task)
                     goodIds.append(idU)
-                    status = True
+                    status1 = True
                     break
         if not status1:
             badIds.append(idU)
@@ -150,7 +152,7 @@ async def user_taskUpdate():
 @flask_login.login_required
 def user_taskGet():
     idUser = request.args.get("idUser", None)
-    tasks = []
+    classTasks = []
 
     if not idUser:
         return sendResponse(400, 39010, {"message": "idUser not entered"}, "error")
@@ -158,8 +160,109 @@ def user_taskGet():
         return sendResponse(400, 39020, {"message": "Nonexistent user"}, "error")
     
     task = User_Task.query.filter_by(idUser = idUser)
+    classes = User_Class.query.filter_by(idUser = idUser)
 
-    for t in task:
-        tasks.append(allUserTasks(t.idUser))
+    if task:
+        tasks = allUserTasks(idUser)
+    else:
+        tasks = []
 
-    return sendResponse(200, 39031, {"message": "Tasks found", "tasks":tasks}, "success")
+    for c in classes:
+        cl = {"idClass":c.idClass, "tasks":[]}
+        task_class = Task_Class.query.filter_by(idClass = c.idClass)
+
+        for t in task_class:
+            tas = Task.query.filter_by(id = t.idTask).first()
+            user = User.query.filter_by(id = tas.guarantor).first()
+            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+            cl["tasks"].append({"id":t.idTask, "name":tas.name, "startDate":tas.startDate, "endDate":tas.endDate, "task":tas.task, "guarantor":guarantor})
+
+        classTasks.append(cl)
+
+
+    return sendResponse(200, 39031, {"message": "Tasks found", "tasks":tasks, "classTasks":classTasks}, "success")
+
+@user_task_bp.route("/user_task/get/status", methods=["GET"])
+@flask_login.login_required
+def user_taskGetWithStatus():
+    status = request.args.get("status", "")
+    guarantorTasks = []
+    elaboratingTasks = []
+
+    try:
+        status = json.loads(status) if status.strip() else []
+    except:
+        status = []
+
+    if not isinstance(status, list):
+        status = [status]
+
+    for s in status:
+        task = Task.query.filter_by(guarantor = flask_login.current_user.id)
+        for tas in task:
+            ta = User_Task.query.filter_by(idTask = tas.id, status = s)
+
+            for t in ta:
+                user = User.query.filter_by(id = t.idUser).first()
+                guarantorTasks.append({"elaborator":{"id": user.id, 
+                                            "name": user.name, 
+                                            "surname": user.surname, 
+                                            "abbreviation": user.abbreviation, 
+                                            "role": user.role, 
+                                            "profilePicture": user.profilePicture, 
+                                            "email": user.email, 
+                                            "idClass": allUserClasses(user.id)
+                                            },
+                            "task":tas.task,
+                            "name":tas.name, 
+                            "statDate":tas.startDate, 
+                            "endDate":tas.endDate, 
+                            "status":t.status, 
+                            "elaboration":t.elaboration,
+                            "review":t.review,
+                            "guarantor":{"id": flask_login.current_user.id, 
+                                         "name": flask_login.current_user.name, 
+                                         "surname": flask_login.current_user.surname, 
+                                         "abbreviation": flask_login.current_user.abbreviation, 
+                                         "role": flask_login.current_user.role, 
+                                         "profilePicture": flask_login.current_user.profilePicture, 
+                                         "email": flask_login.current_user.email, 
+                                         "idClass": allUserClasses(flask_login.current_user.id)
+                                         },
+                                         "idTask":tas.id
+                            })
+    for s in status:
+        ta = User_Task.query.filter_by(idUser = flask_login.current_user.id, status = s)
+
+        for t in ta:
+            tas = Task.query.filter_by(id = t.idTask).first()
+            user = User.query.filter_by(id = tas.guarantor).first()
+            elaboratingTasks.append({"elaborator":{"id": flask_login.current_user.id, 
+                                    "name": flask_login.current_user.name, 
+                                    "surname": flask_login.current_user.surname, 
+                                    "abbreviation": flask_login.current_user.abbreviation, 
+                                    "role": flask_login.current_user.role, 
+                                    "profilePicture": flask_login.current_user.profilePicture, 
+                                    "email": flask_login.current_user.email, 
+                                    "idClass": allUserClasses(flask_login.current_user.id)
+                                    },
+                        "task":tas.task,
+                        "name":tas.name, 
+                        "statDate":tas.startDate, 
+                        "endDate":tas.endDate, 
+                        "status":t.status,
+                        "elaboration":t.elaboration,
+                        "review":t.review, 
+                        "guarantor":{"id": user.id, 
+                                        "name": user.name, 
+                                        "surname": user.surname, 
+                                        "abbreviation": user.abbreviation, 
+                                        "role": user.role, 
+                                        "profilePicture": user.profilePicture, 
+                                        "email": user.email, 
+                                        "idClass": allUserClasses(user.id)
+                                    },
+                                    "idTask":t.idTask
+                        })
+                
+    return sendResponse(200, 38090, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
