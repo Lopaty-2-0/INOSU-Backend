@@ -32,14 +32,17 @@ def user_taskAdd():
         return sendResponse(400, 36020, {"message": "idUser not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
         return sendResponse(400, 36030, {"message": "Nonexistent task"}, "error")
-    if not Task_Class.query.filter_by(idTask=idTask).first():
-        return sendResponse(400, 36040, {"message": "This task isnt assigned to a class"}, "error")
     if Task.query.filter_by(id = idTask).first().approve:
-        status = "pending"
+        if not Task_Class.query.filter_by(idTask=idTask).first():
+            status = "waiting"
+        else:
+            status = "pending"
     else:
         status = "approved"
+
     #udělej to ještě pro int
     tc = Task_Class.query.filter_by(idTask=idTask)
+
     if not isinstance(idUser, list):
         idUser = [idUser]
     for idU in idUser:
@@ -50,22 +53,31 @@ def user_taskAdd():
         cl = User_Class.query.filter_by(idUser=idU)
         status1 = False
 
-        for c in cl:
-            for t in tc:
-                if c.idClass == t.idClass:
-                    newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
-                    db.session.add(newUser_Task)
-                    goodIds.append(idU)
-                    status1 = True
-                    break
+        if tc:
+            for c in cl:
+                for t in tc:
+                    if c.idClass == t.idClass:
+                        newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                        db.session.add(newUser_Task)
+                        goodIds.append(idU)
+                        status1 = True
+                        break
+        else:
+            if flask_login.current_user.id == Task.query.filter_by(id = idTask).first().guarantor:
+                newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                db.session.add(newUser_Task)
+                goodIds.append(idU)
+                status1 = True
+
         if not status1:
             badIds.append(idU)
+
     if not goodIds:
-        return sendResponse(400, 36050, {"message": "Nothing created"}, "error")
+        return sendResponse(400, 36040, {"message": "Nothing created"}, "error")
 
     db.session.commit()
 
-    return sendResponse(201, 36061, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(201, 36051, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_task_bp.route("/user_task/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -119,7 +131,7 @@ async def user_taskUpdate():
         if not review and not status:
             return sendResponse(400, 38050, {"message": "Nothing entered to change"}, "error")
         if task.approve:
-            if user_task.status == "pending" and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
+            if (user_task.status == "pending" or user_task.status == "waiting") and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
                 user_task.status = status.lower()
         if review:
             if not review.filename.rsplit(".", 1)[1].lower() in task_extensions:
@@ -186,6 +198,7 @@ def user_taskGet():
 @flask_login.login_required
 def user_taskGetWithStatus():
     status = request.args.get("status", "")
+    which = request.args.get("which", None)
     guarantorTasks = []
     elaboratingTasks = []
 
@@ -193,18 +206,72 @@ def user_taskGetWithStatus():
         status = json.loads(status) if status.strip() else []
     except:
         status = []
+    
+    if not which:
+        return sendResponse(400, 40010, {"message": "Which not entered"}, "error")
 
     if not isinstance(status, list):
         status = [status]
+    if which == "0" or which == "2":
+        for s in status:
+            task = Task.query.filter_by(guarantor = flask_login.current_user.id)
+            for tas in task:
+                ta = User_Task.query.filter_by(idTask = tas.id, status = s)
 
-    for s in status:
-        task = Task.query.filter_by(guarantor = flask_login.current_user.id)
-        for tas in task:
-            ta = User_Task.query.filter_by(idTask = tas.id, status = s)
+                for t in ta:
+                    user = User.query.filter_by(id = t.idUser).first()
+                    guarantorTasks.append({"elaborator":{"id": user.id, 
+                                                "name": user.name, 
+                                                "surname": user.surname, 
+                                                "abbreviation": user.abbreviation, 
+                                                "role": user.role, 
+                                                "profilePicture": user.profilePicture, 
+                                                "email": user.email, 
+                                                "idClass": allUserClasses(user.id)
+                                                },
+                                "task":tas.task,
+                                "name":tas.name, 
+                                "statDate":tas.startDate, 
+                                "endDate":tas.endDate, 
+                                "status":t.status, 
+                                "elaboration":t.elaboration,
+                                "review":t.review,
+                                "guarantor":{"id": flask_login.current_user.id, 
+                                            "name": flask_login.current_user.name, 
+                                            "surname": flask_login.current_user.surname, 
+                                            "abbreviation": flask_login.current_user.abbreviation, 
+                                            "role": flask_login.current_user.role, 
+                                            "profilePicture": flask_login.current_user.profilePicture, 
+                                            "email": flask_login.current_user.email, 
+                                            "idClass": allUserClasses(flask_login.current_user.id)
+                                            },
+                                            "idTask":tas.id
+                                })
+                    
+    if which == "1" or which == "2":
+        for s in status:
+            ta = User_Task.query.filter_by(idUser = flask_login.current_user.id, status = s)
 
             for t in ta:
-                user = User.query.filter_by(id = t.idUser).first()
-                guarantorTasks.append({"elaborator":{"id": user.id, 
+                tas = Task.query.filter_by(id = t.idTask).first()
+                user = User.query.filter_by(id = tas.guarantor).first()
+                elaboratingTasks.append({"elaborator":{"id": flask_login.current_user.id, 
+                                        "name": flask_login.current_user.name, 
+                                        "surname": flask_login.current_user.surname, 
+                                        "abbreviation": flask_login.current_user.abbreviation, 
+                                        "role": flask_login.current_user.role, 
+                                        "profilePicture": flask_login.current_user.profilePicture, 
+                                        "email": flask_login.current_user.email, 
+                                        "idClass": allUserClasses(flask_login.current_user.id)
+                                        },
+                            "task":tas.task,
+                            "name":tas.name, 
+                            "statDate":tas.startDate, 
+                            "endDate":tas.endDate, 
+                            "status":t.status,
+                            "elaboration":t.elaboration,
+                            "review":t.review, 
+                            "guarantor":{"id": user.id, 
                                             "name": user.name, 
                                             "surname": user.surname, 
                                             "abbreviation": user.abbreviation, 
@@ -212,57 +279,8 @@ def user_taskGetWithStatus():
                                             "profilePicture": user.profilePicture, 
                                             "email": user.email, 
                                             "idClass": allUserClasses(user.id)
-                                            },
-                            "task":tas.task,
-                            "name":tas.name, 
-                            "statDate":tas.startDate, 
-                            "endDate":tas.endDate, 
-                            "status":t.status, 
-                            "elaboration":t.elaboration,
-                            "review":t.review,
-                            "guarantor":{"id": flask_login.current_user.id, 
-                                         "name": flask_login.current_user.name, 
-                                         "surname": flask_login.current_user.surname, 
-                                         "abbreviation": flask_login.current_user.abbreviation, 
-                                         "role": flask_login.current_user.role, 
-                                         "profilePicture": flask_login.current_user.profilePicture, 
-                                         "email": flask_login.current_user.email, 
-                                         "idClass": allUserClasses(flask_login.current_user.id)
-                                         },
-                                         "idTask":tas.id
+                                        },
+                                        "idTask":t.idTask
                             })
-    for s in status:
-        ta = User_Task.query.filter_by(idUser = flask_login.current_user.id, status = s)
-
-        for t in ta:
-            tas = Task.query.filter_by(id = t.idTask).first()
-            user = User.query.filter_by(id = tas.guarantor).first()
-            elaboratingTasks.append({"elaborator":{"id": flask_login.current_user.id, 
-                                    "name": flask_login.current_user.name, 
-                                    "surname": flask_login.current_user.surname, 
-                                    "abbreviation": flask_login.current_user.abbreviation, 
-                                    "role": flask_login.current_user.role, 
-                                    "profilePicture": flask_login.current_user.profilePicture, 
-                                    "email": flask_login.current_user.email, 
-                                    "idClass": allUserClasses(flask_login.current_user.id)
-                                    },
-                        "task":tas.task,
-                        "name":tas.name, 
-                        "statDate":tas.startDate, 
-                        "endDate":tas.endDate, 
-                        "status":t.status,
-                        "elaboration":t.elaboration,
-                        "review":t.review, 
-                        "guarantor":{"id": user.id, 
-                                        "name": user.name, 
-                                        "surname": user.surname, 
-                                        "abbreviation": user.abbreviation, 
-                                        "role": user.role, 
-                                        "profilePicture": user.profilePicture, 
-                                        "email": user.email, 
-                                        "idClass": allUserClasses(user.id)
-                                    },
-                                    "idTask":t.idTask
-                        })
                 
-    return sendResponse(200, 40011, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
+    return sendResponse(200, 40021, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
