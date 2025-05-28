@@ -326,13 +326,16 @@ async def user_taskChange():
     goodIds = []
     badIds = []
     ids = []
+    removedIds = []
 
     if not idTask:
         return sendResponse(400, 43010, {"message": "idTask not entered"}, "error")
     if not idUser:
-        return sendResponse(400, 43020, {"message": "idUser not entered"}, "error")
+        ids.append("all")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 43030, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 43020, {"message": "Nonexistent task"}, "error")
+    if Task_Class.query.filter_by(idTask = idTask).first():
+        return sendResponse(400, 43030, {"message": "Task is only for classes"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
         return sendResponse(403, 43040, {"message": "No permission"}, "error")
     if not isinstance(idUser, list):
@@ -350,11 +353,24 @@ async def user_taskChange():
         if not task.idUser in ids:
             await user_taskDelete(task_path, task.idUser, idTask)
             db.session.delete(task)
-            goodIds.append(task.idUser)
+            removedIds.append(task.idUser)
+            continue
+        ids.remove(task.idUser)
+    
+    if len(ids) >= 1 and ids[0]!="all":
+        if Task.query.filter_by(id = idTask).first().approve:
+            status = "waiting"
+        else:
+            status = "approved"
 
-    if not goodIds:
+        for id in ids:
+            newUser_Task = User_Task(idTask=idTask,idUser=id, review=None, status=status, elaboration=None)
+            goodIds.append(id)
+            db.session.add(newUser_Task)
+
+    if not goodIds and not ids:
         return sendResponse(400, 43050, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
 
-    return sendResponse(200, 43061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(200, 43061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")

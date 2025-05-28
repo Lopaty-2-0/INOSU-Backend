@@ -141,10 +141,10 @@ async def task_classUpdate():
 
         if id in ids:
             ids.remove(id)
-            
-        goodIds.append(id)
+        else:
+            goodIds.append(id)
 
-    if not goodIds or not ids:
+    if not goodIds and not ids:
         return sendResponse(400, 32040, {"message": "Nothing updated"}, "error")
     
     for user in User_Task.query.filter_by(idTask = idTask):
@@ -158,7 +158,7 @@ async def task_classUpdate():
 
     db.session.commit()
 
-    return sendResponse(200, 32051, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(200, 32051, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds, "removedIds":ids}, "success")
 
 @task_class_bp.route("/task_class/get", methods=["GET"])
 @flask_login.login_required
