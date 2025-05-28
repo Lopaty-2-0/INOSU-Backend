@@ -12,6 +12,8 @@ from src.utils.task import taskDeleteSftp, taskSaveSftp
 from src.utils.checkFileSize import checkFileSize
 from src.utils.allUserClasses import allUserClasses
 import json
+import json
+from urllib.parse import unquote
 
 user_task_bp = Blueprint("user_task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -203,7 +205,8 @@ def user_taskGetWithStatus():
     elaboratingTasks = []
 
     try:
-        status = json.loads(status) if status.strip() else []
+        decoded_status = unquote(status)
+        status = json.loads(decoded_status) if decoded_status.strip() else []
     except:
         status = []
     

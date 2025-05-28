@@ -27,7 +27,7 @@ async def taskAdd():
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
-    needApprove = bool(request.form.get("approve", None))
+    approve = request.form.get("approve", None)
     lastTask = Task.query.order_by(Task.id.desc()).first()
 
     if lastTask:
@@ -35,16 +35,21 @@ async def taskAdd():
     else:
         id = 1
 
+    if not approve:
+        return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
+    
+    needApprove = str(approve).lower() == "true"
+
     if not taskName:
         return sendResponse(400, 26020, {"message": "Name not entered"}, "error")
     if not startDate:
         startDate = datetime.now()
     else:
-        startDate = datetime.fromtimestamp(int(startDate)/1000000)
+        startDate = datetime.fromtimestamp(int(startDate)/1000)
     if not endDate:
         return sendResponse(400, 26030, {"message": "endDate  not entered"}, "error")
     try:
-        endDate = datetime.fromtimestamp(int(endDate)/1000000)
+        endDate = datetime.fromtimestamp(int(endDate)/1000)
     except:
         return sendResponse(400, 26040, {"message":"End date not integer or is too far"}, "error")
     if endDate <= startDate:
@@ -53,8 +58,6 @@ async def taskAdd():
         return sendResponse(400, 26060, {"message": "Task not entered"}, "error")
     if not task.filename.rsplit(".", 1)[1].lower() in task_extensions:
         return sendResponse(400, 26070, {"message": "Wrong file format"}, "error")
-    if not needApprove:
-        return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
     
     user = flask_login.current_user
 
@@ -69,6 +72,29 @@ async def taskAdd():
     db.session.commit()
 
     return sendResponse(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor}}, "success")
+
+@task_bp.route("/task/get/guarantor", methods=["GET"])
+@flask_login.login_required
+def getTasksByGuarantor():
+    idUser = request.args.get("idUser", None)
+    tasks = Task.query.filter_by(guarantor=idUser).all()
+    all_tasks = []
+
+    if not idUser:
+        return sendResponse(400, 29010, {"message": "No idUser entered"}, "error")
+
+    for task in tasks:
+        all_tasks.append({
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "guarantor": task.guarantor,
+            "approve": task.approve
+        })
+        
+    return sendResponse(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
