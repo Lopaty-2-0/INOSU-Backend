@@ -9,6 +9,8 @@ from src.models.User import User
 from src.utils.task import taskDeleteSftp
 from src.utils.response import sendResponse
 from src.utils.allUserClasses import allUserClasses
+import json
+from urllib.parse import unquote
 
 user_class_bp = Blueprint("user_class", __name__)
 task_path = "/home/filemanager/files/tasks/"
@@ -91,6 +93,12 @@ def user_classGetUsers():
     users = []
     badIds = []
     goodIds = []
+
+    try:
+        decoded_status = unquote(idClass)
+        idClass = json.loads(decoded_status) if decoded_status.strip() else []
+    except:
+        idClass = []
 
     if not isinstance(idClass, list):
         idClass = [idClass]
