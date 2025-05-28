@@ -42,7 +42,6 @@ def user_taskAdd():
     else:
         status = "approved"
 
-    #udělej to ještě pro int
     tc = Task_Class.query.filter_by(idTask=idTask)
 
     if not isinstance(idUser, list):
@@ -138,6 +137,8 @@ async def user_taskUpdate():
         if review:
             if not review.filename.rsplit(".", 1)[1].lower() in task_extensions:
                 return sendResponse(400, 38060, {"message": "Wrong file format"}, "error")
+            if len(review.filename) > 255:
+                return sendResponse(400, 38070, {"message": "File name too long"}, "error")
             if user_task.review:
                 await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
 
@@ -146,21 +147,23 @@ async def user_taskUpdate():
 
     elif currentUser.id == user_task.idUser and user_task.status == "approved":
         if not elaboration:
-            return sendResponse(400, 38070, {"message": "Nothing entered to change"}, "error")
+            return sendResponse(400, 38080, {"message": "Nothing entered to change"}, "error")
         if elaboration:
             if not elaboration.filename.rsplit(".", 1)[1].lower() in task_extensions:
-                return sendResponse(400, 38080, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 38090, {"message": "Wrong file format"}, "error")
+            if len(elaboration.filename) > 255:
+                return sendResponse(400, 38100, {"message": "File name too long"}, "error")
             if user_task.elaboration:
                 await taskDeleteSftp(task_path + str(task.id) + "/", currentUser.id)
 
             filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, currentUser.id)
             user_task.elaboration = filename
     else:
-        return sendResponse(403, 38090, {"message": "Permission denied"}, "error")
+        return sendResponse(403, 38110, {"message": "Permission denied"}, "error")
     
     db.session.commit()
 
-    return sendResponse(200, 38101, {"message": "User_Task successfuly updated"}, "success") 
+    return sendResponse(200, 38121, {"message": "User_Task successfuly updated"}, "success") 
 
 @user_task_bp.route("/user_task/get", methods=["GET"])
 @flask_login.login_required
@@ -215,7 +218,7 @@ def user_taskGetWithStatus():
 
     if not isinstance(status, list):
         status = [status]
-    if which == "0" or which == "2":
+    if str(which) == "0" or str(which) == "2":
         for s in status:
             task = Task.query.filter_by(guarantor = flask_login.current_user.id)
             for tas in task:
@@ -251,7 +254,7 @@ def user_taskGetWithStatus():
                                             "idTask":tas.id
                                 })
                     
-    if which == "1" or which == "2":
+    if str(which) == "1" or str(which) == "2":
         for s in status:
             ta = User_Task.query.filter_by(idUser = flask_login.current_user.id, status = s)
 

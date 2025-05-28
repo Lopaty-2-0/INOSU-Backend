@@ -30,6 +30,8 @@ def task_classAdd():
         return sendResponse(400, 30030, {"message": "idClass not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
         return sendResponse(400, 30040, {"message": "Nonexistent task"}, "error")
+    if not isinstance(idClass, list):
+        idClass = [idClass]
     
     for id in idClass:
         if not Class.query.filter_by(id=id).first():
