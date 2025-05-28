@@ -59,6 +59,7 @@ async def task_classDelete():
     idClass = data.get("idClass", None)
     badIds = []
     goodIds = []
+    userClass = []
 
     if not isinstance(idClass, list):
         idClass = [idClass]
@@ -92,7 +93,7 @@ async def task_classDelete():
         for cl in User_Class.query.filter_by(idUser = user.idUser):
             userClass.append(cl.idClass)
             
-        if all(userClass in goodIds):
+        if all(id in userClass for id in goodIds):
             await user_taskDelete(task_path, user.idUser, idTask)
             db.session.delete(user)
         userClass = []
@@ -110,6 +111,7 @@ async def task_classUpdate():
     goodIds = []
     badIds = []
     ids = []
+    userClass = []
 
     if flask_login.current_user.role == "student":
         return sendResponse(403, 32010, {"message": "No permission"}, "error")
@@ -133,7 +135,7 @@ async def task_classUpdate():
 
         newMichal = Task_Class(idTask=idTask, idClass=id)
         db.session.add(newMichal)
-        if any(id for id in ids):
+        if id in ids:
             ids.remove(id)
         goodIds.append(id)
 

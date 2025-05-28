@@ -169,6 +169,9 @@ async def update():
         idClass = json.loads(raw_id_class) if raw_id_class.strip() else []
     except:
         idClass = []
+
+    if not isinstance(idClass, list):
+        idClass = [idClass]
     
     #gets profile picture
     profilePicture = request.files.get("profilePicture", None)
