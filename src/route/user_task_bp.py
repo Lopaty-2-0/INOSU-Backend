@@ -313,14 +313,6 @@ def user_taskGetByidTask():
 
     for t in task:
         user = User.query.filter_by(id = t.idUser).first()
-        users.append({"id": user.id, 
-                        "name": user.name, 
-                        "surname": user.surname, 
-                        "abbreviation": user.abbreviation, 
-                        "role": user.role, 
-                        "profilePicture": user.profilePicture, 
-                        "email": user.email,
-                        "createdAt": user.createdAt
-                    })
+        users.append(user.id)
 
     return sendResponse(200, 42041, {"message": "Users found", "users":users}, "success")
