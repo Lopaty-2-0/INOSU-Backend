@@ -352,9 +352,7 @@ async def user_taskChange():
             db.session.delete(task)
             goodIds.append(task.idUser)
 
-    print(goodIds)
     if not goodIds:
-        print("skibidi")
         return sendResponse(400, 43050, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
