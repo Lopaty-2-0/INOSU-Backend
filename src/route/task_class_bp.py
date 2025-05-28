@@ -118,15 +118,18 @@ async def task_classUpdate():
     if not idClass:
         goodIds.append("all")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 32030, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 32020, {"message": "Nonexistent task"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
-        return sendResponse(403, 32040, {"message": "No permission"}, "error")
+        return sendResponse(403, 32030, {"message": "No permission"}, "error")
     
     task_class = Task_Class.query.filter_by(idTask = idTask)
 
     for task in task_class:
         ids.append(task.idClass)
         db.session.delete(task)
+    
+    if not ids:
+        ids.append("deleted")
     
     for id in idClass:
         if not Class.query.filter_by(id=id).first():
@@ -142,7 +145,7 @@ async def task_classUpdate():
         goodIds.append(id)
 
     if not goodIds or not ids:
-        return sendResponse(400, 32050, {"message": "Nothing updated"}, "error")
+        return sendResponse(400, 32040, {"message": "Nothing updated"}, "error")
     
     for user in User_Task.query.filter_by(idTask = idTask):
         for cl in User_Class.query.filter_by(idUser = user.idUser):
@@ -155,7 +158,7 @@ async def task_classUpdate():
 
     db.session.commit()
 
-    return sendResponse(200, 32061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
+    return sendResponse(200, 32051, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
 
 @task_class_bp.route("/task_class/get", methods=["GET"])
 @flask_login.login_required
