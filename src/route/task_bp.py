@@ -96,6 +96,30 @@ def getTasksByGuarantor():
         
     return sendResponse(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
 
+@task_bp.route("/task/get", methods=["GET"])  
+@flask_login.login_required
+def getTaskById():
+    idTask = request.args.get("idTask", None)
+    task = Task.query.filter_by(id=idTask).first()
+
+    if not idTask:
+        return sendResponse(400, 30010, {"message": "No id entered"}, "error")
+
+    if not task:
+        return sendResponse(404, 30020, {"message": "Task not found"}, "error")
+
+    task_data = {
+        "id": task.id,
+        "name": task.name,
+        "startDate": task.startDate,
+        "endDate": task.endDate,
+        "task": task.task,
+        "guarantor": task.guarantor,
+        "approve": task.approve
+    }
+
+    return sendResponse(200, 30031, {"message": "Task found", "task": task_data}, "success")
+
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
 def getAllTasks():
