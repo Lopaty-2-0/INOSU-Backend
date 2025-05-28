@@ -116,7 +116,7 @@ async def task_classUpdate():
     if not idTask:
         return sendResponse(400, 32010, {"message": "idTask not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 32020, {"message": "idClass not entered"}, "error")
+        goodIds.append("all")
     if not Task.query.filter_by(id=idTask).first():
         return sendResponse(400, 32030, {"message": "Nonexistent task"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
@@ -141,7 +141,7 @@ async def task_classUpdate():
             
         goodIds.append(id)
 
-    if not goodIds:
+    if not goodIds or not ids:
         return sendResponse(400, 32050, {"message": "Nothing updated"}, "error")
     
     for user in User_Task.query.filter_by(idTask = idTask):

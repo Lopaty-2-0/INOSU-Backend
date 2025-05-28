@@ -89,10 +89,10 @@ async def user_classDelete():
 @flask_login.login_required
 def user_classGetUsers():
     idClass = request.args.get("idClass", "")
-    classes = User_Class.query.filter_by(idClass = idClass)
     users = []
     badIds = []
     goodIds = []
+    ids = []
 
     try:
         decoded_status = unquote(idClass)
@@ -109,13 +109,13 @@ def user_classGetUsers():
             continue
 
         clas = User_Class.query.filter_by(idClass = id)
-        classes = {"id":id, "users":[]}
 
         for cl in clas:
-            user = User.query.filter_by(id = cl.idUser).first()
-            classes["users"].append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id), "createdAt":user.createdAt})
+            if not cl.idUser in ids:
+                user = User.query.filter_by(id = cl.idUser).first()
+                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id), "createdAt":user.createdAt})
+                ids.append(cl.idUser)
 
-        users.append(classes)
         goodIds.append(id)
 
     if not goodIds:
