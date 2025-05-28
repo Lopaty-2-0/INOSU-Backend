@@ -96,7 +96,7 @@ def getTasksByGuarantor():
         
     return sendResponse(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
 
-@task_bp.route("/task/get", methods=["GET"])  
+@task_bp.route("/task/get/id", methods=["GET"]) 
 @flask_login.login_required
 def getTaskById():
     idTask = request.args.get("idTask", None)

@@ -113,20 +113,20 @@ async def task_classUpdate():
     ids = []
     userClass = []
 
-    if flask_login.current_user.role == "student":
-        return sendResponse(403, 32010, {"message": "No permission"}, "error")
     if not idTask:
-        return sendResponse(400, 32020, {"message": "idTask not entered"}, "error")
+        return sendResponse(400, 32010, {"message": "idTask not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 32030, {"message": "idClass not entered"}, "error")
+        return sendResponse(400, 32020, {"message": "idClass not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return sendResponse(400, 32040, {"message": "Nonexistent task"}, "error")
+        return sendResponse(400, 32030, {"message": "Nonexistent task"}, "error")
+    if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
+        return sendResponse(403, 32040, {"message": "No permission"}, "error")
     
     task_class = Task_Class.query.filter_by(idTask = idTask)
 
     for task in task_class:
-        db.session.delete(task)
         ids.append(task.idClass)
+        db.session.delete(task)
     
     for id in idClass:
         if not Class.query.filter_by(id=id).first():
@@ -135,8 +135,10 @@ async def task_classUpdate():
 
         newMichal = Task_Class(idTask=idTask, idClass=id)
         db.session.add(newMichal)
+
         if id in ids:
             ids.remove(id)
+            
         goodIds.append(id)
 
     if not goodIds:

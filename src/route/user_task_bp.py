@@ -8,10 +8,9 @@ from src.models.User_Class import User_Class
 from src.models.User import User
 from src.utils.response import sendResponse
 from src.utils.allUserTasks import allUserTasks
-from src.utils.task import taskDeleteSftp, taskSaveSftp
+from src.utils.task import taskDeleteSftp, taskSaveSftp, user_taskDelete
 from src.utils.checkFileSize import checkFileSize
 from src.utils.allUserClasses import allUserClasses
-import json
 import json
 from urllib.parse import unquote
 
@@ -46,8 +45,9 @@ def user_taskAdd():
 
     if not isinstance(idUser, list):
         idUser = [idUser]
+
     for idU in idUser:
-        if not User.query.filter_by(id=idU).first() or User_Task.query.filter_by(idUser = idU, idTask = idTask).first():
+        if User_Task.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
             badIds.append(idU)
             continue
 
@@ -82,7 +82,7 @@ def user_taskAdd():
 
 @user_task_bp.route("/user_task/delete", methods=["DELETE"])
 @flask_login.login_required
-def user_taskDelete():
+def user_taskDel():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
@@ -316,3 +316,45 @@ def user_taskGetByidTask():
         users.append(user.id)
 
     return sendResponse(200, 42041, {"message": "Users found", "users":users}, "success")
+
+@user_task_bp.route("/user_task/change", methods=["PUT"])
+@flask_login.login_required
+async def user_taskChange():
+    data = request.get_json(force=True)
+    idTask = data.get("idTask", None)
+    idUser = data.get("idUser", None)
+    goodIds = []
+    badIds = []
+    ids = []
+
+    if not idTask:
+        return sendResponse(400, 43010, {"message": "idTask not entered"}, "error")
+    if not idUser:
+        return sendResponse(400, 43020, {"message": "idUser not entered"}, "error")
+    if not Task.query.filter_by(id=idTask).first():
+        return sendResponse(400, 43030, {"message": "Nonexistent task"}, "error")
+    if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
+        return sendResponse(403, 43040, {"message": "No permission"}, "error")
+    if not isinstance(idUser, list):
+        idUser = [idUser]
+    
+    user_task = User_Task.query.filter_by(idTask = idTask)
+
+    for id in idUser:
+        if not User.query.filter_by(id = id).first():
+            badIds.append(id)
+            continue
+        ids.append(id)
+
+    for task in user_task:
+        if not task.idUser in ids:
+            await user_taskDelete(task_path, task.idUser, idTask)
+            db.session.delete(task)
+            goodIds.append(task.idUser)
+
+    if not goodIds:
+        return sendResponse(400, 43050, {"message": "Nothing updated"}, "error")
+
+    db.session.commit()
+
+    return sendResponse(200, 43061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
