@@ -6,6 +6,7 @@ from src.models.Task import Task
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Task import User_Task
+from src.models.Specialization import Specialization
 from src.utils.task import user_taskDelete
 from src.utils.response import sendResponse
 
@@ -52,7 +53,7 @@ def task_classAdd():
 
 @task_class_bp.route("/task_class/delete", methods=["DELETE"])
 @flask_login.login_required
-def task_classDelete():
+async def task_classDelete():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idClass = data.get("idClass", None)
@@ -83,7 +84,7 @@ def task_classDelete():
 
         db.session.delete(task_class)
         goodIds.append(id)
-
+    
     if not goodIds:
         return sendResponse(400, 31060, {"message": "Nothing deleted"}, "error")
     
@@ -99,7 +100,6 @@ async def task_classUpdate():
     idClass = data.get("idClass", None)
     goodIds = []
     badIds = []
-    userClass = []
 
     if flask_login.current_user.role == "student":
         return sendResponse(403, 32010, {"message": "No permission"}, "error")
@@ -127,16 +127,30 @@ async def task_classUpdate():
 
     if not goodIds:
         return sendResponse(400, 32050, {"message": "Nothing updated"}, "error")
-    
-    for user in User_Task.query.filter_by(idTask = idTask):
-        for cl in User_Class.query.filter_by(idUser = user.idUser):
-            userClass.append(cl.idClass)
-            
-        if not any(id in goodIds for id in userClass):
-            await user_taskDelete(task_path, user.idUser, idTask)
-            db.session.delete(user)
-        userClass = []
 
     db.session.commit()
 
     return sendResponse(200, 32061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds}, "success")
+
+@task_class_bp.route("/task_class/get", methods=["GET"])
+@flask_login.login_required
+def getByTask():
+    idTask = request.args.get("idTask", None)
+    classes = []
+
+    if not idTask:
+        return sendResponse(400, 41010, {"message": "idTask not entered"}, "error")
+    
+    task = Task.query.filter_by(id = idTask).first()
+    tasks = Task_Class.query.filter_by(idTask = idTask)
+
+    if not task:
+        return sendResponse(400, 41020, {"message": "Nonexistent task"}, "error")
+    
+    for t in tasks:
+        cl = Class.query.filter_by(id = t.idClass).first()
+        specialization = Specialization.query.filter_by(id = cl.idSpecialization).first()
+        classes.append({"id": cl.id, "grade": cl.grade, "group": cl.group,"name": cl.name,"specialization": specialization.abbreviation})
+    
+    return sendResponse(200, 41031, {"message": "All classes for this task", "classes":classes}, "success")
+        

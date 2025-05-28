@@ -94,6 +94,6 @@ def user_classGetUsers():
         return sendResponse(400, 35010, {"message": "Nonexistent class"}, "error")
     for cl in classes:
         user = User.query.filter_by(id = cl.idUser).first()
-        users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id)})
+        users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id), "createdAt":user.createdAt})
 
     return sendResponse(200, 35021, {"message": "Users found", "users":users}, "success")

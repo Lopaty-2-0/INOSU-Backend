@@ -191,7 +191,7 @@ def user_taskGet():
         for t in task_class:
             tas = Task.query.filter_by(id = t.idTask).first()
             user = User.query.filter_by(id = tas.guarantor).first()
-            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "createdAt":user.createdAt}
             cl["tasks"].append({"id":t.idTask, "name":tas.name, "startDate":tas.startDate, "endDate":tas.endDate, "task":tas.task, "guarantor":guarantor})
 
         classTasks.append(cl)
@@ -233,7 +233,8 @@ def user_taskGetWithStatus():
                                                 "role": user.role, 
                                                 "profilePicture": user.profilePicture, 
                                                 "email": user.email, 
-                                                "idClass": allUserClasses(user.id)
+                                                "idClass": allUserClasses(user.id),
+                                                "createdAt":user.createdAt
                                                 },
                                 "task":tas.task,
                                 "name":tas.name, 
@@ -249,7 +250,8 @@ def user_taskGetWithStatus():
                                             "role": flask_login.current_user.role, 
                                             "profilePicture": flask_login.current_user.profilePicture, 
                                             "email": flask_login.current_user.email, 
-                                            "idClass": allUserClasses(flask_login.current_user.id)
+                                            "idClass": allUserClasses(flask_login.current_user.id), 
+                                            "createdAt":flask_login.current_user.createdAt
                                             },
                                             "idTask":tas.id
                                 })
@@ -268,7 +270,8 @@ def user_taskGetWithStatus():
                                         "role": flask_login.current_user.role, 
                                         "profilePicture": flask_login.current_user.profilePicture, 
                                         "email": flask_login.current_user.email, 
-                                        "idClass": allUserClasses(flask_login.current_user.id)
+                                        "idClass": allUserClasses(flask_login.current_user.id), 
+                                        "createdAt":flask_login.current_user.createdAt
                                         },
                             "task":tas.task,
                             "name":tas.name, 
@@ -284,9 +287,40 @@ def user_taskGetWithStatus():
                                             "role": user.role, 
                                             "profilePicture": user.profilePicture, 
                                             "email": user.email, 
-                                            "idClass": allUserClasses(user.id)
+                                            "idClass": allUserClasses(user.id), 
+                                            "createdAt":user.createdAt
                                         },
                                         "idTask":t.idTask
                             })
                 
     return sendResponse(200, 40021, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
+
+@user_task_bp.route("/user_task/get/idTask", methods=["GET"])
+@flask_login.login_required
+def user_taskGetByidTask():
+    idTask = request.args.get("idTask", None)
+    users = []
+
+    if not idTask:
+        return sendResponse(400, 42010, {"message": "idTask not entered"}, "error")
+    if not Task.query.filter_by(id = idTask).first():
+        return sendResponse(400, 42020, {"message": "Nonexistent task"}, "error")
+    
+    task = User_Task.query.filter_by(idTask = idTask)
+
+    if not task:
+        return sendResponse(400, 42030, {"message": "No user has this task"}, "error")
+
+    for t in task:
+        user = User.query.filter_by(id = t.idUser).first()
+        users.append({"id": user.id, 
+                        "name": user.name, 
+                        "surname": user.surname, 
+                        "abbreviation": user.abbreviation, 
+                        "role": user.role, 
+                        "profilePicture": user.profilePicture, 
+                        "email": user.email,
+                        "createdAt": user.createdAt
+                    })
+
+    return sendResponse(200, 42041, {"message": "Users found", "users":users}, "success")
