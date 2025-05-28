@@ -86,14 +86,31 @@ async def user_classDelete():
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
 def user_classGetUsers():
-    idClass = request.args.get("idClass", None)
+    idClass = request.args.get("idClass", "")
     classes = User_Class.query.filter_by(idClass = idClass)
     users = []
+    badIds = []
+    goodIds = []
 
-    if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 35010, {"message": "Nonexistent class"}, "error")
-    for cl in classes:
-        user = User.query.filter_by(id = cl.idUser).first()
-        users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id), "createdAt":user.createdAt})
+    if not isinstance(idClass, list):
+        idClass = [idClass]
 
-    return sendResponse(200, 35021, {"message": "Users found", "users":users}, "success")
+    for id in idClass:
+        if not Class.query.filter_by(id = id).first():
+            badIds.append(id)
+            continue
+
+        clas = User_Class.query.filter_by(idClass = id)
+        classes = {"id":id, "users":[]}
+
+        for cl in clas:
+            user = User.query.filter_by(id = cl.idUser).first()
+            classes["users"].append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id), "createdAt":user.createdAt})
+
+        users.append(classes)
+        goodIds.append(id)
+
+    if not goodIds:
+        return sendResponse(400, 35010, {"message": "Only wrong idClass"}, "error")
+
+    return sendResponse(200, 35021, {"message": "Users found", "users":users, "badIds":badIds, "goodIds":goodIds}, "success")
