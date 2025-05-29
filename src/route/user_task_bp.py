@@ -63,7 +63,7 @@ def user_taskAdd():
                         goodIds.append(idU)
                         status1 = True
                         break
-                    
+
                 if status1:
                     break
         else:
@@ -377,3 +377,63 @@ async def user_taskChange():
     db.session.commit()
 
     return sendResponse(200, 43061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
+
+@user_task_bp.route("/user_task/get/status/idTask", methods=["GET"])
+@flask_login.login_required
+def user_taskGetWithStatusAndIdTask():
+    status = request.args.get("status", "")
+    idTask = request.args.get("idTask", None)
+    tasks = []
+
+    try:
+        decoded_status = unquote(status)
+        status = json.loads(decoded_status) if decoded_status.strip() else []
+    except:
+        status = []
+    
+    if not idTask:
+        return sendResponse(400, 44010, {"message": "idTask not entered"}, "error")
+    if not Task.query.filter_by(id = idTask).first():
+        return sendResponse(400, 44020, {"message": "Nonexistent task"}, "error")
+
+    if not isinstance(status, list):
+        status = [status]
+
+    tas = Task.query.filter_by(id = idTask).first()
+    guarantor = User.query.filter_by(id = tas.guarantor).first()
+
+    for s in status:
+        ta = User_Task.query.filter_by(idTask = idTask, status = s)
+        for t in ta:
+            user = User.query.filter_by(id = t.idUser).first()
+            tasks.append({"elaborator":{"id": user.id, 
+                                        "name": user.name, 
+                                        "surname": user.surname, 
+                                        "abbreviation": user.abbreviation, 
+                                        "role": user.role, 
+                                        "profilePicture": user.profilePicture, 
+                                        "email": user.email, 
+                                        "idClass": allUserClasses(user.id),
+                                        "createdAt":user.createdAt
+                                        },
+                        "task":tas.task,
+                        "name":tas.name, 
+                        "statDate":tas.startDate, 
+                        "endDate":tas.endDate, 
+                        "status":t.status, 
+                        "elaboration":t.elaboration,
+                        "review":t.review,
+                        "guarantor":{"id": guarantor.id, 
+                                    "name": guarantor.name, 
+                                    "surname": guarantor.surname, 
+                                    "abbreviation": guarantor.abbreviation, 
+                                    "role": guarantor.role, 
+                                    "profilePicture": guarantor.profilePicture, 
+                                    "email": guarantor.email, 
+                                    "idClass": allUserClasses(guarantor.id), 
+                                    "createdAt":guarantor.createdAt
+                                    },
+                                    "idTask":tas.id
+                        })
+                
+    return sendResponse(200, 44031, {"message": "All User_Tasks for this task and statuses", "tasks": tasks}, "success")
