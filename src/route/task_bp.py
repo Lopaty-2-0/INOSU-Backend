@@ -180,17 +180,15 @@ def getAllPossibleTask():
         task_class = Task_Class.query.filter_by(idTask = task.id)
         user_task = User_Task.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first()
 
-        if user_task and user_task.status != "waiting":
-            continue
-
-        if task_class:
+        if task_class and not user_task:
             for t in task_class:
                 if t.idClass in ids:
                     user = User.query.filter_by(id = task.guarantor).first()
                     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
                     possibleTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
                     break
-        else:
+                
+        elif user_task.status == "waiting":
             user = User.query.filter_by(id = task.guarantor).first()
             guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
             possibleTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
