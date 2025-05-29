@@ -135,38 +135,47 @@ async def user_taskUpdate():
         if not review and not status:
             return sendResponse(400, 38050, {"message": "Nothing entered to change"}, "error")
         if task.approve:
-            if (user_task.status == "pending" or user_task.status == "waiting") and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
+            if (user_task.status == "pending") and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
                 user_task.status = status.lower()
         if review:
             if not review.filename.rsplit(".", 1)[1].lower() in task_extensions:
                 return sendResponse(400, 38060, {"message": "Wrong file format"}, "error")
+            if not user_task.status == "approved":
+                return sendResponse(400, 38070, {"message": "Can not do that"}, "error")
             if len(review.filename) > 255:
-                return sendResponse(400, 38070, {"message": "File name too long"}, "error")
+                return sendResponse(400, 38080, {"message": "File name too long"}, "error")
             if user_task.review:
                 await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
 
             filename = await taskSaveSftp(task_path + str(task.id) + "/", review, idUser)
             user_task.review = filename
 
-    elif currentUser.id == user_task.idUser and user_task.status == "approved":
-        if not elaboration:
-            return sendResponse(400, 38080, {"message": "Nothing entered to change"}, "error")
-        if elaboration:
+    elif currentUser.id == user_task.idUser and (user_task.status == "approved" or user_task.status == "waiting"):
+        if not elaboration and not status:
+            return sendResponse(400, 38090, {"message": "Nothing entered to change"}, "error")
+        if elaboration and user_task.status == "approved":
             if not elaboration.filename.rsplit(".", 1)[1].lower() in task_extensions:
-                return sendResponse(400, 38090, {"message": "Wrong file format"}, "error")
+                return sendResponse(400, 38100, {"message": "Wrong file format"}, "error")
             if len(elaboration.filename) > 255:
-                return sendResponse(400, 38100, {"message": "File name too long"}, "error")
+                return sendResponse(400, 38110, {"message": "File name too long"}, "error")
             if user_task.elaboration:
                 await taskDeleteSftp(task_path + str(task.id) + "/", currentUser.id)
 
             filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, currentUser.id)
             user_task.elaboration = filename
+
+        if user_task.status == "waiting":
+            if not status:
+                db.session.delete(user_task)
+                await user_taskDelete(task_path, currentUser.id, idTask)               
+            else:
+                user_task.status = "pending"
     else:
-        return sendResponse(403, 38110, {"message": "Permission denied"}, "error")
+        return sendResponse(403, 38120, {"message": "Permission denied"}, "error")
     
     db.session.commit()
 
-    return sendResponse(200, 38121, {"message": "User_Task successfuly updated"}, "success") 
+    return sendResponse(200, 38131, {"message": "User_Task successfuly updated"}, "success") 
 
 @user_task_bp.route("/user_task/get", methods=["GET"])
 @flask_login.login_required
@@ -371,7 +380,7 @@ async def user_taskChange():
             goodIds.append(id)
             db.session.add(newUser_Task)
 
-    if not goodIds and not ids:
+    if not goodIds and not ids and not removedIds:
         return sendResponse(400, 43050, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
