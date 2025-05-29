@@ -168,7 +168,7 @@ async def user_taskUpdate():
             filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, currentUser.id)
             user_task.elaboration = filename
 
-        elif user_task.staus == "approved":
+        elif user_task.status == "approved":
             if user_task.elaboration:
                 await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
             user_task.elaboration = None
