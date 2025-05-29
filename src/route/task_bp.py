@@ -178,8 +178,9 @@ def getAllPossibleTask():
 
     for task in tasks:
         task_class = Task_Class.query.filter_by(idTask = task.id)
+        user_task = User_Task.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first()
 
-        if User_Task.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first():
+        if user_task and user_task.status != "waiting":
             continue
 
         if task_class:

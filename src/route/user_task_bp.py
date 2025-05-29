@@ -385,7 +385,7 @@ async def user_taskChange():
 
     db.session.commit()
 
-    return sendResponse(200, 43061, {"message": "Task_class updated", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
+    return sendResponse(200, 43061, {"message": "User_tasks changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
 
 @user_task_bp.route("/user_task/get/status/idTask", methods=["GET"])
 @flask_login.login_required
