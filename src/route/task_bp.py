@@ -173,7 +173,8 @@ async def taskDelete():
 @flask_login.login_required
 def getAllPossibleTask():
     tasks = Task.query.all()
-    possibleTasks = []
+    waitingTasks = []
+    classTasks = []
     ids = allUserClasses(flask_login.current_user.id)
 
     for task in tasks:
@@ -185,12 +186,12 @@ def getAllPossibleTask():
                 if t.idClass in ids:
                     user = User.query.filter_by(id = task.guarantor).first()
                     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
-                    possibleTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+                    classTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
                     break
-                
+
         elif user_task.status == "waiting":
             user = User.query.filter_by(id = task.guarantor).first()
             guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
-            possibleTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+            waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
-    return sendResponse(200, 46011, {"message":"All possible tasks for a user", "possibleTasks":possibleTasks}, "success")
+    return sendResponse(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks, "classTasks":classTasks}, "success")
