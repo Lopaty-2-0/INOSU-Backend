@@ -4,6 +4,7 @@ from src.utils.response import sendResponse
 from src.utils.checkFileSize import checkFileSize
 from src.utils.task import taskSaveSftp, taskDeleteSftp
 from src.utils.sftp_utils import sftp_stat_async
+from src.utils.allUserClasses import allUserClasses
 from src.models.User import User
 from src.models.Task import Task
 from src.models.Task_Class import Task_Class
@@ -133,7 +134,6 @@ def getAllTasks():
 
     return sendResponse(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
 
-#NOT WORKING
 @task_bp.route("/task/delete", methods=["DELETE"])
 @flask_login.login_required
 async def taskDelete():
@@ -168,3 +168,30 @@ async def taskDelete():
     db.session.commit()
 
     return sendResponse(200, 28051, {"message":"Task deleted"}, "success")
+
+@task_bp.route("/task/get/possible", methods = ["GET"])
+@flask_login.login_required
+def getAllPossibleTask():
+    tasks = Task.query.all()
+    possibleTasks = []
+    ids = allUserClasses(flask_login.current_user.id)
+
+    for task in tasks:
+        task_class = Task_Class.query.filter_by(idTask = task.id)
+
+        if User_Task.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first():
+            continue
+
+        if task_class:
+            for t in task_class:
+                if t.idClass in ids:
+                    user = User.query.filter_by(id = task.guarantor).first()
+                    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+                    possibleTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+                    break
+        else:
+            user = User.query.filter_by(id = task.guarantor).first()
+            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+            possibleTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+
+    return sendResponse(200, 46011, {"message":"All possible tasks for a user", "possibleTasks":possibleTasks}, "success")
