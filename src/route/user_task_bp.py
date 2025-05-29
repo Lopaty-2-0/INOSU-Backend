@@ -63,6 +63,9 @@ def user_taskAdd():
                         goodIds.append(idU)
                         status1 = True
                         break
+                    
+                if status1:
+                    break
         else:
             if flask_login.current_user.id == Task.query.filter_by(id = idTask).first().guarantor:
                 newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
