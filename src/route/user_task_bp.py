@@ -402,7 +402,7 @@ def user_taskGetWithStatusAndIdTask():
     guarantor = User.query.filter_by(id = tas.guarantor).first()
 
     if flask_login.current_user.id != tas.guarantor:
-        return sendResponse(400, 44030, {"message": "No permission"}, "error")
+        return sendResponse(403, 44030, {"message": "No permission"}, "error")
 
     for s in status:
         ta = User_Task.query.filter_by(idTask = idTask, status = s)
