@@ -132,7 +132,7 @@ async def user_taskUpdate():
         return sendResponse(400, 38040, {"message": "Nonexistent user_task"}, "error")
             
     if currentUser.id == task.guarantor:
-        if not review and not status:
+        if not status:
             return sendResponse(400, 38050, {"message": "Nothing entered to change"}, "error")
         if task.approve:
             if (user_task.status == "pending") and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
@@ -149,9 +149,13 @@ async def user_taskUpdate():
 
             filename = await taskSaveSftp(task_path + str(task.id) + "/", review, idUser)
             user_task.review = filename
+        else:
+            if user_task.review:
+                await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
+            user_task.review = None
 
     elif currentUser.id == user_task.idUser and (user_task.status == "approved" or user_task.status == "waiting"):
-        if not elaboration and not status:
+        if not status:
             return sendResponse(400, 38090, {"message": "Nothing entered to change"}, "error")
         if elaboration and user_task.status == "approved":
             if not elaboration.filename.rsplit(".", 1)[1].lower() in task_extensions:
@@ -163,6 +167,11 @@ async def user_taskUpdate():
 
             filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, currentUser.id)
             user_task.elaboration = filename
+
+        elif user_task.staus == "approved":
+            if user_task.elaboration:
+                await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
+            user_task.elaboration = None
 
         if user_task.status == "waiting":
             if not status:
