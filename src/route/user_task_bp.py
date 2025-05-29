@@ -448,3 +448,60 @@ def user_taskGetWithStatusAndIdTask():
                         })
                 
     return sendResponse(200, 44041, {"message": "All User_Tasks for this task and statuses", "tasks": tasks}, "success")
+
+
+@user_task_bp.route("/user_task/get/idUser/idTask", methods = ["GET"])
+@flask_login.login_required
+def get():
+    idUser = request.args.get("idUser", None)
+    idTask = request.args.get("idTask", None)
+
+    if not idTask:
+        return sendResponse(400, 45010, {"message": "idTask not entered"}, "error")
+    if not idUser:
+        return sendResponse(400, 45020, {"message": "idUser not entered"}, "error")
+    
+    user_task = User_Task.query.filter_by(idUser = idUser, idTask = idTask).first()
+    user = User.query.filter_by(id = idUser).first()
+    task = Task.query.filter_by(id = idTask).first()
+    
+    if not user:
+        return sendResponse(400, 45030, {"message": "Nonexistent user"}, "error")
+    if not task:
+        return sendResponse(400, 45040, {"message": "Nonexistent task"}, "error")
+    if not user_task:
+        return sendResponse(400, 45050, {"message": "Nonexistent user_task"}, "error")
+    
+    guarantor = User.query.filter_by(id = task.guarantor).first()
+
+    tasks = {"elaborator":{"id": user.id, 
+                                "name": user.name, 
+                                "surname": user.surname, 
+                                "abbreviation": user.abbreviation, 
+                                "role": user.role, 
+                                "profilePicture": user.profilePicture, 
+                                "email": user.email, 
+                                "idClass": allUserClasses(user.id),
+                                "createdAt":user.createdAt
+                                },
+                "task":task.task,
+                "name":task.name, 
+                "statDate":task.startDate, 
+                "endDate":task.endDate, 
+                "status":user_task.status, 
+                "elaboration":user_task.elaboration,
+                "review":user_task.review,
+                "guarantor":{"id": guarantor.id, 
+                            "name": guarantor.name, 
+                            "surname": guarantor.surname, 
+                            "abbreviation": guarantor.abbreviation, 
+                            "role": guarantor.role, 
+                            "profilePicture": guarantor.profilePicture, 
+                            "email": guarantor.email, 
+                            "idClass": allUserClasses(guarantor.id), 
+                            "createdAt":guarantor.createdAt
+                            },
+                            "idTask":task.id
+                }
+    
+    return sendResponse(200, 44061, {"message": "All User_Tasks for this task and statuses", "task": tasks}, "success")
