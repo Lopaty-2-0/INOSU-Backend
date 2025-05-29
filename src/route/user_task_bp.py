@@ -395,12 +395,14 @@ def user_taskGetWithStatusAndIdTask():
         return sendResponse(400, 44010, {"message": "idTask not entered"}, "error")
     if not Task.query.filter_by(id = idTask).first():
         return sendResponse(400, 44020, {"message": "Nonexistent task"}, "error")
-
     if not isinstance(status, list):
         status = [status]
 
     tas = Task.query.filter_by(id = idTask).first()
     guarantor = User.query.filter_by(id = tas.guarantor).first()
+
+    if flask_login.current_user.id != tas.guarantor:
+        return sendResponse(400, 44030, {"message": "No permission"}, "error")
 
     for s in status:
         ta = User_Task.query.filter_by(idTask = idTask, status = s)
@@ -436,4 +438,4 @@ def user_taskGetWithStatusAndIdTask():
                                     "idTask":tas.id
                         })
                 
-    return sendResponse(200, 44031, {"message": "All User_Tasks for this task and statuses", "tasks": tasks}, "success")
+    return sendResponse(200, 44041, {"message": "All User_Tasks for this task and statuses", "tasks": tasks}, "success")
