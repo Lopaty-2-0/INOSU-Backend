@@ -143,13 +143,13 @@ async def user_taskUpdate():
             if len(review.filename) > 255:
                 return sendResponse(400, 38070, {"message": "File name too long"}, "error")
             if user_task.review:
-                await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
+                await taskDeleteSftp(task_path + str(task.id) + "/", str(idUser) + "/review")
 
-            filename = await taskSaveSftp(task_path + str(task.id) + "/", review, idUser)
+            filename = await taskSaveSftp(task_path + str(task.id) + "/", review, str(idUser) + "/review")
             user_task.review = filename
         else:
             if user_task.review:
-                await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
+                await taskDeleteSftp(task_path + str(task.id) + "/", str(idUser) + "/review")
             user_task.review = None
 
     elif currentUser.id == user_task.idUser and (user_task.status == "approved" or user_task.status == "waiting"):
@@ -159,20 +159,20 @@ async def user_taskUpdate():
             if len(elaboration.filename) > 255:
                 return sendResponse(400, 38090, {"message": "File name too long"}, "error")
             if user_task.elaboration:
-                await taskDeleteSftp(task_path + str(task.id) + "/", currentUser.id)
+                await taskDeleteSftp(task_path + str(task.id) + "/", str(currentUser.id) + "/elaboration")
 
-            filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, currentUser.id)
+            filename = await taskSaveSftp(task_path + str(task.id) + "/", elaboration, str(currentUser.id) + "/elaboration")
             user_task.elaboration = filename
 
         elif user_task.status == "approved":
             if user_task.elaboration:
-                await taskDeleteSftp(task_path + str(task.id) + "/", idUser)
+                await taskDeleteSftp(task_path + str(task.id) + "/", str(currentUser.id) + "/elaboration")
             user_task.elaboration = None
 
         if user_task.status == "waiting":
             if not status:
                 db.session.delete(user_task)
-                await user_taskDelete(task_path, currentUser.id, idTask)               
+                await user_taskDelete(task_path, str(currentUser.id) + "/elaboration", idTask)               
             else:
                 user_task.status = "pending"
     else:
