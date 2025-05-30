@@ -36,4 +36,13 @@ async def user_taskDelete(file_path, idUser, idTask):
     await sftp_removeDir_async(ssh, file_path)
 
     return True
+
+async def user_taskCreateDir(file_path, id):
+    file_path = file_path + str(id)
+
+    if await sftp_stat_async(ssh, file_path):
+            return False
     
+    ssh.open_sftp().mkdir(file_path)
+
+    return True    

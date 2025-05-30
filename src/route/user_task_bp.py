@@ -8,7 +8,7 @@ from src.models.User_Class import User_Class
 from src.models.User import User
 from src.utils.response import sendResponse
 from src.utils.allUserTasks import allUserTasks
-from src.utils.task import taskDeleteSftp, taskSaveSftp, user_taskDelete
+from src.utils.task import taskDeleteSftp, taskSaveSftp, user_taskDelete, user_taskCreateDir
 from src.utils.checkFileSize import checkFileSize
 from src.utils.allUserClasses import allUserClasses
 import json
@@ -20,7 +20,7 @@ task_path = "/home/filemanager/files/tasks/"
 
 @user_task_bp.route("/user_task/add", methods=["POST"])
 @flask_login.login_required
-def user_taskAdd():
+async def user_taskAdd():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
@@ -59,6 +59,7 @@ def user_taskAdd():
                 for t in tc:
                     if c.idClass == t.idClass:
                         newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                        await user_taskCreateDir(task_path + str(idTask) + "/", idU)
                         db.session.add(newUser_Task)
                         goodIds.append(idU)
                         status1 = True
@@ -69,6 +70,7 @@ def user_taskAdd():
         else:
             if flask_login.current_user.id == Task.query.filter_by(id = idTask).first().guarantor:
                 newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                await user_taskCreateDir(task_path + str(idTask) + "/", idU)
                 db.session.add(newUser_Task)
                 goodIds.append(idU)
                 status1 = True
@@ -382,6 +384,7 @@ async def user_taskChange():
 
         for id in ids:
             newUser_Task = User_Task(idTask=idTask,idUser=id, review=None, status=status, elaboration=None)
+            await user_taskCreateDir(task_path + str(idTask) + "/", id)
             goodIds.append(id)
             db.session.add(newUser_Task)
 
