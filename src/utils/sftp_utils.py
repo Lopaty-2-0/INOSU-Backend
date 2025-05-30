@@ -39,6 +39,10 @@ def sftp_removedir_recursive(sftp, path):
             sftp.remove(full_path)
     sftp.rmdir(path)
 
+def sftp_createDir(ssh, file_path):
+    sftp = ssh.open_sftp()
+    sftp.mkdir(file_path)
+
 async def sftp_remove_async(ssh, file_path):
     await asyncio.to_thread(sftp_remove, ssh, file_path)
 
@@ -54,3 +58,6 @@ async def sftp_stat_async(ssh, file_path):
 async def sftp_removeDir_async(ssh, file_path):
     sftp = ssh.open_sftp()
     return await asyncio.to_thread(sftp_removedir_recursive, sftp, file_path)
+
+async def sftp_createDir_async(ssh, file_path):
+    return await asyncio.to_thread(sftp_createDir, ssh, file_path)

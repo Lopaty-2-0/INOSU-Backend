@@ -2,11 +2,14 @@ import os
 import random
 import datetime
 import asyncio
-from src.utils.sftp_utils import sftp_remove_async, sftp_put_async, sftp_stat_async
+from src.utils.sftp_utils import sftp_remove_async, sftp_put_async, sftp_stat_async, sftp_createDir_async
 from app import ssh
 
 async def pfpSave(file_path, user, file):
     state = True
+
+    if not await sftp_stat_async(ssh, file_path):
+        await sftp_createDir_async(ssh, file_path)
     
     if not user.profilePicture == "default.jpg":
         try:
