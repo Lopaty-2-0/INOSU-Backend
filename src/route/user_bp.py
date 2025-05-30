@@ -465,8 +465,8 @@ def getCountUsersByRole():
     role = request.args.get("role", None)
 
     if not role:
-        return sendResponse(400, 26010, {"message": "Role not entered"}, "error")
+        return sendResponse(400, 48010, {"message": "Role not entered"}, "error")
 
     count = User.query.filter_by(role=role).count()
 
-    return sendResponse(200, 26021, {"message": "User count found", "count": count}, "success")
+    return sendResponse(200, 48021, {"message": "User count found", "count": count}, "success")

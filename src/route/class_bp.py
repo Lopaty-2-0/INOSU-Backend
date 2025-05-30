@@ -122,4 +122,4 @@ def getClasses():
 def getClassCount():
     count = Class.query.count()
 
-    return sendResponse(200, 24011, {"message": "Class count found", "count": count}, "success") 
+    return sendResponse(200, 49011, {"message": "Class count found", "count": count}, "success") 
