@@ -513,3 +513,10 @@ def get():
                 }
     
     return sendResponse(200, 45061, {"message": "All User_Tasks for this task and statuses", "task": tasks}, "success")
+
+@user_task_bp.route("/user_task/count/approved_without_review", methods=["GET"])
+@flask_login.login_required
+def count_approved_without_review():
+    count = User_Task.query.filter_by(status="approved").filter(User_Task.review == None).count()
+
+    return sendResponse(200, 46011, {"message": "Count of approved user_tasks without review", "count": count}, "success")

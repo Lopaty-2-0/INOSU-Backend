@@ -458,3 +458,15 @@ def getNoClass():
             users.append({"id": s.id, "name": s.name, "surname": s.surname, "abbreviation": s.abbreviation, "role": s.role, "profilePicture": s.profilePicture, "email": s.email, "createdAt":s.createdAt})
 
     return sendResponse(200, 40011, {"message": "All students without class", "users": users}, "success")
+
+@user_bp.route("/user/get/count/by-role", methods=["GET"])
+@flask_login.login_required
+def getCountUsersByRole():
+    role = request.args.get("role", None)
+
+    if not role:
+        return sendResponse(400, 26010, {"message": "Role not entered"}, "error")
+
+    count = User.query.filter_by(role=role).count()
+
+    return sendResponse(200, 26021, {"message": "User count found", "count": count}, "success")

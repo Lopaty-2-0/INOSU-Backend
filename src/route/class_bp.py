@@ -116,3 +116,10 @@ def getClasses():
         return sendResponse(400, 23010, {"message": "Classes not found"}, "error")
     
     return sendResponse(200, 23021, {"message": "Classes found", "classes": all_class}, "success")
+
+@class_bp.route("/class/count", methods=["GET"])
+@flask_login.login_required
+def getClassCount():
+    count = Class.query.count()
+
+    return sendResponse(200, 24011, {"message": "Class count found", "count": count}, "success") 
