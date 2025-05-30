@@ -155,6 +155,7 @@ async def taskDelete():
 
     for user in user_task:
         db.session.delete(user)
+        taskDeleteSftp(task_path, id)
     for cl in task_class:
         db.session.delete(cl)
 
