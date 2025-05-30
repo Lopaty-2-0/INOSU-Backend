@@ -152,10 +152,9 @@ async def taskDelete():
 
     if flask_login.current_user.id != Task.query.filter_by(id = id).first().guarantor or flask_login.current_user.role != "admin":
         return sendResponse(403, 28030, {"message":"No permission for that"}, "error")
-
+    
     for user in user_task:
         db.session.delete(user)
-        taskDeleteSftp(task_path, id)
     for cl in task_class:
         db.session.delete(cl)
 
