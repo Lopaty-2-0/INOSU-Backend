@@ -30,24 +30,14 @@ def sftp_stat(ssh, file_path):
     finally:
         sftp.close()
 
-def sftp_removedir_recursive(ssh, path):
-    sftp = ssh.open_sftp()
-
-    try:
-        try:
-            sftp.listdir(path)
-        except FileNotFoundError:
-            return
-        for item in sftp.listdir_attr(path):
-            full_path = f"{path}/{item.filename}"
-            if S_ISDIR(item.st_mode):
-                sftp_removedir_recursive(sftp, full_path)
-            else:
-                sftp.remove(full_path)
-
-        sftp.rmdir(path)
-    finally:
-        sftp.close()
+def sftp_removedir_recursive(sftp, path):
+    for file_attr in sftp.listdir_attr(path):
+        full_path = f"{path}/{file_attr.filename}"
+        if S_ISDIR(file_attr.st_mode):
+            sftp_removedir_recursive(sftp, full_path)
+        else:
+            sftp.remove(full_path)
+    sftp.rmdir(path)
 
 async def sftp_remove_async(ssh, file_path):
     await asyncio.to_thread(sftp_remove, ssh, file_path)
@@ -62,4 +52,5 @@ async def sftp_stat_async(ssh, file_path):
     return await asyncio.to_thread(sftp_stat, ssh, file_path)
 
 async def sftp_removeDir_async(ssh, file_path):
-    return await asyncio.to_thread(sftp_removedir_recursive, ssh, file_path)
+    sftp = ssh.open_sftp()
+    return await asyncio.to_thread(sftp_removedir_recursive, sftp, file_path)
