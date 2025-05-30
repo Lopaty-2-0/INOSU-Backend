@@ -270,14 +270,16 @@ async def delete():
         delUser = User.query.filter_by(id = id).first()
 
         if delUser:
+            print(delUser.id)
             cl = User_Class.query.filter_by(idUser = id)
             ta = User_Task.query.filter_by(idUser = id)
 
-            for c in cl:
-                db.session.delete(c)
             for t in ta:
                 await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
                 db.session.delete(t)
+            for c in cl:
+                db.session.delete(c)
+            db.session.commit()
 
             await pfpDelete(pfp_path, delUser)
             db.session.delete(delUser)
@@ -325,7 +327,7 @@ def passwordRes():
         return sendResponse(400, 12030, {"message": "No user with that email addres"}, "error")
     
     token = flask_jwt_extended.create_access_token(fresh = True, identity = email, expires_delta= datetime.timedelta(hours = 1),additional_claims = {"email": email})
-    link = "http://89.203.248.163/password/forget/reset?token=" + token
+    link = "http://localhost:3000/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = emailResetPasswordTemplate(name, link)
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
