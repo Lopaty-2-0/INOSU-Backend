@@ -19,6 +19,7 @@ from src.models.User_Task import User_Task
 from src.models.Task_Class import Task_Class
 from src.utils.task import taskDeleteSftp
 from src.utils.checkFileSize import checkFileSize
+from urllib.parse import unquote
 
 user_bp = Blueprint("user", __name__)
 
@@ -46,12 +47,8 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
-        raw_id_class = request.form.get("idClass", "")
-
-        try:
-            idClass = json.loads(raw_id_class) if raw_id_class.strip() else []
-        except:
-            idClass = []
+        idClass = data.get("classes", "")
+        lastUser = User.query.order_by(User.id.desc()).first()
 
         if not name:
             return sendResponse(400, 1020, {"message": "Name is not entered"}, "error")
@@ -91,13 +88,19 @@ def add():
         db.session.add(newUser)
 
         if idClass:
-            if newUser.role.lower() == "student":
+            if lastUser:
+                idUser = lastUser.id + 1
+            else:
+                idUser = 1
+
+            if str(role).lower() == "student":
                 for id in idClass:
+                    print(id)
                     if not Class.query.filter_by(id=id).first():
                         badIds.append(id)
                         continue
 
-                    newUser_Class = User_Class(newUser.id, id)
+                    newUser_Class = User_Class(idUser, id)
                     goodIds.append(id)
                     db.session.add(newUser_Class)
 
@@ -111,6 +114,7 @@ def add():
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
             return sendResponse(400, 1180, {"message": "Wrong file format"}, "error")
         try:
+            lastUser = User.query.order_by(User.id.desc()).first()
             for userData in json.load(users):
                 data = request.get_json()
                 name = data.get("name", None)
@@ -119,7 +123,8 @@ def add():
                 role = data.get("role", None)
                 email = data.get("email", None)
                 password = str(data.get("password", None))
-                idClass = data.get("idClass", None)
+                idClass = data.get("classes", None)
+                
 
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1190, {"message": "Wrong user format"}, "error")
@@ -136,16 +141,22 @@ def add():
                 db.session.add(newUser)
 
                 if idClass:
-                    if newUser.role.lower() == "student":
+                    if lastUser:
+                        idUser = lastUser.id + 1
+                    else:
+                        idUser = 1
+
+                    if str(role).lower() == "student":
                         for id in idClass:
+                            print(id)
                             if not Class.query.filter_by(id=id).first():
                                 badIds.append(id)
                                 continue
 
-                            newUser_Class = User_Class(newUser.id, id)
+                            newUser_Class = User_Class(idUser, id)
                             goodIds.append(id)
                             db.session.add(newUser_Class)
-
+                idUser += 1
 
             db.session.commit()
         except:
