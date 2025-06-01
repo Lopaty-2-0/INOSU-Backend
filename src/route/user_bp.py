@@ -115,7 +115,6 @@ def add():
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
             return sendResponse(400, 1180, {"message": "Wrong file format"}, "error")
         try:
-            lastUser = User.query.order_by(User.id.desc()).first()
             for userData in json.load(users):
                 data = request.get_json()
                 name = data.get("name", None)
@@ -125,7 +124,6 @@ def add():
                 email = data.get("email", None)
                 password = str(data.get("password", None))
                 idClass = data.get("classes", None)
-                
 
                 if not name or not surname or not role or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
                     return sendResponse (400, 1190, {"message": "Wrong user format"}, "error")
@@ -140,13 +138,10 @@ def add():
 
                 newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = str(role).lower(), password = generate_password_hash(password), profilePicture = None, email = email)
                 db.session.add(newUser)
+                db.session.commit()
+                lastUser = User.query.order_by(User.id.desc()).first()
 
                 if idClass:
-                    if lastUser:
-                        idUser = lastUser.id + 1
-                    else:
-                        idUser = 1
-
                     if str(role).lower() == "student":
                         for id in idClass:
                             print(id)
@@ -157,9 +152,7 @@ def add():
                             newUser_Class = User_Class(idUser, id)
                             goodIds.append(id)
                             db.session.add(newUser_Class)
-                idUser += 1
-
-            db.session.commit()
+                    db.session.commit()
         except:
             return sendResponse(400, 1220, {"message": "Something wrong in json"}, "error")
         return sendResponse (201, 1231, {"message": "All users created successfuly"}, "success")

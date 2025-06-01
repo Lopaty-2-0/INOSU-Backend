@@ -29,12 +29,6 @@ async def taskAdd():
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
     approve = request.form.get("approve", None)
-    lastTask = Task.query.order_by(Task.id.desc()).first()
-
-    if lastTask:
-        id = lastTask.id + 1
-    else:
-        id = 1
 
     if not approve:
         return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
@@ -64,16 +58,17 @@ async def taskAdd():
         return sendResponse(400, 26070, {"message": "Wrong file format or too long"}, "error")
     
     user = flask_login.current_user
+    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, approve = needApprove)
+    db.session.add(newTask)
+    db.session.commit()
+
+    id = Task.query.order_by(Task.id.desc()).first().id
 
     if await sftp_stat_async(ssh, task_path + str(id)):
         await taskDeleteSftp(task_path, id)
         
-    taskFileName = await taskSaveSftp(task_path, task, id)
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task=taskFileName, approve = needApprove)
+    await taskSaveSftp(task_path, task, id)
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
-        
-    db.session.add(newTask)
-    db.session.commit()
 
     return sendResponse(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor}}, "success")
 
@@ -144,7 +139,7 @@ async def taskDelete():
     id = data.get("id", None)
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 28010, {"message":"Students can not make tasks"}, "error")
+        return sendResponse(403, 28010, {"message":"Students can not delete"}, "error")
     
 
     if not id:
@@ -153,7 +148,7 @@ async def taskDelete():
     task_class = Task_Class.query.filter_by(idTask = id)
     user_task = User_Task.query.filter_by(idTask = id)
 
-    if flask_login.current_user.id != Task.query.filter_by(id = id).first().guarantor or flask_login.current_user.role != "admin":
+    if flask_login.current_user.id != Task.query.filter_by(id = id).first().guarantor:
         return sendResponse(403, 28030, {"message":"No permission for that"}, "error")
     
     for user in user_task:
