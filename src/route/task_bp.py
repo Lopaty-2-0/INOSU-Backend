@@ -39,8 +39,11 @@ async def taskAdd():
     if not approve:
         return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
     
-    needApprove = str(approve).lower() == "true"
+    needApprove = bool(approve)
 
+    if taskName:
+        if len(taskName) > 255:
+            taskName = None
     if not taskName:
         return sendResponse(400, 26020, {"message": "Name not entered"}, "error")
     if not startDate:
@@ -57,8 +60,8 @@ async def taskAdd():
         return sendResponse(400, 26050, {"message":"Ending before begining"}, "error")
     if not task:
         return sendResponse(400, 26060, {"message": "Task not entered"}, "error")
-    if not task.filename.rsplit(".", 1)[1].lower() in task_extensions:
-        return sendResponse(400, 26070, {"message": "Wrong file format"}, "error")
+    if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+        return sendResponse(400, 26070, {"message": "Wrong file format or too long"}, "error")
     
     user = flask_login.current_user
 
