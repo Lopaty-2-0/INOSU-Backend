@@ -17,7 +17,8 @@ from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Task import User_Task
 from src.models.Task_Class import Task_Class
-from src.utils.task import taskDeleteSftp
+from src.models.Task import Task
+from src.utils.task import taskDeleteSftp, user_taskDelete
 from src.utils.checkFileSize import checkFileSize
 from urllib.parse import unquote
 
@@ -281,15 +282,18 @@ async def delete():
         delUser = User.query.filter_by(id = id).first()
 
         if delUser:
-            print(delUser.id)
             cl = User_Class.query.filter_by(idUser = id)
             ta = User_Task.query.filter_by(idUser = id)
+            tas = Task.query.filter_by(guarantor = id)
 
             for t in ta:
-                await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
+                await user_taskDelete(task_path, id, t.idTask)
                 db.session.delete(t)
             for c in cl:
                 db.session.delete(c)
+            for task in tas:
+                await taskDeleteSftp(task_path + str(t.idTask) + "/", id)
+                db.session.delete(t)
             db.session.commit()
 
             await pfpDelete(pfp_path, delUser)
