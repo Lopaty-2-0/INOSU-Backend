@@ -39,7 +39,7 @@ async def taskAdd():
     if not approve:
         return sendResponse(400, 26080, {"message":"Approve not entered"}, "error")
     
-    needApprove = bool(approve)
+    needApprove = str(approve).lower() == "true"
 
     if taskName:
         if len(taskName) > 255:
