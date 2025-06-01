@@ -292,7 +292,7 @@ async def delete():
             for c in cl:
                 db.session.delete(c)
             for task in tas:
-                await taskDeleteSftp(task_path + str(task.idTask) + "/", id)
+                await taskDeleteSftp(task_path + str(task.id) + "/", id)
                 db.session.delete(t)
             db.session.commit()
 
