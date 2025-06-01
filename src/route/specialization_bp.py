@@ -22,6 +22,9 @@ def add():
         return sendResponse(400, 4020, {"message": "lengthOfStudy missing"}, "error")
     try:
         lengthOfStudy = int(lengthOfStudy)
+        if lengthOfStudy > 2147483647:
+            lengthOfStudy = "a"
+            lengthOfStudy = int(lengthOfStudy)
     except:
         return sendResponse(400, 4030, {"message": "lengthOfStudy not integer"}, "error")
     if not abbreviation:
