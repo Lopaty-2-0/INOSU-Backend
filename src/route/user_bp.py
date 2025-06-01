@@ -293,7 +293,7 @@ async def delete():
                 db.session.delete(c)
             for task in tas:
                 await taskDeleteSftp(task_path + str(task.id) + "/", id)
-                db.session.delete(t)
+                db.session.delete(task)
             db.session.commit()
 
             await pfpDelete(pfp_path, delUser)
