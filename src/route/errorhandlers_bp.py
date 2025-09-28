@@ -13,7 +13,7 @@ def unauthorized(e):
 
 @errors_bp.app_errorhandler(404)
 def page_not_found(e):
-    return sendResponse(404, "E10030", {"message": "Page Not Found"}, "error")
+    return sendResponse(404, "E10030", {"message": "GG Page Not Found"}, "error")
 
 @errors_bp.app_errorhandler(405)
 def method_not_allowed(e):
