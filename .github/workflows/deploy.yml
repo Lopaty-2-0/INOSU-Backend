@@ -28,5 +28,5 @@ jobs:
       - name: Restart with PM2
         run: |
           cd ~/maturita/INOSU-Backend
-          pm2 restart inosu-backend || pm2 start wsgi.py --name inosu-backend --interpreter python3
-          pm2 save
+          /home/runner/.nvm/versions/node/v22.14.0/bin/pm2 restart inosu-backend || /home/runner/.nvm/versions/node/v22.14.0/bin/pm2 start wsgi.py --name inosu-backend --interpreter python3
+          /home/runner/.nvm/versions/node/v22.14.0/bin/pm2 save
