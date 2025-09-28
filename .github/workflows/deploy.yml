@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted,
+    runs-on: ['self-hosted', 'Linux', 'ARM64']
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
