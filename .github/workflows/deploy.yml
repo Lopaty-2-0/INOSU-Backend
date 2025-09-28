@@ -27,6 +27,8 @@ jobs:
 
       - name: Restart with PM2
         run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           cd ~/maturita/INOSU-Backend
-          /home/runner/.nvm/versions/node/v22.14.0/bin/pm2 restart inosu-backend || /home/runner/.nvm/versions/node/v22.14.0/bin/pm2 start wsgi.py --name inosu-backend --interpreter python3
-          /home/runner/.nvm/versions/node/v22.14.0/bin/pm2 save
+          pm2 restart inosu-backend || pm2 start wsgi.py --name inosu-backend --interpreter python3
+          pm2 save
