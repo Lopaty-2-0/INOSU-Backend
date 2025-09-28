@@ -1,0 +1,32 @@
+name: Deploy Python Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Update repo on RPi
+        run: |
+          cd ~/maturita/INOSU-Backend
+          git reset --hard
+          git pull origin main
+
+      - name: Install dependencies
+        run: |
+          cd ~/maturita/INOSU-Backend
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Restart with PM2
+        run: |
+          cd ~/maturita/INOSU-Backend
+          pm2 restart inosu-backend || pm2 start wsgi.py --name inosu-backend --interpreter python3
+          pm2 save
