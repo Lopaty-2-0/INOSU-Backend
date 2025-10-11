@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
-def sendEmail(receiver_email, subject, html, plain_text):
+def send_email(receiver_email, subject, html, plain_text):
     sender_email = os.getenv("SENDER_EMAIL")
     password = os.getenv("APP_TOKEN")
     message = MIMEMultipart("alternative")

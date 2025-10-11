@@ -5,7 +5,7 @@ import asyncio
 from src.utils.sftp_utils import sftp_remove_async, sftp_put_async, sftp_stat_async, sftp_createDir_async
 from app import ssh
 
-async def pfpSave(file_path, user, file):
+async def pfp_save(file_path, user, file):
     state = True
 
     if not await sftp_stat_async(ssh, file_path):
@@ -29,7 +29,7 @@ async def pfpSave(file_path, user, file):
             user.profilePicture = fileName
             state = False
 
-async def pfpDelete(file_path, user):
+async def pfp_delete(file_path, user):
     if not user.profilePicture == "default.jpg":
         try:
             await sftp_remove_async(ssh, file_path + user.profilePicture)  

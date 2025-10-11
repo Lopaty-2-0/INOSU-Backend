@@ -1,19 +1,18 @@
 from flask import request, Blueprint
 import flask_login
-from app import db
+import json
+from app import db, task_path
 from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User_Task import User_Task
 from src.models.Task_Class import Task_Class
 from src.models.User import User
-from src.utils.task import taskDeleteSftp
-from src.utils.response import sendResponse
-from src.utils.allUserClasses import allUserClasses
-import json
+from src.utils.task import task_delete_sftp
+from src.utils.response import send_response
+from utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
 
 user_class_bp = Blueprint("user_class", __name__)
-task_path = "/home/filemanager/files/tasks/"
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
@@ -25,15 +24,15 @@ def user_classAdd():
     goodIds = []
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 33010, {"message": "Permission denied"}, "error")
+        return send_response(403, 33010, {"message": "Permission denied"}, "error")
     if not idUser:
-        return sendResponse(400, 33020, {"message": "idUser not entered"}, "error")
+        return send_response(400, 33020, {"message": "idUser not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 33030, {"message": "idClass not entered"}, "error")
+        return send_response(400, 33030, {"message": "idClass not entered"}, "error")
     if not User.query.filter_by(id = idUser).first():
-        return sendResponse(400, 33040, {"message": "Nonexistent user"}, "error")
+        return send_response(400, 33040, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return sendResponse(400, 33050, {"message": "Nonexistent class"}, "error")
+        return send_response(400, 33050, {"message": "Nonexistent class"}, "error")
     if not isinstance(idClass, list):
         idClass = [idClass]
     
@@ -46,11 +45,11 @@ def user_classAdd():
             goodIds.append(id)
 
     if not goodIds:
-        return sendResponse(400, 33060, {"message": "Nothing created"}, "error")
+        return send_response(400, 33060, {"message": "Nothing created"}, "error")
 
     db.session.commit()
     
-    return sendResponse(201, 33071, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(201, 33071, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -60,30 +59,30 @@ async def user_classDelete():
     idClass = data.get("idClass", None)
 
     if flask_login.current_user.role == "student":
-        return sendResponse(403, 34010, {"message": "Permission denied"}, "error")
+        return send_response(403, 34010, {"message": "Permission denied"}, "error")
     if not idUser:
-        return sendResponse(400, 34020, {"message": "idUser not entered"}, "error")
+        return send_response(400, 34020, {"message": "idUser not entered"}, "error")
     if not idClass:
-        return sendResponse(400, 34030, {"message": "idClass not entered"}, "error")
+        return send_response(400, 34030, {"message": "idClass not entered"}, "error")
     
     user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
     user_t = User_Task.query.filter_by(idUser = idUser)
 
     if not user_cl:
-        return sendResponse(400, 34040, {"message": "This user is not in this class"}, "error")
+        return send_response(400, 34040, {"message": "This user is not in this class"}, "error")
     
     for t in user_t:
         task = Task_Class.query.filter_by(idTask = t.idTask).first()
         
         if task:
             if task.idClass == idClass:
-                await taskDeleteSftp(task_path + str(t.idTask) + "/", idUser)
+                await task_delete_sftp(task_path + str(t.idTask) + "/", idUser)
                 db.session.delete(t)
     
     db.session.delete(user_cl)
     db.session.commit()
 
-    return sendResponse(200, 34051, {"message": "User deleted from this class"}, "success")
+    return send_response(200, 34051, {"message": "User deleted from this class"}, "success")
 
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
@@ -113,12 +112,12 @@ def user_classGetUsers():
         for cl in clas:
             if not cl.idUser in ids:
                 user = User.query.filter_by(id = cl.idUser).first()
-                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": allUserClasses(user.id), "createdAt":user.createdAt})
+                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt})
                 ids.append(cl.idUser)
 
         goodIds.append(id)
 
     if not goodIds:
-        return sendResponse(400, 35010, {"message": "Only wrong idClass"}, "error")
+        return send_response(400, 35010, {"message": "Only wrong idClass"}, "error")
 
-    return sendResponse(200, 35021, {"message": "Users found", "users":users, "badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(200, 35021, {"message": "Users found", "users":users, "badIds":badIds, "goodIds":goodIds}, "success")

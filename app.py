@@ -1,8 +1,8 @@
 import flask_login
 import os
-from src.utils.response import sendResponse
+from src.utils.response import send_response
 from src.utils.ssh_connect import ssh_connect
-from src.createDB import create_db
+from create_DB import create_db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta
@@ -19,6 +19,8 @@ user = os.getenv("DB_USER")
 psw = os.getenv("DB_PSW")
 database = os.getenv("DB_NAME")
 secret_key = os.getenv("SECRET_KEY")
+task_path = os.getenv("TASK_PATH")
+pfp_path = os.getenv("PFP_PATH")
 
 try:
     app = Flask(__name__)
@@ -35,6 +37,7 @@ try:
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
+    app.config["REMEMBER_COOKIE_REFRESH_EACH_REQUEST"] = True
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
     
     ssh = ssh_connect()
@@ -52,17 +55,18 @@ try:
     login_manager = flask_login.LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = ""
+
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
     
     @jwt.expired_token_loader
     def expired_token(expiredToken, nn):
-        return sendResponse(401, "JWT16010", {"message": "Token is expired"}, "error")
+        return send_response(401, "JWT16010", {"message": "Token is expired"}, "error")
     
     @jwt.invalid_token_loader
     def invalid_token(e):
-        return sendResponse(422, "JWT16020", {"message": e}, "error")
+        return send_response(422, "JWT16020", {"message": e}, "error")
 
     with app.app_context():
         from src.models.User_Class import User_Class

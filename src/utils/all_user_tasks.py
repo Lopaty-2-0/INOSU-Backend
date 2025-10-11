@@ -2,7 +2,7 @@ from src.models.User_Task import User_Task
 from src.models.Task import Task
 from src.models.User import User
 
-def allUserTasks(idUser):
+def all_user_tasks(idUser):
     user_tasks = User_Task.query.filter_by(idUser = idUser)
     tasks = []
 

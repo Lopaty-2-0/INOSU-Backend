@@ -1,4 +1,4 @@
-def emailResetPasswordTemplate(name, link):
+def email_reset_password_template(name, link):
     return f"""<!DOCTYPE html>
         <html lang="cs">
 

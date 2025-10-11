@@ -1,4 +1,4 @@
-def sendResponse(statuscode, resCode, data, resType):
+def send_response(statuscode, resCode, data, resType):
     return  {
         "statuscode": statuscode,
         "resCode": resCode,
