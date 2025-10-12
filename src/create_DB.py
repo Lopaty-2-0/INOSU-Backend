@@ -1,4 +1,5 @@
 import mysql.connector
+
 def create_db(gHost, gUser, gPasswd, gDatabase):
     create_db = mysql.connector.connect(
         host = str(gHost),

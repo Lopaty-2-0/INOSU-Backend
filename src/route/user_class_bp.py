@@ -9,7 +9,7 @@ from src.models.Task_Class import Task_Class
 from src.models.User import User
 from src.utils.task import task_delete_sftp
 from src.utils.response import send_response
-from utils.all_user_classes import all_user_classes
+from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
 
 user_class_bp = Blueprint("user_class", __name__)

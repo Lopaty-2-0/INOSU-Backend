@@ -8,10 +8,10 @@ from src.models.Task_Class import Task_Class
 from src.models.User_Class import User_Class
 from src.models.User import User
 from src.utils.response import send_response
-from utils.all_user_tasks import all_user_tasks
+from src.utils.all_user_tasks import all_user_tasks
 from src.utils.task import task_delete_sftp, task_save_sftp, user_task_delete, user_task_createDir
-from utils.check_file import check_file_size
-from utils.all_user_classes import all_user_classes
+from src.utils.check_file import check_file_size
+from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
 
 user_task_bp = Blueprint("user_task", __name__)

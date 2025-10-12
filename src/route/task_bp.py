@@ -1,10 +1,10 @@
 from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
-from utils.check_file import check_file_size
+from src.utils.check_file import check_file_size
 from src.utils.task import task_save_sftp, task_delete_sftp
 from src.utils.sftp_utils import sftp_stat_async
-from utils.all_user_classes import all_user_classes
+from src.utils.all_user_classes import all_user_classes
 from src.models.User import User
 from src.models.Task import Task
 from src.models.Task_Class import Task_Class

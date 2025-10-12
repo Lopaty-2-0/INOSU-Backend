@@ -2,7 +2,7 @@ import flask_login
 import os
 from src.utils.response import send_response
 from src.utils.ssh_connect import ssh_connect
-from create_DB import create_db
+from src.create_DB import create_db
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy as sql
 from datetime import timedelta

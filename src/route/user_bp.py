@@ -4,11 +4,11 @@ import json
 import flask_jwt_extended
 import datetime
 import asyncio
-from email.templates.reset_password import email_reset_password_template
+from src.email.templates.reset_password import email_reset_password_template
 from src.utils.pfp import pfp_save, pfp_delete
-from utils.all_user_classes import all_user_classes
+from src.utils.all_user_classes import all_user_classes
 from src.utils.response import send_response
-from utils.send_email import send_email
+from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
 from app import db, task_path, pfp_path
@@ -19,7 +19,7 @@ from src.models.User_Task import User_Task
 from src.models.Task_Class import Task_Class
 from src.models.Task import Task
 from src.utils.task import task_delete_sftp, user_task_delete
-from utils.check_file import check_file_size
+from src.utils.check_file import check_file_size
 from urllib.parse import unquote
 
 user_bp = Blueprint("user", __name__)

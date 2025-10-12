@@ -4,7 +4,7 @@ from flask import Blueprint, request
 from werkzeug.security import check_password_hash
 from src.utils.response import send_response
 from src.models.User import User
-from utils.all_user_classes import all_user_classes
+from src.utils.all_user_classes import all_user_classes
 
 auth_bp = Blueprint("auth", __name__)
 
