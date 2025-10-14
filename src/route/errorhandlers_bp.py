@@ -30,3 +30,7 @@ def server_error(e):
 @errors_bp.app_errorhandler(504)
 def timeout(e):
     return  send_response(504, "E10070", {"message": "Gateway Time-out"}, "error")
+
+@errors_bp.app_errorhandler(403)
+def method_not_allowed(e):
+    return  send_response(403, "E10080", {"message": "Forbidden"}, "error")

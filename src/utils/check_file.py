@@ -29,7 +29,7 @@ def check_file_access(folder_type):
     def decorator(func):
         @wraps(func)
         def wrapper(filename, id = None, id2=None, *args, **kwargs):
-            idUser = session.get("id")
+            idUser = flask_login.current_user.id
             if not idUser:
                 abort(403)
 
@@ -46,6 +46,11 @@ def check_file_access(folder_type):
         return wrapper
     return decorator
 
+
+"""
+z nějakého důvodu stat dělá brikule (projde i kdyby neměl)
+"""
+
 def has_access_to_pfp(idUser, filename):
     if not idUser:
         return False
@@ -57,8 +62,8 @@ def has_access_to_pfp(idUser, filename):
         return False
     
     if not sftp_stat_async(ssh, pfp_path + filename):
-        return False
-
+        return abort(404)
+    print(pfp_path + filename)
     return True
 
 def has_access_to_tasks(idUser, idTask, idStudent, filename):
@@ -78,6 +83,6 @@ def has_access_to_tasks(idUser, idTask, idStudent, filename):
         return False
     
     if not sftp_stat_async(ssh, task_path + idTask + "/" + idStudent + "/" + filename):
-        return False
+        return abort(404)
 
     return True

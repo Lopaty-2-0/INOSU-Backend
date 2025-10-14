@@ -20,7 +20,6 @@ from src.models.Task_Class import Task_Class
 from src.models.Task import Task
 from src.utils.task import task_delete_sftp, user_task_delete
 from src.utils.check_file import check_file_size
-from urllib.parse import unquote
 
 user_bp = Blueprint("user", __name__)
 
@@ -333,7 +332,7 @@ def passwordRes():
         return send_response(400, 12030, {"message": "No user with that email addres"}, "error")
     
     token = flask_jwt_extended.create_access_token(fresh = True, identity = email, expires_delta= datetime.timedelta(hours = 1),additional_claims = {"email": email})
-    link = "http://localhost:3000/password/forget/reset?token=" + token
+    link = "http://localhost:5000/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = email_reset_password_template(name, link)
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link

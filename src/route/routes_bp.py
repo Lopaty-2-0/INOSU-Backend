@@ -8,6 +8,7 @@ from src.route.task_bp import task_bp
 from src.route.user_class_bp import user_class_bp
 from src.route.user_task_bp import user_task_bp
 from src.route.task_class_bp import task_class_bp
+from src.route.check_file_bp import check_file_bp
 
 routes_bp = Blueprint("routes", __name__)
 routes_bp.register_blueprint(auth_bp)
@@ -19,3 +20,4 @@ routes_bp.register_blueprint(task_bp)
 routes_bp.register_blueprint(user_class_bp)
 routes_bp.register_blueprint(user_task_bp)
 routes_bp.register_blueprint(task_class_bp)
+routes_bp.register_blueprint(check_file_bp)
