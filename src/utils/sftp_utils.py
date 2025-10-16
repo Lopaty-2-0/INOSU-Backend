@@ -1,5 +1,7 @@
 import asyncio
+import os
 from stat import S_ISDIR
+from src.utils.status_codes import InsufficientStorage
 
 def sftp_remove(ssh, file_path):
     sftp = ssh.open_sftp()
@@ -8,8 +10,16 @@ def sftp_remove(ssh, file_path):
 
 def sftp_put(ssh, file_put, file_path):
     sftp = ssh.open_sftp()
-    sftp.put(file_put, file_path)
-    sftp.close()
+
+    try:
+        sftp.put(file_put, file_path)
+    except OSError.errno == 28:
+        filename = file_path.split("/")[-1]
+        os.remove("files/" + filename)
+
+        raise InsufficientStorage
+    finally:
+        sftp.close()
 
 def sftp_get(ssh, file_get, file_path):
     try:

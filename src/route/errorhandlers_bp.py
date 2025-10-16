@@ -1,5 +1,6 @@
 from flask import Blueprint
 from src.utils.response import send_response
+from src.utils.status_codes import InsufficientStorage
 
 errors_bp = Blueprint("errors", __name__)
 
@@ -20,7 +21,7 @@ def method_not_allowed(e):
     return  send_response(405, "E10040", {"message": "Method Not Allowed"}, "error")
 
 @errors_bp.app_errorhandler(413)
-def method_not_allowed(e):
+def payload_too_large(e):
     return  send_response(413, "E10050", {"message": "Payload Too Large"}, "error")
 
 @errors_bp.app_errorhandler(500)
@@ -32,5 +33,9 @@ def timeout(e):
     return  send_response(504, "E10070", {"message": "Gateway Time-out"}, "error")
 
 @errors_bp.app_errorhandler(403)
-def method_not_allowed(e):
+def forbidden(e):
     return  send_response(403, "E10080", {"message": "Forbidden"}, "error")
+
+@errors_bp.app_errorhandler(InsufficientStorage)
+def insuffiecient_storage(e):
+    return  send_response(507, "E10090", {"message": "Insuffiecient storage"}, "error")

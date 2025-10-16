@@ -19,25 +19,19 @@ def check_file_size(max_length):
         return wrapper
     return decorator
 
-"""
-odsaď dolů je potřeba zkontrolovat
-předpokládám že jsem retard a pochopil jsem to špatně
-takže jestli se ti to nelíbí tak mi to napiš
-"""
-
 def check_file_access(folder_type):
     def decorator(func):
         @wraps(func)
-        def wrapper(filename, id = None, id2=None, *args, **kwargs):
+        async def wrapper(filename, id = None, id2=None, *args, **kwargs):
             idUser = flask_login.current_user.id
             if not idUser:
                 abort(403)
 
             if folder_type == "profilePictures":
-                if not has_access_to_pfp(idUser, filename):
+                if not await has_access_to_pfp(idUser, filename):
                     abort(403)
             elif folder_type == "tasks":
-                if not has_access_to_tasks(idUser, id, id2, filename):
+                if not await has_access_to_tasks(idUser, id, id2, filename):
                     abort(403)
             else:
                 abort(403)
@@ -46,12 +40,7 @@ def check_file_access(folder_type):
         return wrapper
     return decorator
 
-
-"""
-z nějakého důvodu stat dělá brikule (projde i kdyby neměl)
-"""
-
-def has_access_to_pfp(idUser, filename):
+async def has_access_to_pfp(idUser, filename):
     if not idUser:
         return False
     
@@ -61,12 +50,12 @@ def has_access_to_pfp(idUser, filename):
     if flask_login.current_user.id != idUser and session.get("id") != idUser:
         return False
     
-    if not sftp_stat_async(ssh, pfp_path + filename):
-        return abort(404)
-    print(pfp_path + filename)
+    if not await sftp_stat_async(ssh, pfp_path + filename):
+        abort(404)
+
     return True
 
-def has_access_to_tasks(idUser, idTask, idStudent, filename):
+async def has_access_to_tasks(idUser, idTask, idStudent, filename):
     if not idUser:
         return False
     
@@ -82,7 +71,7 @@ def has_access_to_tasks(idUser, idTask, idStudent, filename):
     if not User_Task.query.filter_by(idTask = idTask, idUser = idUser).first() and not Task.query.filter_by(id = idTask, guarantor = idUser).first():
         return False
     
-    if not sftp_stat_async(ssh, task_path + idTask + "/" + idStudent + "/" + filename):
-        return abort(404)
+    if not await sftp_stat_async(ssh, task_path + idTask + "/" + idStudent + "/" + filename):
+        abort(404)
 
     return True

@@ -5,6 +5,10 @@ from app import ssh
 
 async def task_save_sftp(file_path, file, id):
     state = True
+
+    if not await sftp_stat_async(ssh, file_path):
+        ssh.open_sftp().mkdir(file_path)
+
     file_path = file_path + str(id)
 
     if not await sftp_stat_async(ssh, file_path):

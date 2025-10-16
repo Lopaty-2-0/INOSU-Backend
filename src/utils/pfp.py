@@ -10,12 +10,6 @@ async def pfp_save(file_path, user, file):
 
     if not await sftp_stat_async(ssh, file_path):
         await sftp_createDir_async(ssh, file_path)
-    
-    if not user.profilePicture == "default.jpg":
-        try:
-            await sftp_remove_async(ssh, file_path + user.profilePicture)  
-        except:
-            user.profilePicture = "default.jpg"
 
     while state:
         fileName = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + chr(random.randint(65, 90)) + "." + file.filename.rsplit('.', 1)[1].lower()
@@ -26,8 +20,15 @@ async def pfp_save(file_path, user, file):
             file.save("files/" + fileName)
             await sftp_put_async(ssh, "files/" + fileName, file_path + fileName)
             os.remove("files/" + fileName)
-            user.profilePicture = fileName
             state = False
+
+        if not user.profilePicture == "default.jpg":
+            try:
+                await sftp_remove_async(ssh, file_path + user.profilePicture)  
+            except:
+                user.profilePicture = "default.jpg"
+                
+        user.profilePicture = fileName
 
 async def pfp_delete(file_path, user):
     if not user.profilePicture == "default.jpg":

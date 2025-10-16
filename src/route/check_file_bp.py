@@ -16,7 +16,7 @@ check_file_bp = Blueprint("check_file_bp", __name__)
 def check_pfp(filename, id, id2):
     token = flask_jwt_extended.create_access_token(fresh = True, identity= flask_login.current_user.email , expires_delta= datetime.timedelta(hours = 1),additional_claims = {"path": pfp_path, "filename": filename})
     link = "http://localhost:5000/file/get?token=" + token
-
+    print(link)
     return send_response(200, 1, {"skibidi": "skibidi"}, "Error")
 
 

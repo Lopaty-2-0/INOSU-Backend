@@ -59,14 +59,15 @@ async def taskAdd():
     user = flask_login.current_user
     newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, approve = needApprove)
     db.session.add(newTask)
-    db.session.commit()
-
     id = Task.query.order_by(Task.id.desc()).first().id
 
     if await sftp_stat_async(ssh, task_path + str(id)):
         await task_delete_sftp(task_path, id)
         
     await task_save_sftp(task_path, task, id)
+
+    db.session.commit()
+
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
 
     return send_response(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor}}, "success")
