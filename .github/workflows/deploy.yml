@@ -8,27 +8,26 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Update repo on RPi
+      - name: Stop old containers
         run: |
-          cd ~/maturita/INOSU-Backend
-          git reset --hard
-          git pull origin main
+          cd ~/INOSU-Backend
+          docker compose down || true
 
-      - name: Install dependencies
+      - name: Build Docker image(s)
         run: |
-          cd ~/maturita/INOSU-Backend
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
+          cd ~/INOSU-Backend
+          docker compose build
 
-      - name: Restart with PM2
+      - name: Start backend service
         run: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          cd ~/maturita/INOSU-Backend
-          pm2 restart inosu-backend || pm2 start wsgi.py --name inosu-backend --interpreter python3
-          pm2 save
+          cd ~/INOSU-Backend
+          docker compose up -d
+
+      - name: Clean up unused Docker resources
+        run: |
+          docker system prune -af || true
