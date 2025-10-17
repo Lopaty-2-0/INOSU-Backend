@@ -15,23 +15,23 @@ jobs:
 
       - name: Update repository
         run: |
-          cd ~/runner2/INOSU-Backend
+          cd ~/INOSU-Backend
           git reset --hard
           git pull origin main
 
       - name: Stop old containers
         run: |
-          cd ~/runner2/INOSU-Backend
+          cd ~/INOSU-Backend
           docker compose down || true
 
       - name: Build Docker image(s)
         run: |
-          cd ~/runner2/INOSU-Backend
+          cd ~/INOSU-Backend
           docker compose build --no-cache
 
       - name: Start backend service
         run: |
-          cd ~/runner2/INOSU-Backend
+          cd ~/INOSU-Backend
           docker compose up -d
 
       - name: Clean up unused Docker resources
