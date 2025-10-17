@@ -14,7 +14,7 @@ def unauthorized(e):
 
 @errors_bp.app_errorhandler(404)
 def page_not_found(e):
-    return send_response(404, "E10030", {"message": "11 Page Not Found"}, "error")
+    return send_response(404, "E10030", {"message": "Page Not Found"}, "error")
 
 @errors_bp.app_errorhandler(405)
 def method_not_allowed(e):
