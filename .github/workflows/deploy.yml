@@ -13,6 +13,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Update repository
+        run: |
+          cd ~/runner2/INOSU-Backend
+          git reset --hard
+          git pull origin main
+
       - name: Stop old containers
         run: |
           cd ~/runner2/INOSU-Backend
@@ -21,7 +27,7 @@ jobs:
       - name: Build Docker image(s)
         run: |
           cd ~/runner2/INOSU-Backend
-          docker compose build
+          docker compose build --no-cache
 
       - name: Start backend service
         run: |
