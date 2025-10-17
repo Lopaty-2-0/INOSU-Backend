@@ -5,6 +5,7 @@ services:
     container_name: inosu-backend
     ports:
       - "5000:5000"
+    network_mode: "host"
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
