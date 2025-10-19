@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
 
-load_dotenv()
+load_dotenv(".env", override=False)
+load_dotenv(".env.hmac", override=True)
 host = os.getenv("DB_HOST")
 user = os.getenv("DB_USER")
 psw = os.getenv("DB_PSW")
@@ -21,6 +22,7 @@ database = os.getenv("DB_NAME")
 secret_key = os.getenv("SECRET_KEY")
 task_path = os.getenv("TASK_PATH")
 pfp_path = os.getenv("PFP_PATH")
+url = os.getenv("URL")
 
 try:
     app = Flask(__name__)
