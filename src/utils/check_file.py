@@ -22,7 +22,7 @@ def check_file_size(max_length):
 def check_file_access(folder_type):
     def decorator(func):
         @wraps(func)
-        async def wrapper(filename, id = None, id2=None, *args, **kwargs):
+        async def wrapper(filename, id = None, id2=None, type = None ,*args, **kwargs):
             idUser = flask_login.current_user.id
             if not idUser:
                 abort(403)
@@ -31,12 +31,15 @@ def check_file_access(folder_type):
                 if not await has_access_to_pfp(idUser, filename):
                     abort(403)
             elif folder_type == "tasks":
-                if not await has_access_to_tasks(idUser, id, id2, filename):
+                if not await has_access_to_tasks(idUser, id, id2, type ,filename):
+                    abort(403)
+            elif folder_type == "task":
+                if not await has_access_to_tasks(idUser, id, None, None, filename):
                     abort(403)
             else:
                 abort(403)
 
-            return func(filename, id, id2, *args, **kwargs)
+            return func(filename, id, id2, type, *args, **kwargs)
         return wrapper
     return decorator
 
@@ -55,7 +58,7 @@ async def has_access_to_pfp(idUser, filename):
 
     return True
 
-async def has_access_to_tasks(idUser, idTask, idStudent, filename):
+async def has_access_to_tasks(idUser, idTask, idStudent, type, filename):
     if not idUser:
         return False
     
@@ -71,7 +74,12 @@ async def has_access_to_tasks(idUser, idTask, idStudent, filename):
     if not User_Task.query.filter_by(idTask = idTask, idUser = idUser).first() and not Task.query.filter_by(id = idTask, guarantor = idUser).first():
         return False
     
-    if not await sftp_stat_async(ssh, task_path + idTask + "/" + idStudent + "/" + filename):
+    if not idStudent and not type:
+        path = task_path + idTask + "/" + filename
+    else:
+        path = task_path + idTask + "/" + idStudent + "/" + type + "/" + filename
+    
+    if not await sftp_stat_async(ssh, path):
         abort(404)
 
     return True

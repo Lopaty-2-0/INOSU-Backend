@@ -3,7 +3,6 @@ import re
 import json
 import flask_jwt_extended
 import datetime
-import asyncio
 from src.email.templates.reset_password import email_reset_password_template
 from src.utils.pfp import pfp_save, pfp_delete
 from src.utils.all_user_classes import all_user_classes
@@ -11,7 +10,7 @@ from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db, task_path, pfp_path
+from app import db, task_path, pfp_path, url
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
@@ -332,7 +331,7 @@ def passwordRes():
         return send_response(400, 12030, {"message": "No user with that email addres"}, "error")
     
     token = flask_jwt_extended.create_access_token(fresh = True, identity = email, expires_delta= datetime.timedelta(hours = 1),additional_claims = {"email": email})
-    link = "http://localhost:5000/password/forget/reset?token=" + token
+    link = url + "/password/forget/reset?token=" + token
     name = User.query.filter_by(email = email).first().name + " " + User.query.filter_by(email = email).first().surname
     html = email_reset_password_template(name, link)
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
