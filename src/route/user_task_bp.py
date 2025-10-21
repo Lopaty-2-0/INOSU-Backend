@@ -209,7 +209,7 @@ def user_taskGet():
         for t in task_class:
             tas = Task.query.filter_by(id = t.idTask).first()
             user = User.query.filter_by(id = tas.guarantor).first()
-            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "createdAt":user.createdAt}
+            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "createdAt":user.createdAt, "updatedAt":user.updatedAt}
             cl["tasks"].append({"id":t.idTask, "name":tas.name, "startDate":tas.startDate, "endDate":tas.endDate, "task":tas.task, "guarantor":guarantor})
 
         classTasks.append(cl)
@@ -252,7 +252,8 @@ def user_taskGetWithStatus():
                                                 "profilePicture": user.profilePicture, 
                                                 "email": user.email, 
                                                 "idClass": all_user_classes(user.id),
-                                                "createdAt":user.createdAt
+                                                "createdAt":user.createdAt,
+                                                "updatedAt":user.updatedAt
                                                 },
                                 "task":tas.task,
                                 "name":tas.name, 
@@ -269,7 +270,8 @@ def user_taskGetWithStatus():
                                             "profilePicture": flask_login.current_user.profilePicture, 
                                             "email": flask_login.current_user.email, 
                                             "idClass": all_user_classes(flask_login.current_user.id), 
-                                            "createdAt":flask_login.current_user.createdAt
+                                            "createdAt":flask_login.current_user.createdAt,
+                                            "updatedAt":flask_login.current_user.updatedAt
                                             },
                                             "idTask":tas.id
                                 })
@@ -289,7 +291,8 @@ def user_taskGetWithStatus():
                                         "profilePicture": flask_login.current_user.profilePicture, 
                                         "email": flask_login.current_user.email, 
                                         "idClass": all_user_classes(flask_login.current_user.id), 
-                                        "createdAt":flask_login.current_user.createdAt
+                                        "createdAt":flask_login.current_user.createdAt,
+                                        "updatedAt":flask_login.current_user.updatedAt
                                         },
                             "task":tas.task,
                             "name":tas.name, 
@@ -306,7 +309,8 @@ def user_taskGetWithStatus():
                                             "profilePicture": user.profilePicture, 
                                             "email": user.email, 
                                             "idClass": all_user_classes(user.id), 
-                                            "createdAt":user.createdAt
+                                            "createdAt":user.createdAt,
+                                            "updatedAt":user.updatedAt
                                         },
                                         "idTask":t.idTask
                             })
@@ -432,7 +436,8 @@ def user_taskGetWithStatusAndIdTask():
                                         "profilePicture": user.profilePicture, 
                                         "email": user.email, 
                                         "idClass": all_user_classes(user.id),
-                                        "createdAt":user.createdAt
+                                        "createdAt":user.createdAt,
+                                        "updatedAt":user.updatedAt
                                         },
                         "task":tas.task,
                         "name":tas.name, 
@@ -449,7 +454,8 @@ def user_taskGetWithStatusAndIdTask():
                                     "profilePicture": guarantor.profilePicture, 
                                     "email": guarantor.email, 
                                     "idClass": all_user_classes(guarantor.id), 
-                                    "createdAt":guarantor.createdAt
+                                    "createdAt":guarantor.createdAt,
+                                    "updatedAt":guarantor.updatedAt
                                     },
                                     "idTask":tas.id
                         })
@@ -489,7 +495,8 @@ def get():
                                 "profilePicture": user.profilePicture, 
                                 "email": user.email, 
                                 "idClass": all_user_classes(user.id),
-                                "createdAt":user.createdAt
+                                "createdAt":user.createdAt,
+                                "updatedAt":user.updatedAt
                                 },
                 "task":task.task,
                 "name":task.name, 
@@ -506,7 +513,8 @@ def get():
                             "profilePicture": guarantor.profilePicture, 
                             "email": guarantor.email, 
                             "idClass": all_user_classes(guarantor.id), 
-                            "createdAt":guarantor.createdAt
+                            "createdAt":guarantor.createdAt,
+                            "updatedAt":guarantor.updatedAt
                             },
                             "idTask":task.id
                 }

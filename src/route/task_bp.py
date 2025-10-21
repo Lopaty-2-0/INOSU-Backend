@@ -127,7 +127,7 @@ def getAllTasks():
 
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()
-        guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+        guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
         all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
     return send_response(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
@@ -183,13 +183,13 @@ def getAllPossibleTask():
             for t in task_class:
                 if t.idClass in ids:
                     user = User.query.filter_by(id = task.guarantor).first()
-                    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+                    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
                     classTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
                     break
 
         elif user_task.status == "waiting":
             user = User.query.filter_by(id = task.guarantor).first()
-            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
             waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
     return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks, "classTasks":classTasks}, "success")

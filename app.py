@@ -33,10 +33,10 @@ try:
     app.config["JWT_SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True
-    app.config["REMEMBER_COOKIE_SECURE"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = False
     app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
     app.config["SESSION_COOKIE_SAMESITE"] = "None"
-    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
     app.config["REMEMBER_COOKIE_REFRESH_EACH_REQUEST"] = True
@@ -82,7 +82,7 @@ try:
         db.create_all()
 
         if not User.query.filter_by(role = "admin").first():
-            newUser = User(name = "admin", surname = "admin", abbreviation = "", role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
+            newUser = User(name = "admin", surname = "admin", abbreviation = None, role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
             db.session.add(newUser)
             db.session.commit()
         

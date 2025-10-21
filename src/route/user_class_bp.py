@@ -112,7 +112,7 @@ def user_classGetUsers():
         for cl in clas:
             if not cl.idUser in ids:
                 user = User.query.filter_by(id = cl.idUser).first()
-                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt})
+                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
                 ids.append(cl.idUser)
 
         goodIds.append(id)

@@ -103,7 +103,7 @@ def add():
 
         db.session.commit()
 
-        return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "createdAt":newUser.createdAt}, "goodIds":goodIds, "badIds":badIds}, "success")
+        return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "createdAt":newUser.createdAt, "updatedAt":newUser.updatedAt}, "goodIds":goodIds, "badIds":badIds}, "success")
 
     else:
         #must get it working
@@ -187,10 +187,12 @@ async def update():
         if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
             return send_response(400, 2020, {"message": "Wrong file format"}, "error")
         await pfp_save(pfp_path, user, profilePicture)
+
+        user.updatedAt = datetime.datetime.now()
         
         db.session.commit()
 
-        return send_response(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt}}, "success")
+        return send_response(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
     else:
         if not str(user.role).lower() == "admin":
             return send_response(400, 2040, {"message": "No permission for that"}, "error")
@@ -247,9 +249,11 @@ async def update():
                 for cl in User_class:
                     db.session.delete(cl)
 
+        secondUser.updatedAt = datetime.datetime.now()
+
         db.session.commit()
 
-        return send_response(200, 2131, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt}, "badIds":badIds, "goodIds":goodIds}, "success")
+        return send_response(200, 2131, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt}, "badIds":badIds, "goodIds":goodIds}, "success")
         
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -386,7 +390,7 @@ def getUserById():
     if not user:
         return send_response(400, 18020, {"message": "User not found"}, "error")
     
-    return send_response(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt}}, "success")
+    return send_response(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
 @user_bp.route("/user/get/email", methods = ["GET"])
 @flask_login.login_required
@@ -403,7 +407,7 @@ def getUserByEmail():
     if not user:
         return send_response(400, 19030, {"message": "User not found"}, "error")
     
-    return send_response(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt}}, "success")
+    return send_response(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
 @user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
@@ -417,7 +421,7 @@ def getUsersByRole():
     users = User.query.filter_by(role = role)
 
     for user in users:
-        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt})
+        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
     if not all_users:
         return send_response(400, 20020, {"message": "Users not found"}, "error")
     
@@ -461,7 +465,7 @@ def getNoClass():
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
-            users.append({"id": s.id, "name": s.name, "surname": s.surname, "abbreviation": s.abbreviation, "role": s.role, "profilePicture": s.profilePicture, "email": s.email, "createdAt":s.createdAt})
+            users.append({"id": s.id, "name": s.name, "surname": s.surname, "abbreviation": s.abbreviation, "role": s.role, "profilePicture": s.profilePicture, "email": s.email, "createdAt":s.createdAt, "updatedAt":s.updatedAt})
 
     return send_response(200, 40011, {"message": "All students without class", "users": users}, "success")
 

@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.Text, nullable = False)
     profilePicture = db.Column(db.VARCHAR(255), server_default="default.jpg")
     email = db.Column(db.VARCHAR(255), unique = True, nullable = False)
+    updatedAt = db.Column(db.DateTime, default = datetime.datetime.now, nullable = False)
 
     @property
     def hash_password(self):
