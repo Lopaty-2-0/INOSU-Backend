@@ -44,7 +44,7 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
-        idClass = data.get("classes", "")
+        idClass = data.get("classes", None)
         lastUser = User.query.order_by(User.id.desc()).first()
 
         if not name:
@@ -92,7 +92,6 @@ def add():
 
             if str(role).lower() == "student":
                 for id in idClass:
-                    print(id)
                     if not Class.query.filter_by(id=id).first():
                         badIds.append(id)
                         continue
@@ -480,3 +479,10 @@ def getCountUsersByRole():
     count = User.query.filter_by(role=role).count()
 
     return send_response(200, 48021, {"message": "User count found", "count": count}, "success")
+
+@user_bp.route("/user/logged/data", methods = ["GET"])
+@flask_login.login_required
+def get_logged_user_data():
+    user = flask_login.current_user
+
+    return send_response(200, 50011, {"message": "Logged user data", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
