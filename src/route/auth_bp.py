@@ -41,9 +41,11 @@ def verifyUser():
         message = "User not logged in"
         role = None
         id = None
+        updatedAt = None
     else:
         state = True
         message = "User logged in"
         role = flask_login.current_user.role
         id = flask_login.current_user.id
-    return send_response(200, 17011, {"message":message,"logged": state, "role":role, "id":id}, "success")
+        updatedAt = flask_login.current_user.updatedAt
+    return send_response(200, 17011, {"message":message,"logged": state, "role":role, "id":id, "updatedAt": updatedAt}, "success")
