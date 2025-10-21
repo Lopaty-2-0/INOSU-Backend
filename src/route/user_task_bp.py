@@ -525,6 +525,5 @@ def get():
 @flask_login.login_required
 def count_approved_without_review():
     count = User_Task.query.filter_by(status="approved", idUser = flask_login.current_user.id).filter(User_Task.review == None).count()
-    print(count)
 
     return send_response(200, 47011, {"message": "Count of approved user_tasks without review", "count": count}, "success")

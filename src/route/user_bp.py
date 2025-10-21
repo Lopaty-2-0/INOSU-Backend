@@ -139,7 +139,6 @@ def add():
                 if idClass:
                     if str(role).lower() == "student":
                         for id in idClass:
-                            print(id)
                             if not Class.query.filter_by(id=id).first():
                                 badIds.append(id)
                                 continue
