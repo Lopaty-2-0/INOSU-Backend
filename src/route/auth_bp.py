@@ -1,6 +1,6 @@
 import flask_login
 from sqlalchemy import or_
-from flask import Blueprint, request
+from flask import Blueprint, request, session
 from werkzeug.security import check_password_hash
 from src.utils.response import send_response
 from src.models.User import User
@@ -31,11 +31,12 @@ def login():
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
-
+    session.clear()
+    
     return send_response(200, 7011, {"message": "Logged out"}, "success")
 
 @auth_bp.route("/auth/verify", methods=["GET"])
-def verifyUser():
+def verify():
     if not flask_login.current_user.is_authenticated:
         state = False
         message = "User not logged in"

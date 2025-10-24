@@ -1,7 +1,6 @@
 import flask_login
 from src.models.Class import Class
 from src.models.User_Class import User_Class
-from src.models.Task_Class import Task_Class
 from src.models.Specialization import Specialization
 from src.utils.response import send_response
 from flask import request, Blueprint
@@ -60,7 +59,6 @@ def delete():
     goodIds = []
     badIds = []
     userIds = []
-    taskIds = []
 
     if not idClass:
         return send_response(400, 9020, {"message": "IdClass is missing"}, "error")
@@ -74,20 +72,17 @@ def delete():
         if User_Class.query.filter_by(idClass = id).first():
             userIds.append(id)
             continue
-        if Task_Class.query.filter_by(idClass = id).first():
-            taskIds.append(id)
-            continue
 
         db.session.delete(Class.query.filter_by(id = id).first())
         goodIds.append(id)
 
     db.session.commit()
 
-    return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds, "userIds":userIds, "taskIds": taskIds}, "success")
+    return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds, "userIds":userIds}, "success")
 
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
-def getClassById():
+def get_by_id():
     data = request.args.get(force=True)
     id = data.get("id", None)
 
@@ -105,7 +100,7 @@ def getClassById():
 
 @class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required
-def getClasses():
+def get():
     classes = Class.query.all()
     all_class = []
 
@@ -119,7 +114,7 @@ def getClasses():
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required
-def getClassCount():
+def get_count():
     count = Class.query.count()
 
     return send_response(200, 49011, {"message": "Class count found", "count": count}, "success") 

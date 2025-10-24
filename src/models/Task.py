@@ -11,6 +11,7 @@ class Task(db.Model):
     task = db.Column(db.VARCHAR(255), nullable = False)
     guarantor = db.Column(db.Integer, db.ForeignKey("user.id"),nullable = False)
     approve = db.Column(db.BOOLEAN, nullable = False)
+    type = db.Column(db.Enum())
 
     def __init__(self, name, startDate, endDate, task, guarantor, approve):
         self.name = name

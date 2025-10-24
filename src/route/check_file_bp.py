@@ -20,7 +20,7 @@ expires_in = 600
 @check_file_bp.route("/file/pfp/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("profilePictures")
-def generate_pfp_token(filename, id, id2, type):
+def check_pfp(filename, id, id2, type):
     message = pfp_path + filename
     expiry_timestamp = int(time.time()) + expires_in
     payload = f"{message}:{expiry_timestamp}"

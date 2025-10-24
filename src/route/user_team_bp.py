@@ -2,9 +2,8 @@ from flask import request, Blueprint
 import flask_login
 import json
 from app import db, task_path
-from src.models.User_Task import User_Task
+from src.models.User_Team import User_Team
 from src.models.Task import Task
-from src.models.Task_Class import Task_Class
 from src.models.User_Class import User_Class
 from src.models.User import User
 from src.utils.response import send_response
@@ -14,15 +13,16 @@ from src.utils.check_file import check_file_size
 from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
 
-user_task_bp = Blueprint("user_task", __name__)
+user_team_bp = Blueprint("user_team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
-@user_task_bp.route("/user_task/add", methods=["POST"])
+@user_team_bp.route("/user_team/add", methods=["POST"])
 @flask_login.login_required
-async def user_taskAdd():
+async def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
+    idClass = data.get("idClass", None)
     badIds = []
     goodIds = []
 
@@ -32,21 +32,21 @@ async def user_taskAdd():
         return send_response(400, 36020, {"message": "idUser not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
         return send_response(400, 36030, {"message": "Nonexistent task"}, "error")
-    if Task.query.filter_by(id = idTask).first().approve:
-        if not Task_Class.query.filter_by(idTask=idTask).first():
-            status = "waiting"
-        else:
-            status = "pending"
+    if not idClass:
+        if Task.query.filter_by(id = idTask).first().approve:
+            if not Task_Class.query.filter_by(idTask=idTask).first():
+                status = "waiting"
+            else:
+                status = "pending"
     else:
         status = "approved"
 
-    tc = Task_Class.query.filter_by(idTask=idTask)
 
     if not isinstance(idUser, list):
         idUser = [idUser]
 
     for idU in idUser:
-        if User_Task.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
+        if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
             badIds.append(idU)
             continue
 
@@ -57,9 +57,9 @@ async def user_taskAdd():
             for c in cl:
                 for t in tc:
                     if c.idClass == t.idClass:
-                        newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                        newuUser_Team = User_Team(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
                         await user_task_createDir(task_path + str(idTask) + "/", idU)
-                        db.session.add(newUser_Task)
+                        db.session.add(newUser_Team)
                         goodIds.append(idU)
                         status1 = True
                         break
@@ -68,9 +68,9 @@ async def user_taskAdd():
                     break
         else:
             if flask_login.current_user.id == Task.query.filter_by(id = idTask).first().guarantor:
-                newUser_Task = User_Task(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
+                newUser_Team = User_Team(idUser=idU, idTask=idTask, elaboration=None, review=None, status=status)
                 await user_task_createDir(task_path + str(idTask) + "/", idU)
-                db.session.add(newUser_Task)
+                db.session.add(newUser_Team)
                 goodIds.append(idU)
                 status1 = True
 
@@ -82,11 +82,11 @@ async def user_taskAdd():
 
     db.session.commit()
 
-    return send_response(201, 36051, {"message": "User_task created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(201, 36051, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
 
-@user_task_bp.route("/user_task/delete", methods=["DELETE"])
+@user_team_bp.route("/user_team/delete", methods=["DELETE"])
 @flask_login.login_required
-def user_taskDel():
+def delete():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
@@ -96,20 +96,20 @@ def user_taskDel():
     if not idUser:
         return send_response(400, 37020, {"message": "idUser not entered"}, "error")
     
-    user_task = User_Task.query.filter_by(idTask = idTask, idUser = idUser).first()
+    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser).first()
 
-    if not user_task:
-        return send_response(400, 37030, {"message": "Nonexistent user_task"}, "error")
+    if not user_team:
+        return send_response(400, 37030, {"message": "Nonexistent user_team"}, "error")
 
-    db.session.delete(user_task)
+    db.session.delete(user_team)
     db.session.commit()
 
-    return send_response(200, 37041, {"message": "User_task deleted successfuly"}, "success")
+    return send_response(200, 37041, {"message": "user_team deleted successfuly"}, "success")
 
-@user_task_bp.route("/user_task/update", methods=["PUT"])
+@user_team_bp.route("/user_team/update", methods=["PUT"])
 @check_file_size(32 * 1024 * 1024)
 @flask_login.login_required
-async def user_taskUpdate():
+async def update():
     idTask = request.form.get("idTask", None)
     idUser = request.form.get("idUser", None)
     status = request.form.get("status", None)
@@ -123,103 +123,88 @@ async def user_taskUpdate():
         idUser = currentUser.id
     
     task = Task.query.filter_by(id = idTask).first()
-    user_task = User_Task.query.filter_by(idUser = idUser, idTask = idTask).first()
+    user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask).first()
 
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 38020, {"message": "Nonexistent user"}, "error") 
     if not task:
         return send_response(400, 38030, {"message": "Nonexistent task"}, "error") 
-    if not user_task:
-        return send_response(400, 38040, {"message": "Nonexistent user_task"}, "error")
+    if not user_team:
+        return send_response(400, 38040, {"message": "Nonexistent user_team"}, "error")
             
     if currentUser.id == task.guarantor:
         if task.approve:
-            if (user_task.status == "pending") and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
-                user_task.status = status.lower()
+            if (user_team.status == "pending") and (str(status).lower() == "approved" or str(status).lower() == "rejected"):
+                user_team.status = status.lower()
         if review:
             if not review.filename.rsplit(".", 1)[1].lower() in task_extensions:
                 return send_response(400, 38050, {"message": "Wrong file format"}, "error")
-            if not user_task.status == "approved":
+            if not user_team.status == "approved":
                 return send_response(400, 38060, {"message": "Can not do that"}, "error")
             if len(review.filename) > 255:
                 return send_response(400, 38070, {"message": "File name too long"}, "error")
-            if user_task.review:
+            if user_team.review:
                 await task_delete_sftp(task_path + str(task.id) + "/", str(idUser) + "/review")
 
             filename = await task_save_sftp(task_path + str(task.id) + "/", review, str(idUser) + "/review")
-            user_task.review = filename
+            user_team.review = filename
         else:
-            if user_task.review:
+            if user_team.review:
                 await task_delete_sftp(task_path + str(task.id) + "/", str(idUser) + "/review")
-            user_task.review = None
+            user_team.review = None
 
-    elif currentUser.id == user_task.idUser and (user_task.status == "approved" or user_task.status == "waiting"):
-        if elaboration and user_task.status == "approved":
+    elif currentUser.id == user_team.idUser and (user_team.status == "approved" or user_team.status == "waiting"):
+        if elaboration and user_team.status == "approved":
             if not elaboration.filename.rsplit(".", 1)[1].lower() in task_extensions:
                 return send_response(400, 38080, {"message": "Wrong file format"}, "error")
             if len(elaboration.filename) > 255:
                 return send_response(400, 38090, {"message": "File name too long"}, "error")
-            if user_task.elaboration:
+            if user_team.elaboration:
                 await task_delete_sftp(task_path + str(task.id) + "/", str(currentUser.id) + "/elaboration")
 
             filename = await task_save_sftp(task_path + str(task.id) + "/", elaboration, str(currentUser.id) + "/elaboration")
-            user_task.elaboration = filename
+            user_team.elaboration = filename
 
-        elif user_task.status == "approved":
-            if user_task.elaboration:
+        elif user_team.status == "approved":
+            if user_team.elaboration:
                 await task_delete_sftp(task_path + str(task.id) + "/", str(currentUser.id) + "/elaboration")
-            user_task.elaboration = None
+            user_team.elaboration = None
 
-        if user_task.status == "waiting":
+        if user_team.status == "waiting":
             if not status:
-                db.session.delete(user_task)
+                db.session.delete(user_team)
                 await user_task_delete(task_path, str(currentUser.id) + "/elaboration", idTask)               
             else:
-                user_task.status = "pending"
+                user_team.status = "pending"
     else:
         return send_response(403, 38100, {"message": "Permission denied"}, "error")
     
     db.session.commit()
 
-    return send_response(200, 38111, {"message": "User_Task successfuly updated"}, "success") 
+    return send_response(200, 38111, {"message": "User_Team successfuly updated"}, "success") 
 
-@user_task_bp.route("/user_task/get", methods=["GET"])
+@user_team_bp.route("/user_team/get", methods=["GET"])
 @flask_login.login_required
-def user_taskGet():
+def get():
     idUser = request.args.get("idUser", None)
-    classTasks = []
 
     if not idUser:
         return send_response(400, 39010, {"message": "idUser not entered"}, "error")
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 39020, {"message": "Nonexistent user"}, "error")
     
-    task = User_Task.query.filter_by(idUser = idUser)
-    classes = User_Class.query.filter_by(idUser = idUser)
+    task = User_Team.query.filter_by(idUser = idUser)
 
     if task:
         tasks = all_user_tasks(idUser)
     else:
         tasks = []
 
-    for c in classes:
-        cl = {"idClass":c.idClass, "tasks":[]}
-        task_class = Task_Class.query.filter_by(idClass = c.idClass)
+    return send_response(200, 39031, {"message": "Tasks found", "tasks":tasks}, "success")
 
-        for t in task_class:
-            tas = Task.query.filter_by(id = t.idTask).first()
-            user = User.query.filter_by(id = tas.guarantor).first()
-            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "createdAt":user.createdAt, "updatedAt":user.updatedAt}
-            cl["tasks"].append({"id":t.idTask, "name":tas.name, "startDate":tas.startDate, "endDate":tas.endDate, "task":tas.task, "guarantor":guarantor})
-
-        classTasks.append(cl)
-
-
-    return send_response(200, 39031, {"message": "Tasks found", "tasks":tasks, "classTasks":classTasks}, "success")
-
-@user_task_bp.route("/user_task/get/status", methods=["GET"])
+@user_team_bp.route("/user_team/get/status", methods=["GET"])
 @flask_login.login_required
-def user_taskGetWithStatus():
+def get_by_status():
     status = request.args.get("status", "")
     which = request.args.get("which", None)
     guarantorTasks = []
@@ -240,7 +225,7 @@ def user_taskGetWithStatus():
         for s in status:
             task = Task.query.filter_by(guarantor = flask_login.current_user.id)
             for tas in task:
-                ta = User_Task.query.filter_by(idTask = tas.id, status = s)
+                ta = User_Team.query.filter_by(idTask = tas.id, status = s)
 
                 for t in ta:
                     user = User.query.filter_by(id = t.idUser).first()
@@ -278,7 +263,7 @@ def user_taskGetWithStatus():
                     
     if str(which) == "1" or str(which) == "2":
         for s in status:
-            ta = User_Task.query.filter_by(idUser = flask_login.current_user.id, status = s)
+            ta = User_Team.query.filter_by(idUser = flask_login.current_user.id, status = s)
 
             for t in ta:
                 tas = Task.query.filter_by(id = t.idTask).first()
@@ -317,9 +302,9 @@ def user_taskGetWithStatus():
                 
     return send_response(200, 40021, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
 
-@user_task_bp.route("/user_task/get/idTask", methods=["GET"])
+@user_team_bp.route("/user_team/get/idTask", methods=["GET"])
 @flask_login.login_required
-def user_taskGetByidTask():
+def get_by_idTask():
     idTask = request.args.get("idTask", None)
     users = []
 
@@ -328,7 +313,7 @@ def user_taskGetByidTask():
     if not Task.query.filter_by(id = idTask).first():
         return send_response(400, 42020, {"message": "Nonexistent task"}, "error")
     
-    task = User_Task.query.filter_by(idTask = idTask)
+    task = User_Team.query.filter_by(idTask = idTask)
 
     if not task:
         return send_response(400, 42030, {"message": "No user has this task"}, "error")
@@ -339,9 +324,9 @@ def user_taskGetByidTask():
 
     return send_response(200, 42041, {"message": "Users found", "users":users}, "success")
 
-@user_task_bp.route("/user_task/change", methods=["PUT"])
+@user_team_bp.route("/user_team/change", methods=["PUT"])
 @flask_login.login_required
-async def user_taskChange():
+async def change():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
@@ -356,14 +341,12 @@ async def user_taskChange():
         ids.append("all")
     if not Task.query.filter_by(id=idTask).first():
         return send_response(400, 43020, {"message": "Nonexistent task"}, "error")
-    if Task_Class.query.filter_by(idTask = idTask).first():
-        return send_response(400, 43030, {"message": "Task is only for classes"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
-        return send_response(403, 43040, {"message": "No permission"}, "error")
+        return send_response(403, 43030, {"message": "No permission"}, "error")
     if not isinstance(idUser, list):
         idUser = [idUser]
     
-    user_task = User_Task.query.filter_by(idTask = idTask)
+    user_team = User_Team.query.filter_by(idTask = idTask)
 
     for id in idUser:
         if not User.query.filter_by(id = id).first():
@@ -371,7 +354,7 @@ async def user_taskChange():
             continue
         ids.append(id)
 
-    for task in user_task:
+    for task in user_team:
         if not task.idUser in ids:
             await user_task_delete(task_path, task.idUser, idTask)
             db.session.delete(task)
@@ -386,21 +369,21 @@ async def user_taskChange():
             status = "approved"
 
         for id in ids:
-            newUser_Task = User_Task(idTask=idTask,idUser=id, review=None, status=status, elaboration=None)
+            newuser_team = user_team(idTask=idTask,idUser=id, review=None, status=status, elaboration=None)
             await user_task_createDir(task_path + str(idTask) + "/", id)
             goodIds.append(id)
-            db.session.add(newUser_Task)
+            db.session.add(newuser_team)
 
     if not goodIds and not ids and not removedIds:
-        return send_response(400, 43050, {"message": "Nothing updated"}, "error")
+        return send_response(400, 43040, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
 
-    return send_response(200, 43061, {"message": "User_tasks changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
+    return send_response(200, 43051, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
 
-@user_task_bp.route("/user_task/get/status/idTask", methods=["GET"])
+@user_team_bp.route("/user_team/get/status/idTask", methods=["GET"])
 @flask_login.login_required
-def user_taskGetWithStatusAndIdTask():
+def get_with_status_and_idTask():
     status = request.args.get("status", "")
     idTask = request.args.get("idTask", None)
     tasks = []
@@ -425,7 +408,7 @@ def user_taskGetWithStatusAndIdTask():
         return send_response(403, 44030, {"message": "No permission"}, "error")
 
     for s in status:
-        ta = User_Task.query.filter_by(idTask = idTask, status = s)
+        ta = User_Team.query.filter_by(idTask = idTask, status = s)
         for t in ta:
             user = User.query.filter_by(id = t.idUser).first()
             tasks.append({"elaborator":{"id": user.id, 
@@ -460,12 +443,12 @@ def user_taskGetWithStatusAndIdTask():
                                     "idTask":tas.id
                         })
                 
-    return send_response(200, 44041, {"message": "All User_Tasks for this task and statuses", "tasks": tasks}, "success")
+    return send_response(200, 44041, {"message": "All user_teams for this task and statuses", "tasks": tasks}, "success")
 
 
-@user_task_bp.route("/user_task/get/idUser/idTask", methods = ["GET"])
+@user_team_bp.route("/user_team/get/idUser/idTask", methods = ["GET"])
 @flask_login.login_required
-def get():
+def get_by_idUser_and_idTask():
     idUser = request.args.get("idUser", None)
     idTask = request.args.get("idTask", None)
 
@@ -474,7 +457,7 @@ def get():
     if not idUser:
         return send_response(400, 45020, {"message": "idUser not entered"}, "error")
     
-    user_task = User_Task.query.filter_by(idUser = idUser, idTask = idTask).first()
+    user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask).first()
     user = User.query.filter_by(id = idUser).first()
     task = Task.query.filter_by(id = idTask).first()
     
@@ -482,8 +465,8 @@ def get():
         return send_response(400, 45030, {"message": "Nonexistent user"}, "error")
     if not task:
         return send_response(400, 45040, {"message": "Nonexistent task"}, "error")
-    if not user_task:
-        return send_response(400, 45050, {"message": "Nonexistent user_task"}, "error")
+    if not user_team:
+        return send_response(400, 45050, {"message": "Nonexistent user_team"}, "error")
     
     guarantor = User.query.filter_by(id = task.guarantor).first()
 
@@ -502,9 +485,9 @@ def get():
                 "name":task.name, 
                 "statDate":task.startDate, 
                 "endDate":task.endDate, 
-                "status":user_task.status, 
-                "elaboration":user_task.elaboration,
-                "review":user_task.review,
+                "status":user_team.status, 
+                "elaboration":user_team.elaboration,
+                "review":user_team.review,
                 "guarantor":{"id": guarantor.id, 
                             "name": guarantor.name, 
                             "surname": guarantor.surname, 
@@ -519,12 +502,11 @@ def get():
                             "idTask":task.id
                 }
     
-    return send_response(200, 45061, {"message": "All User_Tasks for this task and statuses", "task": tasks}, "success")
+    return send_response(200, 45061, {"message": "All user_teams for this task and statuses", "task": tasks}, "success")
 
-@user_task_bp.route("/user_task/count/approved_without_review", methods=["GET"])
+@user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required
 def count_approved_without_review():
-    count = User_Task.query.filter_by(status="approved", idUser = flask_login.current_user.id).filter(User_Task.review == None).count()
-    print(count)
+    count = User_Team.query.filter_by(status="approved", idUser = flask_login.current_user.id).filter(User_Team.review == None).count()
 
-    return send_response(200, 47011, {"message": "Count of approved user_tasks without review", "count": count}, "success")
+    return send_response(200, 47011, {"message": "Count of approved user_teams without review", "count": count}, "success")

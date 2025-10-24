@@ -7,7 +7,6 @@ from src.utils.sftp_utils import sftp_stat_async
 from src.utils.all_user_classes import all_user_classes
 from src.models.User import User
 from src.models.Task import Task
-from src.models.Task_Class import Task_Class
 from src.models.User_Task import User_Task
 from datetime import datetime
 from app import db, ssh, task_path
@@ -18,7 +17,7 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 @flask_login.login_required
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/add", methods = ["POST"])
-async def taskAdd():
+async def add():
     if flask_login.current_user.role == "student":
         return send_response(403, 26010, {"message":"Students can not make tasks"}, "error")
     
@@ -74,7 +73,7 @@ async def taskAdd():
 
 @task_bp.route("/task/get/guarantor", methods=["GET"])
 @flask_login.login_required
-def getTasksByGuarantor():
+def get_by_guarantor():
     idUser = request.args.get("idUser", None)
     tasks = Task.query.filter_by(guarantor=idUser).all()
     all_tasks = []
@@ -97,7 +96,7 @@ def getTasksByGuarantor():
 
 @task_bp.route("/task/get/id", methods=["GET"]) 
 @flask_login.login_required
-def getTaskById():
+def get_by_id():
     idTask = request.args.get("idTask", None)
     task = Task.query.filter_by(id=idTask).first()
 
@@ -121,7 +120,7 @@ def getTaskById():
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
-def getAllTasks():
+def get_all():
     all_tasks = []
     tasks = Task.query.all()
 
@@ -134,7 +133,7 @@ def getAllTasks():
 
 @task_bp.route("/task/delete", methods=["DELETE"])
 @flask_login.login_required
-async def taskDelete():
+async def delete():
     data = request.get_json(force=True)
     id = data.get("id", None)
 
@@ -145,7 +144,7 @@ async def taskDelete():
     if not id:
         return send_response(400, 28020, {"message":"No id entered"}, "error")
     
-    task_class = Task_Class.query.filter_by(idTask = id)
+
     user_task = User_Task.query.filter_by(idTask = id)
 
     if flask_login.current_user.id != Task.query.filter_by(id = id).first().guarantor:
@@ -153,8 +152,6 @@ async def taskDelete():
     
     for user in user_task:
         db.session.delete(user)
-    for cl in task_class:
-        db.session.delete(cl)
 
     task = Task.query.filter_by(id=id).first()
 
@@ -169,27 +166,19 @@ async def taskDelete():
 
 @task_bp.route("/task/get/possible", methods = ["GET"])
 @flask_login.login_required
-def getAllPossibleTask():
+def get_all_possible():
     tasks = Task.query.all()
     waitingTasks = []
-    classTasks = []
-    ids = all_user_classes(flask_login.current_user.id)
 
     for task in tasks:
-        task_class = Task_Class.query.filter_by(idTask = task.id)
         user_task = User_Task.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first()
 
-        if task_class and not user_task:
-            for t in task_class:
-                if t.idClass in ids:
-                    user = User.query.filter_by(id = task.guarantor).first()
-                    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-                    classTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
-                    break
+        if not user_task:
+            continue
 
         elif user_task.status == "waiting":
             user = User.query.filter_by(id = task.guarantor).first()
             guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
             waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
-    return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks, "classTasks":classTasks}, "success")
+    return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks}, "success")

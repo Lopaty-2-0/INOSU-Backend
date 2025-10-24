@@ -1,3 +1,9 @@
+"""
+Tento soubor je uložen čistě z důvodu, aby se vědělo, které rescodes mohou být znovu použity
+"""
+
+
+
 from flask import request, Blueprint
 import flask_login
 from app import db, task_path

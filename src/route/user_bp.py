@@ -15,7 +15,6 @@ from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Task import User_Task
-from src.models.Task_Class import Task_Class
 from src.models.Task import Task
 from src.utils.task import task_delete_sftp, user_task_delete
 from src.utils.check_file import check_file_size
@@ -44,7 +43,7 @@ def add():
         role = data.get("role", None)
         email = data.get("email", None)
         password = str(data.get("password", None))
-        idClass = data.get("classes", "")
+        idClass = data.get("classes", None)
         lastUser = User.query.order_by(User.id.desc()).first()
 
         if not name:
@@ -92,7 +91,6 @@ def add():
 
             if str(role).lower() == "student":
                 for id in idClass:
-                    print(id)
                     if not Class.query.filter_by(id=id).first():
                         badIds.append(id)
                         continue
@@ -140,7 +138,6 @@ def add():
                 if idClass:
                     if str(role).lower() == "student":
                         for id in idClass:
-                            print(id)
                             if not Class.query.filter_by(id=id).first():
                                 badIds.append(id)
                                 continue
@@ -230,12 +227,6 @@ async def update():
 
         if idClass:
             if secondUser.role.lower() == "student":
-                for id in all_user_classes(secondUser.id):
-                    for task in User_Task.query.filter_by(idUser = secondUser.id):
-                        if Task_Class.query.filter_by(idTask = task.idTask, idClass = id).first():
-                            db.session.delete(task)
-                    db.session.delete(User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first())
-                
                 for id in idClass:
                     if not Class.query.filter_by(id=id).first():
                         badIds.append(id)
@@ -303,7 +294,7 @@ async def delete():
 
 @user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required
-def passwordReset():
+def password_reset():
     data = request.get_json(force = True)
     oldPassword = str(data.get("oldPassword", None))
     newPassword = str(data.get("newPassword", None))
@@ -323,7 +314,7 @@ def passwordReset():
     return send_response(200, 11051, {"message": "Password changed successfuly"}, "success")
 
 @user_bp.route("/user/password/new", methods = ["POST"])
-def passwordRes():
+def password_res():
     data = request.get_json(force = True)
     email = data.get("email", None)
     
@@ -344,7 +335,7 @@ def passwordRes():
     return send_response(200, 12041, {"message": "Token created successfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["POST"])
-def passwordVerify():
+def password_verify():
     data = request.get_json(force = True)
     token = data.get("token", None)
 
@@ -356,7 +347,7 @@ def passwordVerify():
     return send_response(200, 13021, {"message": "Verified successfuly", "email":decoded_token["email"]}, "success")
 
 @user_bp.route("/user/password/reset", methods = ["POST"])
-def passwordNew():
+def password_new():
     data = request.get_json(force=True)
     email = data.get("email", None)
     newPassword = str(data.get("newPassword", None))
@@ -379,7 +370,7 @@ def passwordNew():
 
 @user_bp.route("/user/get/id", methods = ["GET"])
 @flask_login.login_required
-def getUserById():
+def get_by_id():
     id = request.args.get("id", None)
 
     if not id:
@@ -394,7 +385,7 @@ def getUserById():
 
 @user_bp.route("/user/get/email", methods = ["GET"])
 @flask_login.login_required
-def getUserByEmail():
+def get_by_email():
     email = request.args.get("email", None)
 
     if not email:
@@ -411,7 +402,7 @@ def getUserByEmail():
 
 @user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
-def getUsersByRole():
+def get_by_role():
     role = request.args.get("role", None)
     all_users = []
 
@@ -427,10 +418,9 @@ def getUsersByRole():
     
     return send_response(200, 20031, {"message": "Users found", "users": all_users}, "success")
 
-#cestu vymyslíme jindy
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
-def getNumberOfUsers():
+def get_of_users():
     number = 0
     users = User.query.all()
 
@@ -441,7 +431,7 @@ def getNumberOfUsers():
 
 @user_bp.route("/user/get/roles", methods = ["GET"])
 @flask_login.login_required
-def getRoles():
+def get_roles():
     roles = []
     users = User.query.all()
 
@@ -454,12 +444,12 @@ def getRoles():
 
 @user_bp.route("/user/get/currentRole", methods=["GET"])
 @flask_login.login_required
-def getCurrentRole():
+def get_current_role():
     return send_response(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
 
 @user_bp.route("/user/get/noClass", methods =["GET"])
 @flask_login.login_required
-def getNoClass():
+def get_no_class():
     user = User.query.filter_by(role = "student")
     users = []
 
@@ -471,7 +461,7 @@ def getNoClass():
 
 @user_bp.route("/user/get/count/by-role", methods=["GET"])
 @flask_login.login_required
-def getCountUsersByRole():
+def get_count_by_role():
     role = request.args.get("role", None)
 
     if not role:
@@ -480,3 +470,10 @@ def getCountUsersByRole():
     count = User.query.filter_by(role=role).count()
 
     return send_response(200, 48021, {"message": "User count found", "count": count}, "success")
+
+@user_bp.route("/user/logged/data", methods = ["GET"])
+@flask_login.login_required
+def get_logged_user_data():
+    user = flask_login.current_user
+
+    return send_response(200, 50011, {"message": "Logged user data", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")

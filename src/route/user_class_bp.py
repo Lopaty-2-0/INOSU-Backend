@@ -5,7 +5,6 @@ from app import db, task_path
 from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User_Task import User_Task
-from src.models.Task_Class import Task_Class
 from src.models.User import User
 from src.utils.task import task_delete_sftp
 from src.utils.response import send_response
@@ -16,7 +15,7 @@ user_class_bp = Blueprint("user_class", __name__)
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
-def user_classAdd():
+def add():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
@@ -53,7 +52,7 @@ def user_classAdd():
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
-async def user_classDelete():
+async def delete():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
@@ -71,6 +70,8 @@ async def user_classDelete():
     if not user_cl:
         return send_response(400, 34040, {"message": "This user is not in this class"}, "error")
     
+    #nutno upravit kvůli přidání modelu Team
+    
     for t in user_t:
         task = Task_Class.query.filter_by(idTask = t.idTask).first()
         
@@ -86,7 +87,7 @@ async def user_classDelete():
 
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
-def user_classGetUsers():
+def get_users():
     idClass = request.args.get("idClass", "")
     users = []
     badIds = []
