@@ -10,6 +10,7 @@ from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.utils.enums import Status, Type, Role
 from datetime import datetime
+from src.utils.team import make_team
 from app import db, ssh, task_path
 
 task_bp = Blueprint("task", __name__)
@@ -63,6 +64,7 @@ async def add():
     newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type)
 
     db.session.add(newTask)
+
     id = Task.query.order_by(Task.id.desc()).first().id
 
     if await sftp_stat_async(ssh, task_path + str(id)):
@@ -72,9 +74,14 @@ async def add():
 
     db.session.commit()
 
+    if type == Type.Maturita:
+        id = await make_team(newTask.id, Status.Pending)
+        db.session.add(User_Team(flask_login.current_user.id, id, newTask.id))
+        db.session.commit()
+
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
 
-    return send_response(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "type":newTask.type.value}}, "success")
+    return send_response(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor}}, "success")
 
 @task_bp.route("/task/get/guarantor", methods=["GET"])
 @flask_login.login_required
@@ -93,8 +100,7 @@ def get_by_guarantor():
             "startDate": task.startDate,
             "endDate": task.endDate,
             "task": task.task,
-            "guarantor": task.guarantor,
-            "type": task.type.value
+            "guarantor": task.guarantor
         })
         
     return send_response(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
@@ -117,8 +123,7 @@ def get_by_id():
         "startDate": task.startDate,
         "endDate": task.endDate,
         "task": task.task,
-        "guarantor": task.guarantor,
-        "type": task.type
+        "guarantor": task.guarantor
     }
 
     return send_response(200, 30031, {"message": "Task found", "task": task_data}, "success")
@@ -132,7 +137,7 @@ def get_all():
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-        all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "type":task.type.value})
+        all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
     return send_response(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
 
@@ -188,6 +193,6 @@ def get_all_possible():
         if Team.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first().status == Status.Waiting:
             user = User.query.filter_by(id = task.guarantor).first()
             guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-            waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "type":task.type.value})
+            waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
     return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks}, "success")
