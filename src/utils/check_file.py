@@ -6,7 +6,8 @@ from src.utils.response import send_response
 from src.utils.sftp_utils import sftp_stat_async
 from src.models.Task import Task
 from src.models.User import User
-from src.models.User_Task import User_Task
+from src.models.User_Team import User_Team
+from src.models.Team import Team
 
 def check_file_size(max_length):
     def decorator(f):
@@ -58,7 +59,7 @@ async def has_access_to_pfp(idUser, filename):
 
     return True
 
-async def has_access_to_tasks(idUser, idTask, idStudent, type, filename):
+async def has_access_to_tasks(idUser, idTask, idTeam, type, filename):
     if not idUser:
         return False
     
@@ -71,13 +72,13 @@ async def has_access_to_tasks(idUser, idTask, idStudent, type, filename):
     if not Task.query.filter_by(id = idTask).first():
         return False
     
-    if not User_Task.query.filter_by(idTask = idTask, idUser = idUser).first() and not Task.query.filter_by(id = idTask, guarantor = idUser).first():
+    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first() and not Task.query.filter_by(id = idTask, guarantor = idUser).first():
         return False
     
-    if not idStudent and not type:
+    if not idTeam and not type:
         path = task_path + idTask + "/" + filename
     else:
-        path = task_path + idTask + "/" + idStudent + "/" + type + "/" + filename
+        path = task_path + idTask + "/" + idTeam + "/" + type + "/" + filename
     
     if not await sftp_stat_async(ssh, path):
         abort(404)

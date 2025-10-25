@@ -2,6 +2,7 @@ import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import db
+from src.utils.enums import Role
 
 class User(db.Model, UserMixin):
     __tablename__ = "user"
@@ -11,7 +12,7 @@ class User(db.Model, UserMixin):
     surname = db.Column(db.VARCHAR(100), nullable = False)
     abbreviation = db.Column(db.VARCHAR(4), unique = True)
     createdAt = db.Column(db.DateTime, default = datetime.datetime.now, nullable = False)
-    role = db.Column(db.VARCHAR(45), nullable = False)
+    role = db.Column(db.Enum(Role), nullable = False)
     password = db.Column(db.Text, nullable = False)
     profilePicture = db.Column(db.VARCHAR(255), server_default="default.jpg")
     email = db.Column(db.VARCHAR(255), unique = True, nullable = False)

@@ -12,6 +12,7 @@ from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
+from src.utils.enums import Role
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -33,10 +34,10 @@ try:
     app.config["JWT_SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True
-    app.config["REMEMBER_COOKIE_SECURE"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = False
     app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
     app.config["SESSION_COOKIE_SAMESITE"] = "None"
-    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
     app.config["REMEMBER_COOKIE_REFRESH_EACH_REQUEST"] = True
@@ -76,13 +77,13 @@ try:
         from src.models.Class import Class
         from src.models.Task import Task
         from src.models.Specialization import Specialization
-        from src.models.User_Task import User_Task
-        from src.models.Task_Class import Task_Class
+        from src.models.User_Team import User_Team
+        from src.models.Team import Team
 
         db.create_all()
 
-        if not User.query.filter_by(role = "admin").first():
-            newUser = User(name = "admin", surname = "admin", abbreviation = None, role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
+        if not User.query.filter_by(role = Role.Admin).first():
+            newUser = User(name = "admin", surname = "admin", abbreviation = None, role = Role.Admin, password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
             db.session.add(newUser)
             db.session.commit()
         

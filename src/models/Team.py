@@ -1,4 +1,5 @@
 from app import db
+from src.utils.enums import Status
 
 class Team(db.Model):
     __tablename__ = "team"
@@ -6,8 +7,7 @@ class Team(db.Model):
     idTask = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key = True)
     elaboration = db.Column(db.VARCHAR(255))
     review = db.Column(db.VARCHAR(255))
-    #udělat na enum
-    status = db.Column(db.VARCHAR(255), nullable = False) #pending, approved, rejected
+    status = db.Column(db.Enum(Status)) #pending, approved, rejected
     
     def __init__(self, idTeam, idTask, elaboration, review, status):
         self.idTeam = idTeam
@@ -17,4 +17,4 @@ class Team(db.Model):
         self.status = status
 
     def __repr__(self):
-        return f"<task_class {self.idTeam, self.idTask!r}>"
+        return f"<team {self.idTeam, self.idTask!r}>"

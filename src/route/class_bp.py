@@ -3,6 +3,7 @@ from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.Specialization import Specialization
 from src.utils.response import send_response
+from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db
 
@@ -11,7 +12,7 @@ class_bp = Blueprint("class", __name__)
 @class_bp.route("/class/add", methods = ["POST"])
 @flask_login.login_required
 def add():
-    if flask_login.current_user.role != "admin":
+    if flask_login.current_user.role != Role.Admin:
         return send_response(403, 8010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
@@ -51,7 +52,7 @@ def add():
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
-    if flask_login.current_user.role != "admin":
+    if flask_login.current_user.role != Role.Admin:
         return send_response(403, 9010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)

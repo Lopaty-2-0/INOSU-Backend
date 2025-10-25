@@ -34,8 +34,8 @@ async def task_delete_sftp(file_path, id):
     await sftp_removeDir_async(ssh, file_path)
     return True
 
-async def user_task_delete(file_path, idUser, idTask):
-    file_path = file_path + str(idTask) + "/" + str(idUser)
+async def team_delete(file_path, idTeam, idTask):
+    file_path = file_path + str(idTask) + "/" + str(idTeam)
     if not await sftp_stat_async(ssh, file_path):
         return False
     
@@ -43,8 +43,8 @@ async def user_task_delete(file_path, idUser, idTask):
 
     return True
 
-async def user_task_createDir(file_path, id):
-    file_path = file_path + str(id)
+async def team_createDir(file_path, idTeam, idTask):
+    file_path = file_path + str(idTask) + "/" + str(idTeam)
 
     if await sftp_stat_async(ssh, file_path):
             return False

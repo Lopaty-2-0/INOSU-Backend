@@ -4,10 +4,11 @@ from src.utils.response import send_response
 from src.utils.check_file import check_file_size
 from src.utils.task import task_save_sftp, task_delete_sftp
 from src.utils.sftp_utils import sftp_stat_async
-from src.utils.all_user_classes import all_user_classes
 from src.models.User import User
 from src.models.Task import Task
-from src.models.User_Task import User_Task
+from src.models.User_Team import User_Team
+from src.models.Team import Team
+from src.utils.enums import Status, Type, Role
 from datetime import datetime
 from app import db, ssh, task_path
 
@@ -18,45 +19,49 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/add", methods = ["POST"])
 async def add():
-    if flask_login.current_user.role == "student":
-        return send_response(403, 26010, {"message":"Students can not make tasks"}, "error")
-    
     taskName = request.form.get("name", None)
     startDate = request.form.get("startDate", None)
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
-    approve = request.form.get("approve", None)
-
-    if not approve:
-        return send_response(400, 26080, {"message":"Approve not entered"}, "error")
-    
-    needApprove = str(approve).lower() == "true"
 
     if taskName:
         if len(taskName) > 255:
             taskName = None
     if not taskName:
-        return send_response(400, 26020, {"message": "Name not entered"}, "error")
+        return send_response(400, 26010, {"message": "Name not entered"}, "error")
     if not startDate:
         startDate = datetime.now()
     else:
         startDate = datetime.fromtimestamp(int(startDate)/1000)
     if not endDate:
-        return send_response(400, 26030, {"message": "endDate  not entered"}, "error")
+        return send_response(400, 26020, {"message": "endDate  not entered"}, "error")
     try:
         endDate = datetime.fromtimestamp(int(endDate)/1000)
     except:
-        return send_response(400, 26040, {"message":"End date not integer or is too far"}, "error")
+        return send_response(400, 26030, {"message":"End date not integer or is too far"}, "error")
     if endDate <= startDate:
-        return send_response(400, 26050, {"message":"Ending before begining"}, "error")
+        return send_response(400, 26040, {"message":"Ending before begining"}, "error")
     if not task:
-        return send_response(400, 26060, {"message": "Task not entered"}, "error")
+        return send_response(400, 26050, {"message": "Task not entered"}, "error")
     if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
-        return send_response(400, 26070, {"message": "Wrong file format or too long"}, "error")
+        return send_response(400, 26060, {"message": "Wrong file format or too long"}, "error")
+    if flask_login.current_user.role != Role.Student:
+        type = Type.Task
+        user = flask_login.current_user
+    else:
+        if not guarantor:
+            return send_response(400, 26070, {"message": "Guarantor not entered"}, "error")
+        if not User.query.filter_by(id = guarantor).first():
+            return send_response(400, 26080, {"message": "Nonexistent user"}, "error")
+        if User.query.filter_by(id = guarantor).first().role == Role.Student:
+            return send_response(400, 26080, {"message": "User can not be guarantor"}, "error")
+        
+        type = Type.Maturita
+        user = flask_login.current_user
     
-    user = flask_login.current_user
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, approve = needApprove)
+    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type)
+
     db.session.add(newTask)
     id = Task.query.order_by(Task.id.desc()).first().id
 
@@ -67,9 +72,9 @@ async def add():
 
     db.session.commit()
 
-    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email}
+    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
 
-    return send_response(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor}}, "success")
+    return send_response(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "type":newTask.type.value}}, "success")
 
 @task_bp.route("/task/get/guarantor", methods=["GET"])
 @flask_login.login_required
@@ -89,7 +94,7 @@ def get_by_guarantor():
             "endDate": task.endDate,
             "task": task.task,
             "guarantor": task.guarantor,
-            "approve": task.approve
+            "type": task.type.value
         })
         
     return send_response(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
@@ -113,7 +118,7 @@ def get_by_id():
         "endDate": task.endDate,
         "task": task.task,
         "guarantor": task.guarantor,
-        "approve": task.approve
+        "type": task.type
     }
 
     return send_response(200, 30031, {"message": "Task found", "task": task_data}, "success")
@@ -126,8 +131,8 @@ def get_all():
 
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()
-        guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-        all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+        guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
+        all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "type":task.type.value})
 
     return send_response(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
 
@@ -144,19 +149,22 @@ async def delete():
     if not id:
         return send_response(400, 28020, {"message":"No id entered"}, "error")
     
-
-    user_task = User_Task.query.filter_by(idTask = id)
-
-    if flask_login.current_user.id != Task.query.filter_by(id = id).first().guarantor:
-        return send_response(403, 28030, {"message":"No permission for that"}, "error")
-    
-    for user in user_task:
-        db.session.delete(user)
+    teams = Team.query.filter_by(idTask = id)
+    user_team = User_Team.query.filter_by(idTask = id)
 
     task = Task.query.filter_by(id=id).first()
 
     if not task:
-        return send_response(400, 28040, {"message":"No task found"}, "error")
+        return send_response(400, 28030, {"message":"No task found"}, "error")
+
+    if flask_login.current_user.id != task.guarantor:
+        return send_response(403, 28040, {"message":"No permission for that"}, "error")
+    
+    for user in user_team:
+        db.session.delete(user)
+
+    for team in teams:
+        db.session.delete(team)
     
     db.session.delete(task)
     await task_delete_sftp(task_path, task.id)
@@ -164,6 +172,7 @@ async def delete():
 
     return send_response(200, 28051, {"message":"Task deleted"}, "success")
 
+#nutno zjistit co dělá a pak ji upravit
 @task_bp.route("/task/get/possible", methods = ["GET"])
 @flask_login.login_required
 def get_all_possible():
@@ -171,14 +180,14 @@ def get_all_possible():
     waitingTasks = []
 
     for task in tasks:
-        user_task = User_Task.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first()
+        user_team = User_Team.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first()
 
-        if not user_task:
+        if not user_team:
             continue
 
-        elif user_task.status == "waiting":
+        if Team.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first().status == Status.Waiting:
             user = User.query.filter_by(id = task.guarantor).first()
-            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-            waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
+            waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "type":task.type.value})
 
     return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks}, "success")

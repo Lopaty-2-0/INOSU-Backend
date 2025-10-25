@@ -1,15 +1,14 @@
 from flask import request, Blueprint
 import flask_login
 import json
-from app import db, task_path
+from app import db
 from src.models.User_Class import User_Class
 from src.models.Class import Class
-from src.models.User_Task import User_Task
 from src.models.User import User
-from src.utils.task import task_delete_sftp
 from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
+from src.utils.enums import Role
 
 user_class_bp = Blueprint("user_class", __name__)
 
@@ -22,7 +21,7 @@ def add():
     badIds = []
     goodIds = []
 
-    if flask_login.current_user.role == "student":
+    if flask_login.current_user.role == Role.Student:
         return send_response(403, 33010, {"message": "Permission denied"}, "error")
     if not idUser:
         return send_response(400, 33020, {"message": "idUser not entered"}, "error")
@@ -57,7 +56,7 @@ async def delete():
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
 
-    if flask_login.current_user.role == "student":
+    if flask_login.current_user.role == Role.Student:
         return send_response(403, 34010, {"message": "Permission denied"}, "error")
     if not idUser:
         return send_response(400, 34020, {"message": "idUser not entered"}, "error")
@@ -65,20 +64,9 @@ async def delete():
         return send_response(400, 34030, {"message": "idClass not entered"}, "error")
     
     user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
-    user_t = User_Task.query.filter_by(idUser = idUser)
 
     if not user_cl:
         return send_response(400, 34040, {"message": "This user is not in this class"}, "error")
-    
-    #nutno upravit kvůli přidání modelu Team
-    
-    for t in user_t:
-        task = Task_Class.query.filter_by(idTask = t.idTask).first()
-        
-        if task:
-            if task.idClass == idClass:
-                await task_delete_sftp(task_path + str(t.idTask) + "/", idUser)
-                db.session.delete(t)
     
     db.session.delete(user_cl)
     db.session.commit()
@@ -113,7 +101,7 @@ def get_users():
         for cl in clas:
             if not cl.idUser in ids:
                 user = User.query.filter_by(id = cl.idUser).first()
-                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
+                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
                 ids.append(cl.idUser)
 
         goodIds.append(id)
