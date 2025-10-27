@@ -1,7 +1,7 @@
 from flask import request, Blueprint
 import flask_login
 import json
-from app import db, task_path
+from app import db
 from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.models.User_Class import User_Class
@@ -11,9 +11,10 @@ from src.utils.enums import Status, Type
 from src.utils.team import make_team
 from src.utils.response import send_response
 from src.utils.all_user_tasks import all_user_tasks
-from src.utils.task import team_delete, team_createDir
+from src.utils.team import team_delete, team_createDir
 from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
+from src.models.Version_Team import Version_Team
 
 user_team_bp = Blueprint("user_team", __name__)
 
@@ -54,10 +55,10 @@ async def add():
                     badIds.append(idU)
                     continue
 
-                idT = make_team(idTask = idTask, status = status)
+                idT = await make_team(idTask = idTask, status = status, name = None)
 
                 newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
-                await team_createDir(task_path, idTask, idT)
+                await team_createDir(idTask, idT)
                 db.session.add(newUser_Team)
                 goodIds.append(idU)
 
@@ -65,17 +66,17 @@ async def add():
             for idCl in idClass:
                 users = User_Class.query.filter_by(idClass = idCl)
 
-                for u in users:
-                    idU = u.id
+                for user in users:
+                    idU = user.id
 
                     if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
                         badIds.append(idU)
                         continue
 
-                    idT = make_team(idTask = idTask, status = status)
+                    idT = await make_team(idTask = idTask, status = status, name = None)
 
                     newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
-                    await team_createDir(task_path, idTask, idT)
+                    await team_createDir(idTask, idT)
                     db.session.add(newUser_Team)
                     goodIds.append(idU)
     else:
@@ -157,13 +158,14 @@ def get_by_status():
         status = [status]
     if str(which) == "0" or str(which) == "2":
         for s in status:
-            task = Task.query.filter_by(guarantor = flask_login.current_user.id)
-            for tas in task:
-                teams = Team.query.filter_by(idTask = tas.id, status = s)
+            tasks = Task.query.filter_by(guarantor = flask_login.current_user.id)
+            for task in tasks:
+                teams = Team.query.filter_by(idTask = task.id, status = s)
 
                 for t in teams:
-                    team = User_Team.query.filter_by(idTeam = t.idTeam, idTask = t.idTask).first()
+                    team = User_Team.query.filter_by(idTeam = team.idTeam, idTask = t.idTask).first()
                     user = User.query.filter_by(id = team.idUser).first()
+                    version = Version_Team.query.filter_by(idTask=t.idTask, idTeam = t.idTeam).order_by(Version_Team.idVersion.desc()).first()
                     guarantorTasks.append({"elaborator":{"id": user.id, 
                                                 "name": user.name, 
                                                 "surname": user.surname, 
@@ -175,14 +177,14 @@ def get_by_status():
                                                 "createdAt":user.createdAt,
                                                 "updatedAt":user.updatedAt
                                                 },
-                                "task":tas.task,
-                                "name":tas.name, 
-                                "statDate":tas.startDate, 
-                                "endDate":tas.endDate, 
-                                "status":t.status.value, 
-                                "elaboration":t.elaboration,
-                                "review":t.review,
-                                "type":tas.type.value,
+                                "task":task.task,
+                                "name":task.name, 
+                                "statDate":task.startDate, 
+                                "endDate":task.endDate, 
+                                "status":team.status.value, 
+                                "elaboration":version.elaboration,
+                                "review":team.review,
+                                "type":task.type.value,
                                 "guarantor":{"id": flask_login.current_user.id, 
                                             "name": flask_login.current_user.name, 
                                             "surname": flask_login.current_user.surname, 
@@ -194,18 +196,19 @@ def get_by_status():
                                             "createdAt":flask_login.current_user.createdAt,
                                             "updatedAt":flask_login.current_user.updatedAt
                                             },
-                                "idTask":tas.id,
-                                "idTeam":t.idTeam
+                                "idTask":task.id,
+                                "idTeam":team.idTeam
                                 })
                     
     if str(which) == "1" or str(which) == "2":
         for s in status:
-            ta = User_Team.query.filter_by(idUser = flask_login.current_user.id)
+            teams = User_Team.query.filter_by(idUser = flask_login.current_user.id)
 
-            for t in ta:
+            for t in teams:
                 team = Team.query.filter_by(idTask = t.idTask, idTeam = t.idTeam).first()
-                tas = Task.query.filter_by(id = t.idTask).first()
-                user = User.query.filter_by(id = tas.guarantor).first()
+                task = Task.query.filter_by(id = t.idTask).first()
+                user = User.query.filter_by(id = task.guarantor).first()
+                version = Version_Team.query.filter_by(idTask=t.idTask, idTeam = t.idTeam).order_by(Version_Team.idVersion.desc()).first()
                 elaboratingTasks.append({"elaborator":{"id": flask_login.current_user.id, 
                                         "name": flask_login.current_user.name, 
                                         "surname": flask_login.current_user.surname, 
@@ -217,14 +220,14 @@ def get_by_status():
                                         "createdAt":flask_login.current_user.createdAt,
                                         "updatedAt":flask_login.current_user.updatedAt
                                         },
-                            "task":tas.task,
-                            "name":tas.name, 
-                            "statDate":tas.startDate, 
-                            "endDate":tas.endDate, 
+                            "task":task.task,
+                            "name":task.name, 
+                            "statDate":task.startDate, 
+                            "endDate":task.endDate, 
                             "status":team.status.value,
-                            "elaboration":team.elaboration,
+                            "elaboration":version.elaboration,
                             "review":team.review,
-                            "type":tas.type.value, 
+                            "type":task.type.value, 
                             "guarantor":{"id": user.id, 
                                             "name": user.name, 
                                             "surname": user.surname, 
@@ -236,7 +239,7 @@ def get_by_status():
                                             "createdAt":user.createdAt,
                                             "updatedAt":user.updatedAt
                                         },
-                             "idTask":t.idTask,
+                             "idTask":task.id,
                              "idTeam":team.idTeam
                             })
                 
@@ -264,13 +267,13 @@ def get_by_idTask():
 
     return send_response(200, 42041, {"message": "Users found", "users":users}, "success")
 
-#nutno upravit
 @user_team_bp.route("/user_team/change", methods=["PUT"])
 @flask_login.login_required
 async def change():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
+    idTeam = data.get("idTeam", None)
     goodIds = []
     badIds = []
     ids = []
@@ -279,15 +282,19 @@ async def change():
     if not idTask:
         return send_response(400, 43010, {"message": "idTask not entered"}, "error")
     if not idUser:
-        ids.append("all")
+        return send_response(400, 43020, {"message": "idUser not entered"}, "error")
+    if not idTeam:
+        return send_response(400, 43030, {"message": "idTeam not entered"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return send_response(400, 43020, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 43040, {"message": "Nonexistent task"}, "error")
+    if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
+        return send_response(400, 43050, {"message": "Nonexistent team"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
-        return send_response(403, 43030, {"message": "No permission"}, "error")
+        return send_response(403, 43060, {"message": "No permission"}, "error")
     if not isinstance(idUser, list):
         idUser = [idUser]
     
-    user_team = User_Team.query.filter_by(idTask = idTask)
+    user_team = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
 
     for id in idUser:
         if not User.query.filter_by(id = id).first():
@@ -295,32 +302,21 @@ async def change():
             continue
         ids.append(id)
 
-    for task in user_team:
-        if not task.idUser in ids:
-            await team_delete(task_path, task.idUser, idTask)
-            db.session.delete(task)
-            removedIds.append(task.idUser)
+    for team in user_team:
+        if not team.idUser in ids:
+            db.session.delete(team)
+            removedIds.append(team.idUser)
             continue
-        ids.remove(task.idUser)
-    
-    if len(ids) >= 1 and ids[0]!="all":
-        if Task.query.filter_by(id = idTask).first().approve:
-            status = "waiting"
         else:
-            status = "approved"
-
-        for id in ids:
-            newuser_team = user_team(idTask=idTask,idUser=id, review=None, status=status, elaboration=None)
-            await team_createDir(task_path + str(idTask) + "/", id)
-            goodIds.append(id)
-            db.session.add(newuser_team)
-
+            goodIds.append(team.idUser)
+        ids.remove(team.idUser)
+    
     if not goodIds and not ids and not removedIds:
-        return send_response(400, 43040, {"message": "Nothing updated"}, "error")
+        return send_response(400, 43070, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
 
-    return send_response(200, 43051, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
+    return send_response(200, 43081, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
 
 @user_team_bp.route("/user_team/get/status/idTask", methods=["GET"])
 @flask_login.login_required
@@ -342,17 +338,18 @@ def get_with_status_and_idTask():
     if not isinstance(status, list):
         status = [status]
 
-    tas = Task.query.filter_by(id = idTask).first()
-    guarantor = User.query.filter_by(id = tas.guarantor).first()
+    task = Task.query.filter_by(id = idTask).first()
+    guarantor = User.query.filter_by(id = task.guarantor).first()
 
-    if flask_login.current_user.id != tas.guarantor:
+    if flask_login.current_user.id != task.guarantor:
         return send_response(403, 44030, {"message": "No permission"}, "error")
 
     for s in status:
-        ta = Team.query.filter_by(idTask = idTask, status = s)
-        for t in ta:
-            user_team = User_Team.query.filter_by(idTask = idTask, idTeam = t.idTeam).first()
+        teams = Team.query.filter_by(idTask = idTask, status = s)
+        for team in teams:
+            user_team = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first()
             user = User.query.filter_by(id = user_team.idUser).first()
+            version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
             tasks.append({"elaborator":{"id": user.id, 
                                         "name": user.name, 
                                         "surname": user.surname, 
@@ -364,14 +361,14 @@ def get_with_status_and_idTask():
                                         "createdAt":user.createdAt,
                                         "updatedAt":user.updatedAt
                                         },
-                        "task":tas.task,
-                        "name":tas.name, 
-                        "statDate":tas.startDate, 
-                        "endDate":tas.endDate, 
-                        "status":t.status.value, 
-                        "elaboration":t.elaboration,
-                        "review":t.review,
-                        "type":tas.type.value,
+                        "task":task.task,
+                        "name":task.name, 
+                        "statDate":task.startDate, 
+                        "endDate":task.endDate, 
+                        "status":team.status.value, 
+                        "elaboration":version.elaboration,
+                        "review":team.review,
+                        "type":task.type.value,
                         "guarantor":{"id": guarantor.id, 
                                     "name": guarantor.name, 
                                     "surname": guarantor.surname, 
@@ -383,8 +380,8 @@ def get_with_status_and_idTask():
                                     "createdAt":guarantor.createdAt,
                                     "updatedAt":guarantor.updatedAt
                                     },
-                        "idTask":tas.id,
-                        "idTeam":t.idTeam
+                        "idTask":task.id,
+                        "idTeam":team.idTeam
                         })
                 
     return send_response(200, 44041, {"message": "All user_teams for this task and statuses", "tasks": tasks}, "success")
@@ -405,6 +402,7 @@ def get_by_idUser_and_idTask():
     team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = idTask).first()
     user = User.query.filter_by(id = idUser).first()
     task = Task.query.filter_by(id = idTask).first()
+    version = Version_Team.query.filter_by(idTask=idTask, idTeam = user_team.idTeam).order_by(Version_Team.idVersion.desc()).first()
     
     if not user:
         return send_response(400, 45030, {"message": "Nonexistent user"}, "error")
@@ -431,7 +429,7 @@ def get_by_idUser_and_idTask():
                 "statDate":task.startDate, 
                 "endDate":task.endDate, 
                 "status":team.status.value, 
-                "elaboration":team.elaboration,
+                "elaboration":version.elaboration,
                 "review":team.review,
                 "type":task.type.value,
                 "guarantor":{"id": guarantor.id, 

@@ -10,7 +10,7 @@ from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db, task_path, pfp_path, url
+from app import db, pfp_path, url
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
@@ -110,6 +110,7 @@ def add():
         if not users.filename.rsplit(".", 1)[1].lower() in addUser_extensions:
             return send_response(400, 1180, {"message": "Wrong file format"}, "error")
         try:
+            #TODO: potom dodělat
             for userData in json.load(users):
                 data = request.get_json()
                 name = data.get("name", None)
@@ -276,8 +277,8 @@ async def delete():
             for c in cl:
                 db.session.delete(c)
             for task in tas:
-                delete_teams_for_task(task.id)
-                await task_delete_sftp(task_path, task.id)
+                await delete_teams_for_task(task.id)
+                await task_delete_sftp(task.id)
                 db.session.delete(task)
             db.session.commit()
 

@@ -59,7 +59,6 @@ def delete():
     idClass = data.get("idClass", None)
     goodIds = []
     badIds = []
-    userIds = []
 
     if not idClass:
         return send_response(400, 9020, {"message": "IdClass is missing"}, "error")
@@ -70,16 +69,18 @@ def delete():
         if not Class.query.filter_by(id = id).first():
             badIds.append(id)
             continue
-        if User_Class.query.filter_by(idClass = id).first():
-            userIds.append(id)
-            continue
+
+        users = User_Class.query.filter_by(idClass = id)
+
+        for user in users:
+            db.session.delete(user)
 
         db.session.delete(Class.query.filter_by(id = id).first())
         goodIds.append(id)
 
     db.session.commit()
 
-    return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds, "userIds":userIds}, "success")
+    return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds}, "success")
 
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required

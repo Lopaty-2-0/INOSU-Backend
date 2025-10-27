@@ -8,6 +8,7 @@ from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
 from src.models.Team import Team
+from src.models.Version_Team import Version_Team
 from src.utils.enums import Status, Type, Role
 from datetime import datetime
 from src.utils.team import make_team
@@ -68,9 +69,9 @@ async def add():
     id = Task.query.order_by(Task.id.desc()).first().id
 
     if await sftp_stat_async(ssh, task_path + str(id)):
-        await task_delete_sftp(task_path, id)
+        await task_delete_sftp(id)
         
-    await task_save_sftp(task_path, task, id)
+    await task_save_sftp(task, id)
 
     db.session.commit()
 
@@ -169,10 +170,15 @@ async def delete():
         db.session.delete(user)
 
     for team in teams:
+        versions = Version_Team.query.filter_by(idTask = id, idTeam = team.idTeam)
+
+        for ver in versions:
+            db.session.delete(ver)
+
         db.session.delete(team)
     
     db.session.delete(task)
-    await task_delete_sftp(task_path, task.id)
+    await task_delete_sftp(task.id)
     db.session.commit()
 
     return send_response(200, 28051, {"message":"Task deleted"}, "success")
