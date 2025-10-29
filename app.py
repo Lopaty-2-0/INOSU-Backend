@@ -46,7 +46,7 @@ try:
     ssh = ssh_connect()
     db = sql(app)
     jwt = JWTManager(app)
-    migrattion = Migrate(app, db)
+    migration = Migrate(app, db)
     CORS( 
         app,
         supports_credentials=True,
