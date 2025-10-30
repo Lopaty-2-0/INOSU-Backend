@@ -438,7 +438,7 @@ def get_roles():
     users = User.query.all()
 
     for user in users:
-        role = user.role
+        role = user.role.value
         if not role in roles:
             roles.append(role)
 
