@@ -26,6 +26,8 @@ async def add():
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
+    deadline = request.form.get("deadline", None)
+    points = request.form.get("points", None)
 
     if taskName:
         if len(taskName) > 255:
@@ -61,8 +63,23 @@ async def add():
         
         type = Type.Maturita
         user = flask_login.current_user
+    if deadline:
+        try:
+            deadline = datetime.fromtimestamp(int(deadline)/1000)
+
+            if deadline < startDate:
+                return send_response(400, 26090, {"message":"Deadline before startDate"}, "error")
+            if deadline < endDate:
+                return send_response(400, 26100, {"message":"Deadline before endDate"}, "error")
+        except:
+            return send_response(400, 26110, {"message":"Deadline not integer or is too far"}, "error")
+    if points:
+        if isinstance(points, int):
+            points = float(points)
+        if not isinstance(points, float):
+            return send_response(400, 26120, {"message":"Points are not integer or float"}, "error")
     
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type)
+    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type, points = points, deadline = deadline)
 
     db.session.add(newTask)
 
@@ -82,7 +99,7 @@ async def add():
 
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
 
-    return send_response(201, 26091, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor}}, "success")
+    return send_response(201, 26131, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
 
 @task_bp.route("/task/get/guarantor", methods=["GET"])
 @flask_login.login_required
@@ -101,7 +118,9 @@ def get_by_guarantor():
             "startDate": task.startDate,
             "endDate": task.endDate,
             "task": task.task,
-            "guarantor": task.guarantor
+            "guarantor": task.guarantor,
+            "deadline": task.deadline,
+            "points":task.points
         })
         
     return send_response(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
@@ -117,6 +136,9 @@ def get_by_id():
 
     if not task:
         return send_response(404, 30020, {"message": "Task not found"}, "error")
+    
+    user = User.query.filter_by(id = task.quarantor).first()
+    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
 
     task_data = {
         "id": task.id,
@@ -124,7 +146,9 @@ def get_by_id():
         "startDate": task.startDate,
         "endDate": task.endDate,
         "task": task.task,
-        "guarantor": task.guarantor
+        "guarantor": guarantor,
+        "points": task.points,
+        "deadline": task.deadline
     }
 
     return send_response(200, 30031, {"message": "Task found", "task": task_data}, "success")
@@ -138,7 +162,7 @@ def get_all():
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-        all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+        all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "deadline": task.deadline, "points": task.points})
 
     return send_response(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
 
@@ -148,9 +172,8 @@ async def delete():
     data = request.get_json(force=True)
     id = data.get("id", None)
 
-    if flask_login.current_user.role == "student":
+    if flask_login.current_user.role == Role.Student:
         return send_response(403, 28010, {"message":"Students can not delete"}, "error")
-    
 
     if not id:
         return send_response(400, 28020, {"message":"No id entered"}, "error")

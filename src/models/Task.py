@@ -7,14 +7,15 @@ class Task(db.Model):
 
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     name = db.Column(db.VARCHAR(45), nullable = False)
-    startDate = db.Column(db.DateTime, default = datetime.datetime.now,nullable = False)
+    startDate = db.Column(db.DateTime, default = datetime.datetime.now, nullable = False)
     endDate = db.Column(db.DateTime, nullable = False)
+    deadline = db.Column(db.DateTime, nullable = True)
     task = db.Column(db.VARCHAR(255), nullable = False)
     guarantor = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = False)
     type = db.Column(db.Enum(Type), nullable = False)
-    points = db.Column(db.Integer, nullable = True)
+    points = db.Column(db.Float, nullable = True)
 
-    def __init__(self, name, startDate, endDate, task, guarantor, type, points):
+    def __init__(self, name, startDate, endDate, task, guarantor, type, points, deadline):
         self.name = name
         self.startDate = startDate
         self.endDate = endDate
@@ -22,6 +23,7 @@ class Task(db.Model):
         self.guarantor = guarantor
         self.type = type
         self.points = points
+        self.deadline = deadline
 
     def __repr__(self):
-        return f"<task {self.name, self.startDate, self.endDate, self.task, self.guarantor, self.type, self.points!r}>"
+        return f"<task {self.name, self.startDate, self.endDate, self.task, self.guarantor, self.type, self.points, self.deadline!r}>"

@@ -1,9 +1,3 @@
-"""
-Tento soubor je uložen čistě z důvodu, aby se vědělo, které rescodes mohou být znovu použity
-"""
-
-#rescode 380000
-
 from flask import request, Blueprint
 import flask_login
 from app import db
@@ -79,10 +73,12 @@ async def delete():
 @flask_login.login_required
 async def update():
     #TODO: předělat na to, že review není soubor
-    idTask = request.form.get("idTask", None)
-    idTeam = request.form.get("idTeam", None)
-    status = request.form.get("status", None)
-    review = request.files.get("review", None)
+    data = request.get_json(force = True)
+    idTask = data.get("idTask", None)
+    idTeam = data.get("idTeam", None)
+    status = data.get("status", None)
+    review = data.get("review", None)
+    points = data.get("points", None)
     ids = []
 
     if not idTask:
@@ -99,20 +95,24 @@ async def update():
 
     if not team:
         return send_response(400, 32040, {"message": "Nonexistent team"}, "error")
-    
-    
     if not flask_login.current_user.id == task.guarantor:
         return send_response(400, 32050, {"message": "User doesnt have rights"}, "error")
-        
-    if not review and status not in [s.value for s in Status] and status != Status.Pending.value:
+    if not review and not status and not points and status != Status.Pending.value:
         return send_response(400, 32060, {"message": "Nothing not entered to change"}, "error")
-    if review:
-        return "Skibidi"
-
-    if status:
+    if status not in [s.value for s in Status]:
+        return send_response(400, 32070, {"message": "Status not our type"}, "error")
+    else:
         team.status = Status(status)
-        
-    return send_response(200, 32101, {"message": "team updated"}, "success")
+    if isinstance(points, int):
+        points = float(points)
+    if not isinstance(points, float):
+        return send_response(400, 32080, {"message": "Points are not integer or float"}, "error")
+    
+    team.review = review
+    
+    db.session.commit()
+
+    return send_response(200, 32091, {"message": "team updated"}, "success")
 
 @team_bp.route("/team/get", methods=["GET"])
 @flask_login.login_required
@@ -151,7 +151,8 @@ def get_by_task():
                     "review":team.review, 
                     "idTeam":team.idTeam,
                     "count": count,
-                    "name":team.name
+                    "name":team.name,
+                    "points":team.points
                     })
 
     return send_response(200, 41031, {"message": "All teams for this task", "teams":teams, "users":users}, "success")

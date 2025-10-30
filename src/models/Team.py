@@ -7,7 +7,7 @@ class Team(db.Model):
 
     idTeam = db.Column(db.Integer, primary_key=True)
     idTask = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key=True)
-    points = db.Column(db.Integer, nullable=True)
+    points = db.Column(db.Float, nullable=True)
     review = db.Column(TEXT, nullable=True)
     status = db.Column(db.Enum(Status), nullable=False)
     name = db.Column(db.String(255), nullable=True)

@@ -197,7 +197,9 @@ def get_by_status():
                                             "updatedAt":flask_login.current_user.updatedAt
                                             },
                                 "idTask":task.id,
-                                "idTeam":team.idTeam
+                                "idTeam":team.idTeam,
+                                "taskPoints":task.points,
+                                "teamPoints":team.points
                                 })
                     
     if str(which) == "1" or str(which) == "2":
@@ -239,8 +241,10 @@ def get_by_status():
                                             "createdAt":user.createdAt,
                                             "updatedAt":user.updatedAt
                                         },
-                             "idTask":task.id,
-                             "idTeam":team.idTeam
+                            "idTask":task.id,
+                            "idTeam":team.idTeam,
+                            "taskPoints":task.points,
+                            "teamPoints":team.points
                             })
                 
     return send_response(200, 40021, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
@@ -381,7 +385,9 @@ def get_with_status_and_idTask():
                                     "updatedAt":guarantor.updatedAt
                                     },
                         "idTask":task.id,
-                        "idTeam":team.idTeam
+                        "idTeam":team.idTeam,
+                        "taskPoints":task.points,
+                        "teamPoints":team.points
                         })
                 
     return send_response(200, 44041, {"message": "All user_teams for this task and statuses", "tasks": tasks}, "success")
@@ -444,7 +450,9 @@ def get_by_idUser_and_idTask():
                             "updatedAt":guarantor.updatedAt
                             },
                 "idTask":task.id,
-                "idTeam":team.idTeam
+                "idTeam":team.idTeam,
+                "taskPoints":task.points,
+                "teamPoints":team.points
                 }
     
     return send_response(200, 45061, {"message": "All user_teams for this task and statuses", "task": tasks}, "success")

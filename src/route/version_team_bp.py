@@ -23,27 +23,27 @@ async def add():
     team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
 
     if not team:
-        return send_response(400, 32100, {"message": "This team doesnt exist"}, "error")
+        return send_response(400, 38010, {"message": "This team doesnt exist"}, "error")
     if not User_Team.query.filter_by(idUser = flask_login.current_user.id, idTeam = idTeam, idTask = idTask).first() or team.status != Status.Approved:
-        return send_response(400, 32100, {"message": "User doesnt have rights"}, "error")
+        return send_response(400, 38020, {"message": "User doesnt have rights"}, "error")
     if not elaboration:
-        return send_response(400, 32110, {"message": "Elaboration not entered"}, "error")
+        return send_response(400, 38030, {"message": "Elaboration not entered"}, "error")
     if not elaboration.filename.rsplit(".", 1)[1].lower() in elaboration_extensions:
-        return send_response(400, 32110, {"message": "Wrong file format"}, "error")
+        return send_response(400, 38040, {"message": "Wrong file format"}, "error")
     if len(elaboration.filename) > 255:
-        return send_response(400, 32120, {"message": "File name too long"}, "error")
+        return send_response(400, 38050, {"message": "File name too long"}, "error")
     
     id = await make_version(idTask = idTask, idTeam = idTeam)
     status = await version_save(idTeam = idTeam, idTask = idTask, idVersion = id, file = elaboration)
 
     if not status:
-        return send_response(400, 32120, {"message": "File already exists"}, "error")
+        return send_response(400, 38060, {"message": "File already exists"}, "error")
     
     new_version = Version_Team(idTeam = idTeam, idTask = idTask, elaboration = elaboration.filename, idVersion = id)
     db.session.add(new_version)
     db.session.commit()
 
-    return send_response(400, 32100, {"message": "Version_team created"}, "success")
+    return send_response(400, 38071, {"message": "Version_team created"}, "success")
 
 @version_team.route("/version_team/change", methods = ["POST"])
 @flask_login.login_required
@@ -57,15 +57,15 @@ async def change():
     version = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion).first()
 
     if not team:
-        return send_response(400, 32100, {"message": "This team doesnt exist"}, "error")
+        return send_response(400, 49010, {"message": "This team doesnt exist"}, "error")
     if not version:
-        return send_response(400, 32100, {"message": "This version doesnt exist"}, "error")
+        return send_response(400, 49020, {"message": "This version doesnt exist"}, "error")
     if not User_Team.query.filter_by(idUser = flask_login.current_user.id, idTeam = idTeam, idTask = idTask).first() or team.status != Status.Approved:
-        return send_response(400, 32100, {"message": "User doesnt have rights"}, "error")
+        return send_response(400, 49030, {"message": "User doesnt have rights"}, "error")
     
     await version_delete(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration)
 
     version.elaboration = None
     db.session.commit()
 
-    return send_response(400, 32100, {"message": "Version_team created"}, "success")
+    return send_response(400, 49041, {"message": "Version_team updated"}, "success")

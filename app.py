@@ -90,7 +90,7 @@ try:
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)
 except OperationalError as db_error:
-    if db_error.code != 1054:
+    if db_error.code == 1049:
         try:
             create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
             print("Creating database")
@@ -100,8 +100,7 @@ except OperationalError as db_error:
         finally:
             exit()
     else:
-        db.create_all()
+        with app.app_context():
+            db.create_all()
 except Exception as e:
     print(f"Error while starting aplication: {e}")
-finally:
-    exit()
