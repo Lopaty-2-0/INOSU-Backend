@@ -20,6 +20,7 @@ from src.utils.task import task_delete_sftp
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role
+from sqlalchemy import or_
 
 user_bp = Blueprint("user", __name__)
 
@@ -106,7 +107,7 @@ def add():
 
 
     
-@user_bp.route("/user/add/file", methods = ["PUT"])
+@user_bp.route("/user/add/file", methods = ["POST"])
 @check_file_size(4*1024*1024)
 @flask_login.login_required
 def add_file():
@@ -426,6 +427,7 @@ def get_by_email():
     
     return send_response(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
+#TODO: předělat na paging
 @user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
 def get_by_role():
@@ -438,7 +440,7 @@ def get_by_role():
     users = User.query.filter_by(role = role)
 
     for user in users:
-        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
+        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
     if not all_users:
         return send_response(400, 20020, {"message": "Users not found"}, "error")
     
@@ -447,13 +449,9 @@ def get_by_role():
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
 def get_of_users():
-    number = 0
-    users = User.query.all()
+    count = User.query.count()
 
-    for user in users:
-        number += 1
-
-    return send_response(200, 24011, {"message": "Number of users", "users": number}, "success")
+    return send_response(200, 24011, {"message": "Count of users", "count": count}, "success")
 
 @user_bp.route("/user/get/roles", methods = ["GET"])
 @flask_login.login_required
@@ -473,6 +471,7 @@ def get_roles():
 def get_current_role():
     return send_response(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
 
+#TODO: předělat na paging
 @user_bp.route("/user/get/noClass", methods =["GET"])
 @flask_login.login_required
 def get_no_class():
@@ -503,3 +502,53 @@ def get_logged_user_data():
     user = flask_login.current_user
 
     return send_response(200, 50011, {"message": "Logged user data", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
+
+#TODO: všechny routy kde se získávají uživatelé předělat na tento typ
+#pageNumber starts with 1
+
+#tady je to co chceš vidět Honzi
+@user_bp.route("/user/get", methods = ["GET"])
+@flask_login.login_required
+def get_user_page():
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+  
+    right_users = []
+
+    if not amountForPaging:
+        return send_response(400, 51010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 51020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 51030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 51040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 51050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 51060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not searchQuery:
+        users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+
+    else:
+        users = User.query.filter(or_(User.id == searchQuery, User.name == searchQuery, User.surname == searchQuery, User.role == searchQuery, User.email == searchQuery, User.abbreviation == searchQuery.upper())).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    
+    count = users.count()
+
+    for user in users:
+        right_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders})
+    
+    return send_response(200, 51071, {"message": "Users found", "users":right_users, "count":count}, "success")

@@ -83,6 +83,7 @@ def delete():
     
     return send_response (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds, "classIds":classIds}, "success")
 
+#TODO: předělat na paging
 @specialization_bp.route("/specialization/get", methods = ["GET"])
 @flask_login.login_required
 def get():

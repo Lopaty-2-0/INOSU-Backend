@@ -22,22 +22,19 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 @task_bp.route("/task/add", methods = ["POST"])
 async def add():
     taskName = request.form.get("name", None)
-    startDate = request.form.get("startDate", None)
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     guarantor = request.form.get("guarantor", None)
     deadline = request.form.get("deadline", None)
     points = request.form.get("points", None)
 
+    startDate = datetime.now
+
     if taskName:
         if len(taskName) > 255:
             taskName = None
     if not taskName:
         return send_response(400, 26010, {"message": "Name not entered"}, "error")
-    if not startDate:
-        startDate = datetime.now()
-    else:
-        startDate = datetime.fromtimestamp(int(startDate)/1000)
     if not endDate:
         return send_response(400, 26020, {"message": "endDate  not entered"}, "error")
     try:
@@ -206,7 +203,7 @@ async def delete():
 
     return send_response(200, 28051, {"message":"Task deleted"}, "success")
 
-#nutno zjistit co dělá a pak ji upravit
+#TODO:nutno zjistit co dělá a pak ji upravit
 @task_bp.route("/task/get/possible", methods = ["GET"])
 @flask_login.login_required
 def get_all_possible():

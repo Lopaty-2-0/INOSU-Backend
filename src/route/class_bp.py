@@ -82,6 +82,7 @@ def delete():
 
     return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds}, "success")
 
+#TODO: předělat na paging
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
 def get_by_id():
@@ -100,6 +101,7 @@ def get_by_id():
     
     return send_response(200, 22031, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}}, "success")
 
+#TODO: předělat na paging
 @class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required
 def get():

@@ -12,6 +12,8 @@ from src.utils.check_file import check_file_size
 version_team = Blueprint("version_team", __name__)
 elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
+#TODO: přidat kontrolu deadline, aby nemohl ovlivňovat verze po deadline
+
 @version_team.route("/version_team/add", methods = ["PUT"])
 @check_file_size(2 * 1024 * 1024)
 @flask_login.login_required

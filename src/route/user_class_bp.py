@@ -73,6 +73,7 @@ async def delete():
 
     return send_response(200, 34051, {"message": "User deleted from this class"}, "success")
 
+#TODO: předělat na paging
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
 def get_users():

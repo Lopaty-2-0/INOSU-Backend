@@ -118,6 +118,7 @@ def delete():
 
     return send_response(200, 37041, {"message": "user_team deleted successfuly"}, "success")
 
+#TODO: předělat na paging
 @user_team_bp.route("/user_team/get", methods=["GET"])
 @flask_login.login_required
 def get():
@@ -137,6 +138,7 @@ def get():
 
     return send_response(200, 39031, {"message": "Tasks found", "tasks":tasks}, "success")
 
+#TODO: předělat na paging
 @user_team_bp.route("/user_team/get/status", methods=["GET"])
 @flask_login.login_required
 def get_by_status():
@@ -249,6 +251,7 @@ def get_by_status():
                 
     return send_response(200, 40021, {"message": "All tasks with these statuses for current user", "guarantorTasks":guarantorTasks, "elaboratingTasks":elaboratingTasks}, "success")
 
+#TODO: předělat na paging
 @user_team_bp.route("/user_team/get/idTask", methods=["GET"])
 @flask_login.login_required
 def get_by_idTask():
@@ -322,6 +325,7 @@ async def change():
 
     return send_response(200, 43081, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
 
+#TODO: předělat na paging
 @user_team_bp.route("/user_team/get/status/idTask", methods=["GET"])
 @flask_login.login_required
 def get_with_status_and_idTask():
@@ -455,7 +459,7 @@ def get_by_idUser_and_idTask():
                 "teamPoints":team.points
                 }
     
-    return send_response(200, 45061, {"message": "All user_teams for this task and statuses", "task": tasks}, "success")
+    return send_response(200, 45061, {"message": "user_team for this task and user", "task": tasks}, "success")
 
 @user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required

@@ -114,6 +114,7 @@ async def update():
 
     return send_response(200, 32091, {"message": "team updated"}, "success")
 
+#TODO: předělat na paging
 @team_bp.route("/team/get", methods=["GET"])
 @flask_login.login_required
 def get_by_task():
