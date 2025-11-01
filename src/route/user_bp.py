@@ -20,7 +20,7 @@ from src.utils.task import task_delete_sftp
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role
-from sqlalchemy import or_
+from sqlalchemy import or_, func, and_
 
 user_bp = Blueprint("user", __name__)
 
@@ -440,7 +440,18 @@ def get_by_role():
     users = User.query.filter_by(role = role)
 
     for user in users:
-        all_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
+        all_users.append({
+                        "id": user.id,
+                        "name": user.name,
+                        "surname": user.surname,
+                        "abbreviation": user.abbreviation,
+                        "role": user.role.value,
+                        "profilePicture": user.profilePicture,
+                        "email": user.email,
+                        "idClass": all_user_classes(user.id),
+                        "createdAt":user.createdAt,
+                        "updatedAt":user.updatedAt
+                        })
     if not all_users:
         return send_response(400, 20020, {"message": "Users not found"}, "error")
     
@@ -480,7 +491,17 @@ def get_no_class():
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
-            users.append({"id": s.id, "name": s.name, "surname": s.surname, "abbreviation": s.abbreviation, "role": s.role.value, "profilePicture": s.profilePicture, "email": s.email, "createdAt":s.createdAt, "updatedAt":s.updatedAt})
+            users.append({
+                        "id": s.id,
+                        "name": s.name,
+                        "surname": s.surname,
+                        "abbreviation": s.abbreviation,
+                        "role": s.role.value,
+                        "profilePicture": s.profilePicture,
+                        "email": s.email,
+                        "createdAt":s.createdAt,
+                        "updatedAt":s.updatedAt
+                        })
 
     return send_response(200, 40011, {"message": "All students without class", "users": users}, "success")
 
@@ -503,17 +524,15 @@ def get_logged_user_data():
 
     return send_response(200, 50011, {"message": "Logged user data", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
 
-#TODO: všechny routy kde se získávají uživatelé předělat na tento typ
+#TODO: všechny routy kde se získávají uživatelé předělat na tento typ, bez toho searchQuery
 #pageNumber starts with 1
-
-#tady je to co chceš vidět Honzi (lepší, už ti to najde třeba pomocí kare)
 @user_bp.route("/user/get", methods = ["GET"])
 @flask_login.login_required
 def get_user_page():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-  
+    
     right_users = []
 
     if not amountForPaging:
@@ -544,11 +563,39 @@ def get_user_page():
         users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
 
     else:
-        users = User.query.filter(or_(User.id.contains(searchQuery), User.name.contains(searchQuery), User.surname.contains(searchQuery), User.email.contains(searchQuery), User.abbreviation.contains(searchQuery.upper()))).offset(amountForPaging * pageNumber).limit(amountForPaging)
-    
+        words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+
+        conditions = []
+        for word in words:
+            like_pattern = f"%{word}%"
+            conditions.append(
+                or_(
+                    func.lower(User.name).like(like_pattern),
+                    func.lower(User.surname).like(like_pattern),
+                    func.lower(User.email).like(like_pattern),
+                    func.lower(User.abbreviation).like(like_pattern),
+                )
+            )
+
+        users = User.query.filter(and_(*conditions))
+            
     count = users.count()
 
     for user in users:
-        right_users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders})
+        right_users.append({
+                            "id": user.id,
+                            "name": user.name,
+                            "surname": user.surname,
+                            "abbreviation": user.abbreviation,
+                            "role": user.role.value,
+                            "profilePicture": user.profilePicture,
+                            "email": user.email,
+                            "idClass": all_user_classes(user.id),
+                            "createdAt":user.createdAt,
+                            "updatedAt":user.updatedAt,
+                            "reminders":user.reminders
+                        })
     
+
+    count = len(right_users)
     return send_response(200, 51071, {"message": "Users found", "users":right_users, "count":count}, "success")

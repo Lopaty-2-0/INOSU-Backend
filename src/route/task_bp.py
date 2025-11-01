@@ -94,7 +94,16 @@ async def add():
         db.session.add(User_Team(flask_login.current_user.id, id, newTask.id))
         db.session.commit()
 
-    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
+    guarantor = {
+                "id":user.id,
+                "name":user.name,
+                "surname": user.surname,
+                "abbreviation": user.abbreviation,
+                "createdAt": user.createdAt,
+                "role": user.role.value,
+                "profilePicture":user.profilePicture,
+                "email":user.email
+                }
 
     return send_response(201, 26131, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
 

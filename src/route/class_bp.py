@@ -110,7 +110,13 @@ def get():
 
     for cl in classes:
         specialization = Specialization.query.filter_by(id=cl.idSpecialization).first()
-        all_class.append({"id": cl.id, "grade": cl.grade, "group": cl.group,"name": cl.name,"specialization": specialization.abbreviation})
+        all_class.append({
+                        "id": cl.id,
+                        "grade": cl.grade,
+                        "group": cl.group,
+                        "name": cl.name,
+                        "specialization": specialization.abbreviation
+                        })
     if not all_class:
         return send_response(400, 23010, {"message": "Classes not found"}, "error")
     
