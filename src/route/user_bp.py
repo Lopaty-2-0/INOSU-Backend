@@ -506,7 +506,7 @@ def get_logged_user_data():
 #TODO: všechny routy kde se získávají uživatelé předělat na tento typ
 #pageNumber starts with 1
 
-#tady je to co chceš vidět Honzi
+#tady je to co chceš vidět Honzi (lepší, už ti to najde třeba pomocí kare)
 @user_bp.route("/user/get", methods = ["GET"])
 @flask_login.login_required
 def get_user_page():
@@ -544,7 +544,7 @@ def get_user_page():
         users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
 
     else:
-        users = User.query.filter(or_(User.id == searchQuery, User.name == searchQuery, User.surname == searchQuery, User.role == searchQuery, User.email == searchQuery, User.abbreviation == searchQuery.upper())).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        users = User.query.filter(or_(User.id.contains(searchQuery), User.name.contains(searchQuery), User.surname.contains(searchQuery), User.email.contains(searchQuery), User.abbreviation.contains(searchQuery.upper()))).offset(amountForPaging * pageNumber).limit(amountForPaging)
     
     count = users.count()
 
