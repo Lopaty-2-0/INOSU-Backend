@@ -72,7 +72,6 @@ async def delete():
 @team_bp.route("/team/update", methods=["PUT"])
 @flask_login.login_required
 async def update():
-    #TODO: předělat na to, že review není soubor
     data = request.get_json(force = True)
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
@@ -101,11 +100,11 @@ async def update():
         return send_response(400, 32060, {"message": "Nothing not entered to change"}, "error")
     if status not in [s.value for s in Status]:
         return send_response(400, 32070, {"message": "Status not our type"}, "error")
-    else:
+    elif status != Status.Pending.value:
         team.status = Status(status)
-    if isinstance(points, int):
+    try:
         points = float(points)
-    if not isinstance(points, float):
+    except:
         return send_response(400, 32080, {"message": "Points are not integer or float"}, "error")
     
     team.review = review
@@ -114,26 +113,56 @@ async def update():
 
     return send_response(200, 32091, {"message": "team updated"}, "success")
 
-#TODO: předělat na paging
-@team_bp.route("/team/get", methods=["GET"])
 @flask_login.login_required
+@team_bp.route("/team/get", methods=["GET"])
 def get_by_task():
-    data = request.get_json(force=True)
-    idTask = data.get("idTask", None)
-    teams = []
+    idTask = request.args.get("idTask", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+
+    if not amountForPaging:
+        return send_response(400, 41010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 41020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 41030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 41040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 41050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 41060, {"message": "pageNumber must be bigger than 0"}, "error")
+
+    right_teams = []
     users = []
 
     if not idTask:
-        return send_response(400, 41010, {"message": "idTask not entered"}, "error")
+        return send_response(400, 41070, {"message": "idTask not entered"}, "error")
     if not Task.query.filter_by(id = idTask).first():
-        return send_response(400, 41020, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 41080, {"message": "Nonexistent task"}, "error")
     
-    teams = Team.query.filter_by(idTask = idTask)
+    teams = Team.query.filter_by(idTask = idTask).offset(amountForPaging * pageNumber).limit(amountForPaging)
 
+    if not teams:
+        return send_response(400, 41090, {"message": "No team found"}, "error")
+    
+    count = teams.count()
+    
     for team in teams:
-        count = User_Team.query.filter_by(idTask=idTask, idTeam=team.idTeam).count()
+        counts = User_Team.query.filter_by(idTask=idTask, idTeam=team.idTeam).count()
         
-        if count == 1:
+        if counts == 1:
             user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first().idUser).first()
             users.append({
                         "idTeam":team.idTeam,
@@ -146,7 +175,7 @@ def get_by_task():
                         }
                         })
 
-        teams.append({
+        right_teams.append({
                     "status":team.status.value,
                     "elaboration":team.elaboration,
                     "review":team.review, 
@@ -156,5 +185,5 @@ def get_by_task():
                     "points":team.points
                     })
 
-    return send_response(200, 41031, {"message": "All teams for this task", "teams":teams, "users":users}, "success")
+    return send_response(200, 41101, {"message": "All teams for this task", "teams":right_teams, "users":users, "count": count}, "success")
         

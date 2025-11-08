@@ -73,52 +73,65 @@ async def delete():
 
     return send_response(200, 34051, {"message": "User deleted from this class"}, "success")
 
-#TODO: předělat na paging
-@user_class_bp.route("/user_class/get/users", methods=["GET"])
+#TODO: idk jestli chce i tady query
 @flask_login.login_required
+@user_class_bp.route("/user_class/get/users", methods=["GET"])
 def get_users():
-    idClass = request.args.get("idClass", "")
-    users = []
-    badIds = []
-    goodIds = []
-    ids = []
+    idClass = request.args.get("idClass", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    
+    right_users = []
 
+    if not amountForPaging:
+        return send_response(400, 35010, {"message": "amountForPaging not entered"}, "error")
+    
     try:
-        decoded_status = unquote(idClass)
-        idClass = json.loads(decoded_status) if decoded_status.strip() else []
+        amountForPaging = int(amountForPaging)
     except:
-        idClass = []
+        return send_response(400, 35020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 35030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 35040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 35050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
 
-    if not isinstance(idClass, list):
-        idClass = [idClass]
+    if pageNumber < 0:
+        return send_response(400, 35060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not idClass:
+        return send_response(400, 35070, {"message":"IdClass not entered"}, "error")
+    if not Class.query.filter_by(id = idClass).first():
+        return send_response(400, 35080, {"message":"Nonexistent class"}, "error")
+    
+    users = User_Class.query.filter_by(idClass = idClass).offset(pageNumber * amountForPaging).limit(amountForPaging)
 
-    for id in idClass:
-        if not Class.query.filter_by(id = id).first():
-            badIds.append(id)
-            continue
+    if not users:
+        return send_response(400, 35090, {"message":"No users found"}, "error")
+    
+    count = users.count()
 
-        clas = User_Class.query.filter_by(idClass = id)
+    for u in users:
+        user = User.query.filter_by(id = u.idUser).first()
+        right_users.append({
+                    "id": user.id,
+                    "name": user.name,
+                    "surname": user.surname,
+                    "abbreviation": user.abbreviation,
+                    "role": user.role.value,
+                    "profilePicture": user.profilePicture,
+                    "email": user.email,
+                    "idClass": all_user_classes(user.id),
+                    "createdAt":user.createdAt,
+                    "updatedAt":user.updatedAt
+                    })
 
-        for cl in clas:
-            if not cl.idUser in ids:
-                user = User.query.filter_by(id = cl.idUser).first()
-                users.append({
-                            "id": user.id,
-                            "name": user.name,
-                            "surname": user.surname,
-                            "abbreviation": user.abbreviation,
-                            "role": user.role.value,
-                            "profilePicture": user.profilePicture,
-                            "email": user.email,
-                            "idClass": all_user_classes(user.id),
-                            "createdAt":user.createdAt,
-                            "updatedAt":user.updatedAt
-                            })
-                ids.append(cl.idUser)
-
-        goodIds.append(id)
-
-    if not goodIds:
-        return send_response(400, 35010, {"message": "Only wrong idClass"}, "error")
-
-    return send_response(200, 35021, {"message": "Users found", "users":users, "badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(200, 35101, {"message": "Users found", "users":right_users, "count":count}, "success")

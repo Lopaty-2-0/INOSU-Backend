@@ -11,7 +11,7 @@ from src.utils.enums import Status, Type
 from src.utils.team import make_team
 from src.utils.response import send_response
 from src.utils.all_user_tasks import all_user_tasks
-from src.utils.team import team_delete, team_createDir
+from src.utils.team import team_createDir
 from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
 from src.models.Version_Team import Version_Team

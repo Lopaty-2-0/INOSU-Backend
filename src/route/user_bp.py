@@ -20,7 +20,7 @@ from src.utils.task import task_delete_sftp
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role
-from sqlalchemy import or_, func, and_
+from src.utils.paging import user_paging
 
 user_bp = Blueprint("user", __name__)
 
@@ -317,7 +317,7 @@ async def delete():
 
     db.session.commit()
 
-    return send_response(200, 3051, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
+    return send_response(200, 3040, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 
 @user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required
@@ -338,7 +338,7 @@ def password_reset():
     flask_login.current_user.password = generate_password_hash(newPassword)
     db.session.commit()
 
-    return send_response(200, 11051, {"message": "Password changed successfuly"}, "success")
+    return send_response(200, 11040, {"message": "Password changed successfuly"}, "success")
 
 @user_bp.route("/user/password/new", methods = ["POST"])
 def password_res():
@@ -393,7 +393,7 @@ def password_new():
     user.password = generate_password_hash(newPassword)
     db.session.commit()
     
-    return send_response(200, 14051, {"message": "Password reseted successfuly"}, "success")
+    return send_response(200, 14040, {"message": "Password reseted successfuly"}, "success")
 
 @user_bp.route("/user/get/id", methods = ["GET"])
 @flask_login.login_required
@@ -427,35 +427,72 @@ def get_by_email():
     
     return send_response(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
-#TODO: předělat na paging
-@user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
+@user_bp.route("/user/get/role", methods = ["GET"])
 def get_by_role():
     role = request.args.get("role", None)
-    all_users = []
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+    
+    users = []
 
+    if not amountForPaging:
+        return send_response(400, 20010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 20020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 20030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 20040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 20050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 20060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
     if not role:
-        return send_response(400, 20010, {"message": "Role not entered"}, "error")
+        return send_response(400, 20070, {"message": "Role not entered"}, "error")
     
-    users = User.query.filter_by(role = role)
+    if role not in [r.value for r in Role]:
+        return send_response(400, 20080, {"message": "Role not our type"}, "error")
+    
+    if not searchQuery:
+        user = User.query.filter_by(role = Role(role)).offset(amountForPaging * pageNumber).limit(amountForPaging)
 
-    for user in users:
-        all_users.append({
-                        "id": user.id,
-                        "name": user.name,
-                        "surname": user.surname,
-                        "abbreviation": user.abbreviation,
-                        "role": user.role.value,
-                        "profilePicture": user.profilePicture,
-                        "email": user.email,
-                        "idClass": all_user_classes(user.id),
-                        "createdAt":user.createdAt,
-                        "updatedAt":user.updatedAt
+    else:
+        user = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
+
+    if not user:
+        return send_response(400, 20090, {"message":"No users found"}, "error")
+            
+    count = user.count()
+
+    for u in user:
+        users.append({
+                        "id": u.id,
+                        "name": u.name,
+                        "surname": u.surname,
+                        "abbreviation": u.abbreviation,
+                        "role": u.role.value,
+                        "profilePicture": u.profilePicture,
+                        "email": u.email,
+                        "idClass": all_user_classes(u.id),
+                        "createdAt":u.createdAt,
+                        "updatedAt":u.updatedAt
                         })
-    if not all_users:
-        return send_response(400, 20020, {"message": "Users not found"}, "error")
     
-    return send_response(200, 20031, {"message": "Users found", "users": all_users}, "success")
+    return send_response(200, 20101, {"message": "Users found", "users": users, "count":count}, "success")
 
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
@@ -482,12 +519,49 @@ def get_roles():
 def get_current_role():
     return send_response(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
 
-#TODO: předělat na paging
-@user_bp.route("/user/get/noClass", methods =["GET"])
 @flask_login.login_required
+@user_bp.route("/user/get/noClass", methods =["GET"])
 def get_no_class():
-    user = User.query.filter_by(role = "student")
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+    
     users = []
+
+    if not amountForPaging:
+        return send_response(400, 40010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 40020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 40030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 40040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 40050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 40060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not searchQuery:
+        user = User.query.filter_by(role = Role.Student).offset(amountForPaging * pageNumber).limit(amountForPaging)
+
+    else:
+        user = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role.Student, typeOfSpecialSearch = "role")
+
+    if not user:
+        return send_response(400, 40070, {"message":"No users found"}, "error")
+            
+    count = user.count()
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
@@ -503,19 +577,22 @@ def get_no_class():
                         "updatedAt":s.updatedAt
                         })
 
-    return send_response(200, 40011, {"message": "All students without class", "users": users}, "success")
+    return send_response(200, 40081, {"message": "All students without class", "users": users, "count": count}, "success")
 
-@user_bp.route("/user/get/count/by-role", methods=["GET"])
 @flask_login.login_required
+@user_bp.route("/user/get/count/byRole", methods=["GET"])
 def get_count_by_role():
     role = request.args.get("role", None)
 
     if not role:
         return send_response(400, 48010, {"message": "Role not entered"}, "error")
+    
+    if role not in [r.value for r in Role]:
+        return send_response(400, 48020, {"message": "Role not our type"}, "error")
 
-    count = User.query.filter_by(role=role).count()
+    count = User.query.filter_by(role=Role(role)).count()
 
-    return send_response(200, 48021, {"message": "User count found", "count": count}, "success")
+    return send_response(200, 48031, {"message": "User count found", "count": count}, "success")
 
 @user_bp.route("/user/logged/data", methods = ["GET"])
 @flask_login.login_required
@@ -524,7 +601,6 @@ def get_logged_user_data():
 
     return send_response(200, 50011, {"message": "Logged user data", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
 
-#TODO: všechny routy kde se získávají uživatelé předělat na tento typ, bez toho searchQuery
 #pageNumber starts with 1
 @user_bp.route("/user/get", methods = ["GET"])
 @flask_login.login_required
@@ -536,50 +612,37 @@ def get_user_page():
     right_users = []
 
     if not amountForPaging:
-        return send_response(400, 51010, {"message": "amountForPaging not entered"}, "error")
+        return send_response(400, 40010, {"message": "amountForPaging not entered"}, "error")
     
     try:
         amountForPaging = int(amountForPaging)
     except:
-        return send_response(400, 51020, {"message": "amountForPaging not integer"}, "error")
+        return send_response(400, 40020, {"message": "amountForPaging not integer"}, "error")
     
     if amountForPaging < 1:
-        return send_response(400, 51030, {"message": "amountForPaging smaller than 1"}, "error")
+        return send_response(400, 40030, {"message": "amountForPaging smaller than 1"}, "error")
     
     if not pageNumber:
-        return send_response(400, 51040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 40040, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 51050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 40050, {"message": "pageNumber not integer"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 51060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 40060, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
         users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
 
     else:
-        words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+        users = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
-        conditions = []
-        for word in words:
-            like_pattern = f"%{word}%"
-            conditions.append(
-                or_(
-                    func.lower(User.name).like(like_pattern),
-                    func.lower(User.surname).like(like_pattern),
-                    func.lower(User.email).like(like_pattern),
-                    func.lower(User.abbreviation).like(like_pattern),
-                )
-            )
-
-        users = User.query.filter(and_(*conditions))
-            
-    count = users.count()
+    if not users:
+        return send_response(400, 40070, {"message":"No users found"}, "error")
 
     for user in users:
         right_users.append({
@@ -595,7 +658,6 @@ def get_user_page():
                             "updatedAt":user.updatedAt,
                             "reminders":user.reminders
                         })
-    
 
     count = len(right_users)
-    return send_response(200, 51071, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 40081, {"message": "Users found", "users":right_users, "count":count}, "success")

@@ -2,6 +2,7 @@ import flask_login
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.Specialization import Specialization
+from src.utils.paging import class_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
@@ -82,7 +83,6 @@ def delete():
 
     return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds}, "success")
 
-#TODO: předělat na paging
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
 def get_by_id():
@@ -101,11 +101,42 @@ def get_by_id():
     
     return send_response(200, 22031, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}}, "success")
 
-#TODO: předělat na paging
-@class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required
+@class_bp.route("/class/get", methods=["GET"])
 def get():
-    classes = Class.query.all()
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
+    if not amountForPaging:
+        return send_response(400, 23010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 23020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 23030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 23040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 23050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 23060, {"message": "pageNumber must be bigger than 0"}, "error")
+
+    if not searchQuery:
+        classes = Class.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+    else:
+        classes = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
+
     all_class = []
 
     for cl in classes:
@@ -117,10 +148,13 @@ def get():
                         "name": cl.name,
                         "specialization": specialization.abbreviation
                         })
+        
     if not all_class:
-        return send_response(400, 23010, {"message": "Classes not found"}, "error")
+        return send_response(400, 23070, {"message": "Classes not found"}, "error")
     
-    return send_response(200, 23021, {"message": "Classes found", "classes": all_class}, "success")
+    count = classes.count()
+    
+    return send_response(200, 23081, {"message": "Classes found", "classes": all_class, "count":count}, "success")
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required

@@ -11,6 +11,7 @@ from src.models.Team import Team
 from src.models.Version_Team import Version_Team
 from src.utils.enums import Status, Type, Role
 from datetime import datetime
+from src.utils.paging import task_paging
 from src.utils.team import make_team
 from app import db, ssh, task_path
 
@@ -28,7 +29,7 @@ async def add():
     deadline = request.form.get("deadline", None)
     points = request.form.get("points", None)
 
-    startDate = datetime.now
+    startDate = datetime.now()
 
     if taskName:
         if len(taskName) > 255:
@@ -71,11 +72,13 @@ async def add():
         except:
             return send_response(400, 26110, {"message":"Deadline not integer or is too far"}, "error")
     if points:
-        if isinstance(points, int):
+        try:
             points = float(points)
-        if not isinstance(points, float):
-            return send_response(400, 26120, {"message":"Points are not integer or float"}, "error")
-    
+        except:
+            return send_response(400, 26120, {"message":"Points are not float"}, "error")
+    else:
+        points = None
+
     newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type, points = points, deadline = deadline)
 
     db.session.add(newTask)
@@ -107,15 +110,52 @@ async def add():
 
     return send_response(201, 26131, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
 
-@task_bp.route("/task/get/guarantor", methods=["GET"])
 @flask_login.login_required
+@task_bp.route("/task/get/guarantor", methods=["GET"])
 def get_by_guarantor():
     idUser = request.args.get("idUser", None)
-    tasks = Task.query.filter_by(guarantor=idUser).all()
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
     all_tasks = []
 
+    if not amountForPaging:
+        return send_response(400, 29010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 29020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 29030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 29040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 29050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 29060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
     if not idUser:
-        return send_response(400, 29010, {"message": "No idUser entered"}, "error")
+        return send_response(400, 29070, {"message": "No idUser entered"}, "error")
+
+    if not searchQuery:
+        tasks = Task.query.filter_by(guarantor = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    else:
+        tasks = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "guarantor")
+
+    if not tasks:
+        return send_response(400, 29080, {"message":"No tasks found"}, "error")
+
+    count = tasks.count()
 
     for task in tasks:
         all_tasks.append({
@@ -129,10 +169,10 @@ def get_by_guarantor():
             "points":task.points
         })
         
-    return send_response(200, 29021, {"message": "Found tasks for guarantor", "tasks": all_tasks}, "success")
+    return send_response(200, 29091, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
 
-@task_bp.route("/task/get/id", methods=["GET"]) 
 @flask_login.login_required
+@task_bp.route("/task/get/id", methods=["GET"]) 
 def get_by_id():
     idTask = request.args.get("idTask", None)
     task = Task.query.filter_by(id=idTask).first()
@@ -161,19 +201,56 @@ def get_by_id():
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
-def get_all():
+def get():
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
     all_tasks = []
-    tasks = Task.query.all()
+
+    if not amountForPaging:
+        return send_response(400, 27010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 27020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 27030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 27040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 27050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 27060, {"message": "pageNumber must be bigger than 0"}, "error")
+
+    if not searchQuery:
+        tasks = Task.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+    else:
+        tasks = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
+
+    if not tasks:
+        return send_response(400, 27070, {"message":"No tasks found"}, "error")
+
+    count = tasks.count()
 
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
         all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "deadline": task.deadline, "points": task.points})
 
-    return send_response(200, 27011, {"message":"Found tasks", "tasks":all_tasks}, "success")
+    return send_response(200, 27081, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
-@task_bp.route("/task/delete", methods=["DELETE"])
 @flask_login.login_required
+@task_bp.route("/task/delete", methods=["DELETE"])
 async def delete():
     data = request.get_json(force=True)
     id = data.get("id", None)
@@ -213,8 +290,8 @@ async def delete():
     return send_response(200, 28051, {"message":"Task deleted"}, "success")
 
 #TODO:nutno zjistit co dělá a pak ji upravit
-@task_bp.route("/task/get/possible", methods = ["GET"])
 @flask_login.login_required
+@task_bp.route("/task/get/possible", methods = ["GET"])
 def get_all_possible():
     tasks = Task.query.all()
     waitingTasks = []
