@@ -12,7 +12,7 @@ class Team(db.Model):
     status = db.Column(db.Enum(Status), nullable=False)
     name = db.Column(db.String(255), nullable=True)
 
-    def __init__(self, idTeam, idTask, review, status, points, name):
+    def __init__(self, idTeam, idTask, name, review = None, status = None, points = None):
         self.idTeam = idTeam
         self.idTask = idTask
         self.points = points

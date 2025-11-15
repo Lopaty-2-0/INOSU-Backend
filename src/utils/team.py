@@ -9,8 +9,8 @@ async def make_team(idTask, status, name):
     else:
         id = Team.query.filter_by(idTask=idTask).order_by(Team.idTeam.desc()).first().idTeam + 1
     
-    new_team = Team(idTeam = id, idTask = idTask, elaboration = None, review = None, status = status, name = name)
-    await team_createDir(task_path, id, idTask)
+    new_team = Team(idTeam = id, idTask = idTask, review = None, status = status, name = name, points = None)
+    await team_createDir(id, idTask)
     db.session.add(new_team)
     db.session.commit()
 

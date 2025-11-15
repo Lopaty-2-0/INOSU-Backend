@@ -79,6 +79,7 @@ try:
         from src.models.Specialization import Specialization
         from src.models.User_Team import User_Team
         from src.models.Team import Team
+        from src.models.Version_Team import Version_Team
 
         db.create_all()
 

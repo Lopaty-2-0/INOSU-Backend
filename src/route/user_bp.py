@@ -529,28 +529,28 @@ def get_no_class():
     users = []
 
     if not amountForPaging:
-        return send_response(400, 40010, {"message": "amountForPaging not entered"}, "error")
+        return send_response(400, 51010, {"message": "amountForPaging not entered"}, "error")
     
     try:
         amountForPaging = int(amountForPaging)
     except:
-        return send_response(400, 40020, {"message": "amountForPaging not integer"}, "error")
+        return send_response(400, 51020, {"message": "amountForPaging not integer"}, "error")
     
     if amountForPaging < 1:
-        return send_response(400, 40030, {"message": "amountForPaging smaller than 1"}, "error")
+        return send_response(400, 51030, {"message": "amountForPaging smaller than 1"}, "error")
     
     if not pageNumber:
-        return send_response(400, 40040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 51040, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 40050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 51050, {"message": "pageNumber not integer"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 40060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 51060, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
         user = User.query.filter_by(role = Role.Student).offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -559,7 +559,7 @@ def get_no_class():
         user = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role.Student, typeOfSpecialSearch = "role")
 
     if not user:
-        return send_response(400, 40070, {"message":"No users found"}, "error")
+        return send_response(400, 51070, {"message":"No users found"}, "error")
             
     count = user.count()
 
@@ -577,7 +577,7 @@ def get_no_class():
                         "updatedAt":s.updatedAt
                         })
 
-    return send_response(200, 40081, {"message": "All students without class", "users": users, "count": count}, "success")
+    return send_response(200, 51081, {"message": "All students without class", "users": users, "count": count}, "success")
 
 @flask_login.login_required
 @user_bp.route("/user/get/count/byRole", methods=["GET"])
@@ -612,28 +612,28 @@ def get_user_page():
     right_users = []
 
     if not amountForPaging:
-        return send_response(400, 40010, {"message": "amountForPaging not entered"}, "error")
+        return send_response(400, 52010, {"message": "amountForPaging not entered"}, "error")
     
     try:
         amountForPaging = int(amountForPaging)
     except:
-        return send_response(400, 40020, {"message": "amountForPaging not integer"}, "error")
+        return send_response(400, 52020, {"message": "amountForPaging not integer"}, "error")
     
     if amountForPaging < 1:
-        return send_response(400, 40030, {"message": "amountForPaging smaller than 1"}, "error")
+        return send_response(400, 52030, {"message": "amountForPaging smaller than 1"}, "error")
     
     if not pageNumber:
-        return send_response(400, 40040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 52040, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 40050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 52050, {"message": "pageNumber not integer"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 40060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 52060, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
         users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -642,7 +642,7 @@ def get_user_page():
         users = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
     if not users:
-        return send_response(400, 40070, {"message":"No users found"}, "error")
+        return send_response(400, 52070, {"message":"No users found"}, "error")
 
     for user in users:
         right_users.append({
@@ -660,4 +660,4 @@ def get_user_page():
                         })
 
     count = len(right_users)
-    return send_response(200, 40081, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 52081, {"message": "Users found", "users":right_users, "count":count}, "success")
