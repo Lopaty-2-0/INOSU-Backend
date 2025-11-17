@@ -149,13 +149,12 @@ def get_by_guarantor():
 
     if not searchQuery:
         tasks = Task.query.filter_by(guarantor = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Task.query.filter_by(guarantor = idUser).count()
     else:
-        tasks = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "guarantor")
+        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "guarantor")
 
     if not tasks:
         return send_response(400, 29080, {"message":"No tasks found"}, "error")
-
-    count = tasks.count()
 
     for task in tasks:
         all_tasks.append({
@@ -234,13 +233,12 @@ def get():
 
     if not searchQuery:
         tasks = Task.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Task.query.count()
     else:
-        tasks = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
+        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
     if not tasks:
         return send_response(400, 27070, {"message":"No tasks found"}, "error")
-
-    count = tasks.count()
 
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()

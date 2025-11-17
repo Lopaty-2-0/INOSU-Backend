@@ -134,8 +134,9 @@ def get():
 
     if not searchQuery:
         classes = Class.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Class.query.count()
     else:
-        classes = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
+        classes, count = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
     all_class = []
 
@@ -151,8 +152,6 @@ def get():
         
     if not all_class:
         return send_response(400, 23070, {"message": "Classes not found"}, "error")
-    
-    count = classes.count()
     
     return send_response(200, 23081, {"message": "Classes found", "classes": all_class, "count":count}, "success")
 

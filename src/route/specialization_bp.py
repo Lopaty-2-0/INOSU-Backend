@@ -119,15 +119,14 @@ def get():
 
     if not searchQuery:
         specialization = Specialization.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Specialization.query.count()
     else:
-        specialization = specialization_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)
+        specialization, count = specialization_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)
 
     if not specialization:
         return send_response (400, 29070, {"message": "No specialization found"}, "error")
     
     for s in specialization:
         specializations.append({"id":s.id,"name":s.name, "abbreviation":s.abbreviation, "lengthOfStudy":s.lengthOfStudy})
-
-    count = specialization.count()
 
     return send_response (200, 29081, {"message": "Specializations found", "specializations":specializations, "count":count}, "success")

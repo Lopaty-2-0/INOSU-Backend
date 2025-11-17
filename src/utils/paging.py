@@ -3,6 +3,7 @@ from src.models.User import User
 from src.models.Specialization import Specialization
 from src.models.Class import Class
 from src.models.Task import Task
+from src.models.Team import Team
 
 def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -32,7 +33,7 @@ def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
         if typeOfSpecialSearch == "updatedAt":
             specialConditions.append(User.updatedAt == specialSearch)
 
-    return User.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    return User.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.filter(and_(*conditions, *specialConditions)).count()
 
 def specialization_paging(searchQuery, amountForPaging, pageNumber):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -47,7 +48,7 @@ def specialization_paging(searchQuery, amountForPaging, pageNumber):
             )
         )
 
-    return Specialization.query.filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    return Specialization.query.filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), Specialization.query.filter(and_(*conditions)).count()
 
 def class_paging(searchQuery, amountForPaging, pageNumber):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -61,7 +62,7 @@ def class_paging(searchQuery, amountForPaging, pageNumber):
             )
         )
 
-    return Class.query.filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    return Class.query.filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), Class.query.filter(and_(*conditions)).count()
 
 def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -81,7 +82,6 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
         )
 
     if specialSearch:
-        #I dont think we will use any other than the role
         if not typeOfSpecialSearch:
             return False
         
@@ -92,4 +92,35 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
         if typeOfSpecialSearch == "endDate":
             specialConditions.append(Task.endDate == specialSearch)
 
-    return Task.query.filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    return Task.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.filter(and_(*conditions, *specialConditions)).count()
+
+def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, ids = None, typeOfIds = None):
+    words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+
+    conditions = []
+    specialConditions = []
+    for word in words:
+        like_pattern = f"%{word}%"
+        conditions.append(
+            or_(
+                func.lower(Team.name).like(like_pattern)
+            )
+        )
+
+    if specialSearch:
+        if not typeOfSpecialSearch:
+            return False
+
+        if typeOfSpecialSearch == "status":
+            specialConditions.append(Team.status == specialSearch)
+        if typeOfSpecialSearch == "points":
+            specialConditions.append(Team.points == specialSearch)
+    if ids:
+        if not isinstance(ids, list):
+            ids = [ids]
+        if typeOfIds == "task":
+            specialConditions.append(Team.idTask.in_(ids))
+        if typeOfIds == "elaboration":
+            specialConditions.append(*ids)
+
+    return Team.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.filter(and_(*conditions, *specialConditions)).count()

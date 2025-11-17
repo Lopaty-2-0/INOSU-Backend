@@ -117,7 +117,6 @@ def delete():
 
     return send_response(200, 37041, {"message": "user_team deleted successfuly"}, "success")
 
-#TODO: zjistit co si o tom náš pán myslí
 @user_team_bp.route("/user_team/get", methods=["GET"])
 @flask_login.login_required
 def get():
@@ -203,99 +202,6 @@ def get():
         
     return send_response(200, 39101, {"message": "User_teams found", "user_teams":right_user_teams, "count":count}, "success")
 
-
-#TODO: vymyslet lépe ten paging
-@user_team_bp.route("/user_team/get/status/elaboration", methods=["GET"])
-@flask_login.login_required
-def get_by_status_elaboration(): 
-    status = request.args.get("status", "")
-    amountForPaging = request.args.get("amountForPaging", None)
-    pageNumber = request.args.get("pageNumber", None)
-    elaboratingTasks = []
-    goodStatuses = []
-    
-    if not amountForPaging:
-        return send_response(400, 53010, {"message": "amountForPaging not entered"}, "error")
-    
-    try:
-        amountForPaging = int(amountForPaging)
-    except:
-        return send_response(400, 53020, {"message": "amountForPaging not integer"}, "error")
-    
-    if amountForPaging < 1:
-        return send_response(400, 53030, {"message": "amountForPaging smaller than 1"}, "error")
-    
-    if not pageNumber:
-        return send_response(400, 53040, {"message": "pageNumber not entered"}, "error")
-    
-    try:
-        pageNumber = int(pageNumber)
-    except:
-        return send_response(400, 53050, {"message": "pageNumber not integer"}, "error")
-    
-    pageNumber -= 1
-
-    if pageNumber < 0:
-        return send_response(400, 53060, {"message": "pageNumber must be bigger than 0"}, "error")
-    
-    try:
-        decoded_status = unquote(status)
-        status = json.loads(decoded_status) if decoded_status.strip() else []
-    except:
-        status = []
-
-    if not isinstance(status, list):
-        status = [status]
-
-    for s in status:
-        if s in [stat.value for stat in Status]:
-            goodStatuses.append(s)
-
-    for s in goodStatuses:
-        user_teams = User_Team.query.filter_by(idUser = flask_login.current_user.id).offset(amountForPaging * pageNumber).limit(amountForPaging)
-
-        for user_team in user_teams:
-            team = Team.query.filter_by(idTask = user_team.idTask, idTeam = user_team.idTeam).first()
-            task = Task.query.filter_by(id = user_team.idTask).first()
-            user = User.query.filter_by(id = task.guarantor).first()
-            version = Version_Team.query.filter_by(idTask=user_team.idTask, idTeam = user_team.idTeam).order_by(Version_Team.idVersion.desc()).first()
-
-            if not version:
-                elaboration = None
-            else:
-                elaboration = version.elaboration
-
-            elaboratingTasks.append({"team":{
-                                            "idTeam":team.idTeam,
-                                            "status":team.status.value,
-                                            "elaboration":elaboration, 
-                                            "review":team.review, 
-                                            "name":team.name, 
-                                            "points":team.points, 
-                                            },
-                                    "task":task.task,
-                                    "name":task.name, 
-                                    "statDate":task.startDate, 
-                                    "endDate":task.endDate, 
-                                    "type":task.type.value, 
-                                    "guarantor":{"id": user.id, 
-                                                    "name": user.name, 
-                                                    "surname": user.surname, 
-                                                    "abbreviation": user.abbreviation, 
-                                                    "role": user.role.value, 
-                                                    "profilePicture": user.profilePicture, 
-                                                    "email": user.email, 
-                                                    "idClass": all_user_classes(user.id), 
-                                                    "createdAt":user.createdAt,
-                                                    "updatedAt":user.updatedAt
-                                                },
-                                    "idTask":task.id,
-                                    "taskPoints":task.points,
-                                    })
-    if not elaboratingTasks:
-        return send_response(400, 53070, {"message": "No elaboratingTasks found"}, "error")
-                
-    return send_response(200, 53021, {"message": "All tasks with these statuses for current user", "elaboratingTasks":elaboratingTasks}, "success")
 
 #TODO: předělat na paging (za mne úplně zbytečný route)
 """@user_team_bp.route("/user_team/get/idTask", methods=["GET"])
@@ -399,7 +305,7 @@ async def change():
 
     return send_response(200, 43081, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
 
-#TODO:Opravit
+#TODO:Opravit (idk co)
 @user_team_bp.route("/user_team/get/idUser/idTask", methods = ["GET"])
 @flask_login.login_required
 def get_by_idUser_and_idTask():

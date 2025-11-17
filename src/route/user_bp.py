@@ -469,15 +469,14 @@ def get_by_role():
     
     if not searchQuery:
         user = User.query.filter_by(role = Role(role)).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = User.query.filter_by(role = Role(role)).count()
 
     else:
-        user = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
+        user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
 
     if not user:
         return send_response(400, 20090, {"message":"No users found"}, "error")
             
-    count = user.count()
-
     for u in user:
         users.append({
                         "id": u.id,
@@ -554,14 +553,13 @@ def get_no_class():
     
     if not searchQuery:
         user = User.query.filter_by(role = Role.Student).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = User.query.filter_by(role = Role.Student).count()
 
     else:
-        user = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role.Student, typeOfSpecialSearch = "role")
+        user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role.Student, typeOfSpecialSearch = "role")
 
     if not user:
         return send_response(400, 51070, {"message":"No users found"}, "error")
-            
-    count = user.count()
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
@@ -637,9 +635,9 @@ def get_user_page():
     
     if not searchQuery:
         users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
-
+        count = User.query.count()
     else:
-        users = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
+        users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
     if not users:
         return send_response(400, 52070, {"message":"No users found"}, "error")
@@ -659,5 +657,4 @@ def get_user_page():
                             "reminders":user.reminders
                         })
 
-    count = len(right_users)
     return send_response(200, 52081, {"message": "Users found", "users":right_users, "count":count}, "success")

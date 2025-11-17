@@ -113,12 +113,11 @@ def get_users():
         return send_response(400, 35080, {"message":"Nonexistent class"}, "error")
     
     users = User_Class.query.filter_by(idClass = idClass).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count =  User_Class.query.filter_by(idClass = idClass).count()
 
     if not users:
         return send_response(400, 35090, {"message":"No users found"}, "error")
     
-    count = users.count()
-
     for u in users:
         user = User.query.filter_by(id = u.idUser).first()
         right_users.append({
