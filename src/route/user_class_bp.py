@@ -1,29 +1,27 @@
 from flask import request, Blueprint
 import flask_login
 import json
-from app import db, task_path
+from app import db
 from src.models.User_Class import User_Class
 from src.models.Class import Class
-from src.models.User_Task import User_Task
-from src.models.Task_Class import Task_Class
 from src.models.User import User
-from src.utils.task import task_delete_sftp
 from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
 from urllib.parse import unquote
+from src.utils.enums import Role
 
 user_class_bp = Blueprint("user_class", __name__)
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
-def user_classAdd():
+def add():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
     badIds = []
     goodIds = []
 
-    if flask_login.current_user.role == "student":
+    if flask_login.current_user.role == Role.Student:
         return send_response(403, 33010, {"message": "Permission denied"}, "error")
     if not idUser:
         return send_response(400, 33020, {"message": "idUser not entered"}, "error")
@@ -53,12 +51,12 @@ def user_classAdd():
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
-async def user_classDelete():
+async def delete():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
 
-    if flask_login.current_user.role == "student":
+    if flask_login.current_user.role == Role.Student:
         return send_response(403, 34010, {"message": "Permission denied"}, "error")
     if not idUser:
         return send_response(400, 34020, {"message": "idUser not entered"}, "error")
@@ -66,58 +64,73 @@ async def user_classDelete():
         return send_response(400, 34030, {"message": "idClass not entered"}, "error")
     
     user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
-    user_t = User_Task.query.filter_by(idUser = idUser)
 
     if not user_cl:
         return send_response(400, 34040, {"message": "This user is not in this class"}, "error")
-    
-    for t in user_t:
-        task = Task_Class.query.filter_by(idTask = t.idTask).first()
-        
-        if task:
-            if task.idClass == idClass:
-                await task_delete_sftp(task_path + str(t.idTask) + "/", idUser)
-                db.session.delete(t)
     
     db.session.delete(user_cl)
     db.session.commit()
 
     return send_response(200, 34051, {"message": "User deleted from this class"}, "success")
 
-@user_class_bp.route("/user_class/get/users", methods=["GET"])
+#TODO: idk jestli chce i tady query
 @flask_login.login_required
-def user_classGetUsers():
-    idClass = request.args.get("idClass", "")
-    users = []
-    badIds = []
-    goodIds = []
-    ids = []
+@user_class_bp.route("/user_class/get/users", methods=["GET"])
+def get_users():
+    idClass = request.args.get("idClass", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    
+    right_users = []
 
+    if not amountForPaging:
+        return send_response(400, 35010, {"message": "amountForPaging not entered"}, "error")
+    
     try:
-        decoded_status = unquote(idClass)
-        idClass = json.loads(decoded_status) if decoded_status.strip() else []
+        amountForPaging = int(amountForPaging)
     except:
-        idClass = []
+        return send_response(400, 35020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 35030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 35040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 35050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
 
-    if not isinstance(idClass, list):
-        idClass = [idClass]
+    if pageNumber < 0:
+        return send_response(400, 35060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not idClass:
+        return send_response(400, 35070, {"message":"IdClass not entered"}, "error")
+    if not Class.query.filter_by(id = idClass).first():
+        return send_response(400, 35080, {"message":"Nonexistent class"}, "error")
+    
+    users = User_Class.query.filter_by(idClass = idClass).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count =  User_Class.query.filter_by(idClass = idClass).count()
 
-    for id in idClass:
-        if not Class.query.filter_by(id = id).first():
-            badIds.append(id)
-            continue
+    if not users:
+        return send_response(400, 35090, {"message":"No users found"}, "error")
+    
+    for u in users:
+        user = User.query.filter_by(id = u.idUser).first()
+        right_users.append({
+                    "id": user.id,
+                    "name": user.name,
+                    "surname": user.surname,
+                    "abbreviation": user.abbreviation,
+                    "role": user.role.value,
+                    "profilePicture": user.profilePicture,
+                    "email": user.email,
+                    "idClass": all_user_classes(user.id),
+                    "createdAt":user.createdAt,
+                    "updatedAt":user.updatedAt
+                    })
 
-        clas = User_Class.query.filter_by(idClass = id)
-
-        for cl in clas:
-            if not cl.idUser in ids:
-                user = User.query.filter_by(id = cl.idUser).first()
-                users.append({"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt})
-                ids.append(cl.idUser)
-
-        goodIds.append(id)
-
-    if not goodIds:
-        return send_response(400, 35010, {"message": "Only wrong idClass"}, "error")
-
-    return send_response(200, 35021, {"message": "Users found", "users":users, "badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(200, 35101, {"message": "Users found", "users":right_users, "count":count}, "success")

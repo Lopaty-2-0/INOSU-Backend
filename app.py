@@ -12,6 +12,7 @@ from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
+from src.utils.enums import Role
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -45,7 +46,7 @@ try:
     ssh = ssh_connect()
     db = sql(app)
     jwt = JWTManager(app)
-    migrattion = Migrate(app, db)
+    migration = Migrate(app, db)
     CORS( 
         app,
         supports_credentials=True,
@@ -76,27 +77,32 @@ try:
         from src.models.Class import Class
         from src.models.Task import Task
         from src.models.Specialization import Specialization
-        from src.models.User_Task import User_Task
-        from src.models.Task_Class import Task_Class
+        from src.models.User_Team import User_Team
+        from src.models.Team import Team
+        from src.models.Version_Team import Version_Team
 
         db.create_all()
 
-        if not User.query.filter_by(role = "admin").first():
-            newUser = User(name = "admin", surname = "admin", abbreviation = None, role = "admin", password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
+        if not User.query.filter_by(role = Role.Admin).first():
+            newUser = User(name = "admin", surname = "admin", abbreviation = None, role = Role.Admin, password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
             db.session.add(newUser)
             db.session.commit()
         
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)
+
 except OperationalError as db_error:
-    try:
-        create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
-        print("Creating database")
-        print("Please run program once more")
-    except Exception as e:
-        print(f"Error while creating database: {e}")
-    finally:
-        exit()
+    if db_error.code == 1049:
+        try:
+            create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
+            print("Creating database")
+            print("Please run program once more")
+        except Exception as e:
+            print(f"Error while creating database: {e}")
+        finally:
+            exit()
+    else:
+        with app.app_context():
+            db.create_all()
 except Exception as e:
     print(f"Error while starting aplication: {e}")
-    exit()

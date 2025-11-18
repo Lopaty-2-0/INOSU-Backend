@@ -1,9 +1,10 @@
 import flask_login
 from src.models.Class import Class
 from src.models.User_Class import User_Class
-from src.models.Task_Class import Task_Class
 from src.models.Specialization import Specialization
+from src.utils.paging import class_paging
 from src.utils.response import send_response
+from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db
 
@@ -12,7 +13,7 @@ class_bp = Blueprint("class", __name__)
 @class_bp.route("/class/add", methods = ["POST"])
 @flask_login.login_required
 def add():
-    if flask_login.current_user.role != "admin":
+    if flask_login.current_user.role != Role.Admin:
         return send_response(403, 8010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
@@ -52,15 +53,13 @@ def add():
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
 def delete():
-    if flask_login.current_user.role != "admin":
+    if flask_login.current_user.role != Role.Admin:
         return send_response(403, 9010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
     idClass = data.get("idClass", None)
     goodIds = []
     badIds = []
-    userIds = []
-    taskIds = []
 
     if not idClass:
         return send_response(400, 9020, {"message": "IdClass is missing"}, "error")
@@ -71,23 +70,22 @@ def delete():
         if not Class.query.filter_by(id = id).first():
             badIds.append(id)
             continue
-        if User_Class.query.filter_by(idClass = id).first():
-            userIds.append(id)
-            continue
-        if Task_Class.query.filter_by(idClass = id).first():
-            taskIds.append(id)
-            continue
+
+        users = User_Class.query.filter_by(idClass = id)
+
+        for user in users:
+            db.session.delete(user)
 
         db.session.delete(Class.query.filter_by(id = id).first())
         goodIds.append(id)
 
     db.session.commit()
 
-    return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds, "userIds":userIds, "taskIds": taskIds}, "success")
+    return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds}, "success")
 
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
-def getClassById():
+def get_by_id():
     data = request.args.get(force=True)
     id = data.get("id", None)
 
@@ -103,23 +101,63 @@ def getClassById():
     
     return send_response(200, 22031, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}}, "success")
 
-@class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required
-def getClasses():
-    classes = Class.query.all()
+@class_bp.route("/class/get", methods=["GET"])
+def get():
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
+    if not amountForPaging:
+        return send_response(400, 23010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 23020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 23030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 23040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 23050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 23060, {"message": "pageNumber must be bigger than 0"}, "error")
+
+    if not searchQuery:
+        classes = Class.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Class.query.count()
+    else:
+        classes, count = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
+
     all_class = []
 
     for cl in classes:
         specialization = Specialization.query.filter_by(id=cl.idSpecialization).first()
-        all_class.append({"id": cl.id, "grade": cl.grade, "group": cl.group,"name": cl.name,"specialization": specialization.abbreviation})
+        all_class.append({
+                        "id": cl.id,
+                        "grade": cl.grade,
+                        "group": cl.group,
+                        "name": cl.name,
+                        "specialization": specialization.abbreviation
+                        })
+        
     if not all_class:
-        return send_response(400, 23010, {"message": "Classes not found"}, "error")
+        return send_response(400, 23070, {"message": "Classes not found"}, "error")
     
-    return send_response(200, 23021, {"message": "Classes found", "classes": all_class}, "success")
+    return send_response(200, 23081, {"message": "Classes found", "classes": all_class, "count":count}, "success")
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required
-def getClassCount():
+def get_count():
     count = Class.query.count()
 
     return send_response(200, 49011, {"message": "Class count found", "count": count}, "success") 

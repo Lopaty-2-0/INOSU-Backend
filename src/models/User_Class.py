@@ -9,4 +9,4 @@ class User_Class(db.Model):
         self.idClass = idClass
 
     def __repr__(self):
-        return f"<task_class {self.idUser, self.idClass!r}>"
+        return f"<user_class {self.idUser, self.idClass!r}>"

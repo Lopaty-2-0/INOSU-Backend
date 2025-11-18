@@ -1,4 +1,3 @@
-from fileinput import filename
 import flask_login
 import time
 import hmac
@@ -6,10 +5,9 @@ import hashlib
 import os
 import base64
 from urllib.parse import quote
-from app import pfp_path, task_path, url
-from flask import Blueprint, redirect, request
+from app import pfp_path, task_path
+from flask import Blueprint, redirect
 from src.utils.check_file import check_file_access
-from src.utils.response import send_response
 
 check_file_bp = Blueprint("check_file_bp", __name__)
 
@@ -20,7 +18,7 @@ expires_in = 600
 @check_file_bp.route("/file/pfp/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("profilePictures")
-def generate_pfp_token(filename, id, id2, type):
+def check_pfp(filename, id, id2, type):
     message = pfp_path + filename
     expiry_timestamp = int(time.time()) + expires_in
     payload = f"{message}:{expiry_timestamp}"
