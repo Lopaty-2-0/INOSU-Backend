@@ -73,7 +73,6 @@ async def delete():
 
     return send_response(200, 34051, {"message": "User deleted from this class"}, "success")
 
-#TODO: idk jestli chce i tady query
 @flask_login.login_required
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 def get_users():
@@ -114,9 +113,6 @@ def get_users():
     
     users = User_Class.query.filter_by(idClass = idClass).offset(pageNumber * amountForPaging).limit(amountForPaging)
     count =  User_Class.query.filter_by(idClass = idClass).count()
-
-    if not users:
-        return send_response(400, 35090, {"message":"No users found"}, "error")
     
     for u in users:
         user = User.query.filter_by(id = u.idUser).first()
@@ -133,4 +129,4 @@ def get_users():
                     "updatedAt":user.updatedAt
                     })
 
-    return send_response(200, 35101, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 35091, {"message": "Users found", "users":right_users, "count":count}, "success")

@@ -161,9 +161,6 @@ def get_by_task():
         count = Team.query.filter_by(idTask = idTask).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
-
-    if not teams:
-        return send_response(400, 41090, {"message": "No team found"}, "error")
     
     for team in teams:
         counts = User_Team.query.filter_by(idTask=idTask, idTeam=team.idTeam).count()
@@ -201,7 +198,7 @@ def get_by_task():
                         "points":team.points
                         })
 
-    return send_response(200, 41101, {"message": "All teams for this task", "teams":right_teams, "users":users, "count": count}, "success")
+    return send_response(200, 41091, {"message": "All teams for this task", "teams":right_teams, "users":users, "count": count}, "success")
 
 @team_bp.route("/team/get/status/guarantor", methods=["GET"])
 @flask_login.login_required
@@ -251,10 +248,7 @@ def get_by_status_guarantor():
         count = Team.query.filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds)
-    
-    if count <= 0:
-        return send_response(400, 40080, {"message": "No team found"}, "error")
-    
+
     for team in teams:
         counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
         version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
@@ -291,7 +285,7 @@ def get_by_status_guarantor():
                         "elaboration": elaboration
                         })
     
-    return send_response(200, 40091, {"message": "All guarantor tasks with these statuses for current user", "users":users, "teams":right_teams, "count": count}, "success")
+    return send_response(200, 40081, {"message": "All guarantor tasks with these statuses for current user", "users":users, "teams":right_teams, "count": count}, "success")
 
 @team_bp.route("/team/get/status/idTask", methods=["GET"])
 @flask_login.login_required
@@ -324,21 +318,15 @@ def get_with_status_and_idTask():
         return send_response(400, 44050, {"message": "pageNumber not integer"}, "error")
     
     pageNumber -= 1
-
-    if pageNumber < 0:
-        return send_response(400, 44060, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if status not in [stat.value for stat in Status]:
-        return send_response(400, 40070, {"message": "Status not our type"}, "error")
+        return send_response(400, 44060, {"message": "Status not our type"}, "error")
     
     if not searchQuery:
         teams = Team.query.filter_by(idTask = idTask, status = Status(status)).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Team.query.filter_by(idTask = idTask, status = Status(status)).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task")
-    
-    if count <= 0:
-        return send_response(400, 40080, {"message": "No team found"}, "error")
     
     for team in teams:
         counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
@@ -376,7 +364,7 @@ def get_with_status_and_idTask():
                         "elaboration": elaboration
                         })
                 
-    return send_response(200, 44101, {"message": "All teams for this task and statuses", "teams": right_teams, "users":users, "count":count}, "success")
+    return send_response(200, 44071, {"message": "All teams for this task and statuses", "teams": right_teams, "users":users, "count":count}, "success")
 
 @team_bp.route("/team/get/status/elaboration", methods=["GET"])
 @flask_login.login_required
@@ -435,9 +423,7 @@ def get_by_status_elaboration():
             teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=conditions, typeOfIds = "elaboration")
     else:
         count = 0
-
-    if count <= 0:
-        return send_response(400, 53080, {"message": "No team found"}, "error")
+        teams = []
     
     for team in teams:
         counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
@@ -475,4 +461,4 @@ def get_by_status_elaboration():
                         "elaboration": elaboration
                         })
                 
-    return send_response(200, 53091, {"message": "All tasks with these statuses for current user", "users":users, "teams":right_teams, "count":count}, "success")
+    return send_response(200, 53081, {"message": "All tasks with these statuses for current user", "users":users, "teams":right_teams, "count":count}, "success")

@@ -121,40 +121,37 @@ def get_by_guarantor():
     all_tasks = []
 
     if not amountForPaging:
-        return send_response(400, 29010, {"message": "amountForPaging not entered"}, "error")
+        return send_response(400, 19010, {"message": "amountForPaging not entered"}, "error")
 
     try:
         amountForPaging = int(amountForPaging)
     except:
-        return send_response(400, 29020, {"message": "amountForPaging not integer"}, "error")
+        return send_response(400, 19020, {"message": "amountForPaging not integer"}, "error")
     
     if amountForPaging < 1:
-        return send_response(400, 29030, {"message": "amountForPaging smaller than 1"}, "error")
+        return send_response(400, 19030, {"message": "amountForPaging smaller than 1"}, "error")
     
     if not pageNumber:
-        return send_response(400, 29040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 19040, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 29050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 19050, {"message": "pageNumber not integer"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 29060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 19060, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not idUser:
-        return send_response(400, 29070, {"message": "No idUser entered"}, "error")
+        return send_response(400, 19070, {"message": "No idUser entered"}, "error")
 
     if not searchQuery:
         tasks = Task.query.filter_by(guarantor = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Task.query.filter_by(guarantor = idUser).count()
     else:
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "guarantor")
-
-    if not tasks:
-        return send_response(400, 29080, {"message":"No tasks found"}, "error")
 
     for task in tasks:
         all_tasks.append({
@@ -168,35 +165,34 @@ def get_by_guarantor():
             "points":task.points
         })
         
-    return send_response(200, 29091, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
+    return send_response(200, 19081, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
 def get_by_id():
     idTask = request.args.get("idTask", None)
     task = Task.query.filter_by(id=idTask).first()
+    task_data = None
 
     if not idTask:
         return send_response(400, 30010, {"message": "No id entered"}, "error")
 
-    if not task:
-        return send_response(404, 30020, {"message": "Task not found"}, "error")
+    if task:
+        user = User.query.filter_by(id = task.quarantor).first()
+        guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
+
+        task_data = {
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "guarantor": guarantor,
+            "points": task.points,
+            "deadline": task.deadline
+        }
     
-    user = User.query.filter_by(id = task.quarantor).first()
-    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
-
-    task_data = {
-        "id": task.id,
-        "name": task.name,
-        "startDate": task.startDate,
-        "endDate": task.endDate,
-        "task": task.task,
-        "guarantor": guarantor,
-        "points": task.points,
-        "deadline": task.deadline
-    }
-
-    return send_response(200, 30031, {"message": "Task found", "task": task_data}, "success")
+    return send_response(200, 30021, {"message": "Task found", "task": task_data}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
@@ -237,15 +233,13 @@ def get():
     else:
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
-    if not tasks:
-        return send_response(400, 27070, {"message":"No tasks found"}, "error")
 
     for task in tasks:
         user = User.query.filter_by(id = task.guarantor).first()
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
         all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "deadline": task.deadline, "points": task.points})
 
-    return send_response(200, 27081, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
+    return send_response(200, 27071, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
@@ -288,7 +282,7 @@ async def delete():
     return send_response(200, 28051, {"message":"Task deleted"}, "success")
 
 #TODO:nutno zjistit co dělá a pak ji upravit
-@flask_login.login_required
+"""@flask_login.login_required
 @task_bp.route("/task/get/possible", methods = ["GET"])
 def get_all_possible():
     tasks = Task.query.all()
@@ -305,4 +299,4 @@ def get_all_possible():
             guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
             waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
 
-    return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks}, "success")
+    return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks}, "success")"""
