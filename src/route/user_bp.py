@@ -615,9 +615,6 @@ def get_user_page():
     else:
         users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
-    if not users:
-        return send_response(400, 52070, {"message":"No users found"}, "error")
-
     for user in users:
         right_users.append({
                             "id": user.id,
@@ -632,5 +629,4 @@ def get_user_page():
                             "updatedAt":user.updatedAt,
                             "reminders":user.reminders
                         })
-
-    return send_response(200, 52081, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 52071, {"message": "Users found", "users":right_users, "count":count}, "success")
