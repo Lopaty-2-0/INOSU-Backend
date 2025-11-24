@@ -86,20 +86,19 @@ def delete():
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
 def get_by_id():
-    data = request.args.get(force=True)
-    id = data.get("id", None)
+    id = request.args.get("id", None)
+    clas = None
 
     if not id:
         return send_response(400, 22010, {"message": "Id not entered"}, "error")
 
     all_class = Class.query.filter_by(id = id).first()
     
-    if not all_class:
-        return send_response(400, 22020, {"message": "Class not found"}, "error")
+    if all_class:
+        specialization = Specialization.query.filter_by(id=all_class.idSpecialization).first()
+        clas = {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}
     
-    specialization = Specialization.query.filter_by(id=all_class.idSpecialization).first()
-    
-    return send_response(200, 22031, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}}, "success")
+    return send_response(200, 22031, {"message": "Class found", "class": clas}, "success")
 
 @flask_login.login_required
 @class_bp.route("/class/get", methods=["GET"])
@@ -150,10 +149,8 @@ def get():
                         "specialization": specialization.abbreviation
                         })
         
-    if not all_class:
-        return send_response(400, 23070, {"message": "Classes not found"}, "error")
     
-    return send_response(200, 23081, {"message": "Classes found", "classes": all_class, "count":count}, "success")
+    return send_response(200, 23071, {"message": "Classes found", "classes": all_class, "count":count}, "success")
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required

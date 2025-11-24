@@ -405,27 +405,8 @@ def get_by_id():
 
     user = User.query.filter_by(id = id).first()
     
-    if not user:
-        return send_response(400, 18020, {"message": "User not found"}, "error")
     
-    return send_response(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
-
-@user_bp.route("/user/get/email", methods = ["GET"])
-@flask_login.login_required
-def get_by_email():
-    email = request.args.get("email", None)
-
-    if not email:
-        return send_response(400, 19010, {"message": "Email not entered"}, "error")
-    if not re.match(email_regex, email):
-        return send_response(400, 19020, {"message": "Wrong email format"}, "error")
-    
-    user = User.query.filter_by(email = email).first()
-    
-    if not user:
-        return send_response(400, 19030, {"message": "User not found"}, "error")
-    
-    return send_response(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
+    return send_response(200, 18021, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
 @flask_login.login_required
 @user_bp.route("/user/get/role", methods = ["GET"])
@@ -473,9 +454,6 @@ def get_by_role():
 
     else:
         user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
-
-    if not user:
-        return send_response(400, 20090, {"message":"No users found"}, "error")
             
     for u in user:
         users.append({
@@ -491,7 +469,7 @@ def get_by_role():
                         "updatedAt":u.updatedAt
                         })
     
-    return send_response(200, 20101, {"message": "Users found", "users": users, "count":count}, "success")
+    return send_response(200, 20091, {"message": "Users found", "users": users, "count":count}, "success")
 
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
@@ -552,14 +530,12 @@ def get_no_class():
         return send_response(400, 51060, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
-        user = User.query.filter_by(role = Role.Student).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.filter_by(role = Role.Student).count()
+        user = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).count()
 
     else:
-        user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role.Student, typeOfSpecialSearch = "role")
+        user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfSpecialSearch = "noClass")
 
-    if not user:
-        return send_response(400, 51070, {"message":"No users found"}, "error")
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
@@ -575,7 +551,7 @@ def get_no_class():
                         "updatedAt":s.updatedAt
                         })
 
-    return send_response(200, 51081, {"message": "All students without class", "users": users, "count": count}, "success")
+    return send_response(200, 51071, {"message": "All students without class", "users": users, "count": count}, "success")
 
 @flask_login.login_required
 @user_bp.route("/user/get/count/byRole", methods=["GET"])
@@ -639,9 +615,6 @@ def get_user_page():
     else:
         users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
-    if not users:
-        return send_response(400, 52070, {"message":"No users found"}, "error")
-
     for user in users:
         right_users.append({
                             "id": user.id,
@@ -656,5 +629,4 @@ def get_user_page():
                             "updatedAt":user.updatedAt,
                             "reminders":user.reminders
                         })
-
-    return send_response(200, 52081, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 52071, {"message": "Users found", "users":right_users, "count":count}, "success")
