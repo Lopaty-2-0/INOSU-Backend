@@ -177,22 +177,24 @@ def get_by_id():
     if not idTask:
         return send_response(400, 30010, {"message": "No id entered"}, "error")
 
-    if task:
-        user = User.query.filter_by(id = task.quarantor).first()
-        guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
+    if not task:
+        return send_response(404, 30020, {"message": "Task not found"}, "error")
 
-        task_data = {
-            "id": task.id,
-            "name": task.name,
-            "startDate": task.startDate,
-            "endDate": task.endDate,
-            "task": task.task,
-            "guarantor": guarantor,
-            "points": task.points,
-            "deadline": task.deadline
-        }
+    user = User.query.filter_by(id = task.quarantor).first()
+    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
+
+    task_data = {
+        "id": task.id,
+        "name": task.name,
+        "startDate": task.startDate,
+        "endDate": task.endDate,
+        "task": task.task,
+        "guarantor": guarantor,
+        "points": task.points,
+        "deadline": task.deadline
+    }
     
-    return send_response(200, 30021, {"message": "Task found", "task": task_data}, "success")
+    return send_response(200, 30031, {"message": "Task found", "task": task_data}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])

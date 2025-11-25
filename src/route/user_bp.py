@@ -405,8 +405,10 @@ def get_by_id():
 
     user = User.query.filter_by(id = id).first()
     
+    if not user:
+        return send_response(404, 18020, {"message": "User not found"}, "error")
     
-    return send_response(200, 18021, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
+    return send_response(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
 @flask_login.login_required
 @user_bp.route("/user/get/role", methods = ["GET"])
