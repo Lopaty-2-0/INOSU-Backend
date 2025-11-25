@@ -87,18 +87,18 @@ def delete():
 @flask_login.login_required
 def get_by_id():
     id = request.args.get("id", None)
-    clas = None
 
     if not id:
         return send_response(400, 22010, {"message": "Id not entered"}, "error")
 
     all_class = Class.query.filter_by(id = id).first()
     
-    if all_class:
-        specialization = Specialization.query.filter_by(id=all_class.idSpecialization).first()
-        clas = {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}
+    if not all_class:
+        return send_response(404, 22020, {"message": "Class not found"}, "error")
     
-    return send_response(200, 22031, {"message": "Class found", "class": clas}, "success")
+    specialization = Specialization.query.filter_by(id=all_class.idSpecialization).first()
+
+    return send_response(200, 22031, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}}, "success")
 
 @flask_login.login_required
 @class_bp.route("/class/get", methods=["GET"])
