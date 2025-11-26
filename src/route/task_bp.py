@@ -290,4 +290,4 @@ async def delete():
         goodIds.append(id)
         db.session.commit()
 
-    return send_response(200, 28051, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
+    return send_response(200, 28031, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
