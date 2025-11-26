@@ -180,7 +180,7 @@ def get_by_id():
     if not task:
         return send_response(404, 30020, {"message": "Task not found"}, "error")
 
-    user = User.query.filter_by(id = task.quarantor).first()
+    user = User.query.filter_by(id = task.guarantor).first()
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
 
     task_data = {
