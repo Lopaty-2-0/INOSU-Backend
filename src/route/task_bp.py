@@ -243,62 +243,51 @@ def get():
 
     return send_response(200, 27071, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
+#TODO: nutno pohlídat jestli je id vůbec velikostně do intu
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
 async def delete():
     data = request.get_json(force=True)
-    id = data.get("id", None)
+    idTask = data.get("idTask", None)
+    goodIds = []
+    badIds = []
 
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 28010, {"message":"Students can not delete"}, "error")
 
-    if not id:
+    if not idTask:
         return send_response(400, 28020, {"message":"No id entered"}, "error")
     
-    teams = Team.query.filter_by(idTask = id)
-    user_team = User_Team.query.filter_by(idTask = id)
-
-    task = Task.query.filter_by(id=id).first()
-
-    if not task:
-        return send_response(400, 28030, {"message":"No task found"}, "error")
-
-    if flask_login.current_user.id != task.guarantor:
-        return send_response(403, 28040, {"message":"No permission for that"}, "error")
+    if not isinstance(idTask, list):
+        idTask = [idTask]
     
-    for user in user_team:
-        db.session.delete(user)
+    for id in idTask:
+        task = Task.query.filter_by(id = id).first()
 
-    for team in teams:
-        versions = Version_Team.query.filter_by(idTask = id, idTeam = team.idTeam)
-
-        for ver in versions:
-            db.session.delete(ver)
-
-        db.session.delete(team)
-    
-    db.session.delete(task)
-    await task_delete_sftp(task.id)
-    db.session.commit()
-
-    return send_response(200, 28051, {"message":"Task deleted"}, "success")
-
-#TODO:nutno zjistit co dělá a pak ji upravit
-"""@flask_login.login_required
-@task_bp.route("/task/get/possible", methods = ["GET"])
-def get_all_possible():
-    tasks = Task.query.all()
-    waitingTasks = []
-
-    for task in tasks:
-        user_team = User_Team.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first()
-
-        if not user_team:
+        if not task or flask_login.current_user.id != task.guarantor:
+            badIds.append(id)
             continue
 
-        if Team.query.filter_by(idTask = task.id, idUser = flask_login.current_user.id).first().status == Status.Waiting:
-            user = User.query.filter_by(id = task.guarantor).first()
-            guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
-            waitingTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor})
+        teams = Team.query.filter_by(idTask = id)
+        user_team = User_Team.query.filter_by(idTask = id)
 
-    return send_response(200, 46011, {"message":"All possible tasks for a user", "waitingTasks":waitingTasks}, "success")"""
+        for user in user_team:
+            db.session.delete(user)
+            db.session.commit()
+
+        for team in teams:
+            versions = Version_Team.query.filter_by(idTask = id, idTeam = team.idTeam)
+
+            for ver in versions:
+                db.session.delete(ver)
+                db.session.commit()
+
+            db.session.delete(team)
+            db.session.commit()
+        
+        db.session.delete(task)
+        await task_delete_sftp(task.id)
+        goodIds.append(id)
+        db.session.commit()
+
+    return send_response(200, 28051, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
