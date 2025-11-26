@@ -156,10 +156,6 @@ def get():
         return send_response(400, 39080, {"message": "Nonexistent user"}, "error")
     
     user_teams = User_Team.query.filter_by(idUser = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
-
-    if not user_teams:
-        return send_response(400, 39090, {"message":"No user_teams found"}, "error")
-    
     count = user_teams.count()
 
     for user_team in user_teams:
@@ -200,59 +196,8 @@ def get():
                                         }
                                 })
         
-    return send_response(200, 39101, {"message": "User_teams found", "user_teams":right_user_teams, "count":count}, "success")
+    return send_response(200, 39091, {"message": "User_teams found", "user_teams":right_user_teams, "count":count}, "success")
 
-
-#TODO: předělat na paging (za mne úplně zbytečný route)
-"""@user_team_bp.route("/user_team/get/idTask", methods=["GET"])
-@flask_login.login_required
-def get_by_idTask():
-    idTask = request.args.get("idTask", None)
-    amountForPaging = request.args.get("amountForPaging", None)
-    pageNumber = request.args.get("pageNumber", None)
-    users = []
-    teams = []
-    
-    if not amountForPaging:
-        return send_response(400, 53010, {"message": "amountForPaging not entered"}, "error")
-    
-    try:
-        amountForPaging = int(amountForPaging)
-    except:
-        return send_response(400, 53020, {"message": "amountForPaging not integer"}, "error")
-    
-    if amountForPaging < 1:
-        return send_response(400, 53030, {"message": "amountForPaging smaller than 1"}, "error")
-    
-    if not pageNumber:
-        return send_response(400, 53040, {"message": "pageNumber not entered"}, "error")
-    
-    try:
-        pageNumber = int(pageNumber)
-    except:
-        return send_response(400, 53050, {"message": "pageNumber not integer"}, "error")
-    
-    pageNumber -= 1
-
-    if pageNumber < 0:
-        return send_response(400, 53060, {"message": "pageNumber must be bigger than 0"}, "error")
-    
-
-    if not idTask:
-        return send_response(400, 42010, {"message": "idTask not entered"}, "error")
-    if not Task.query.filter_by(id = idTask).first():
-        return send_response(400, 42020, {"message": "Nonexistent task"}, "error")
-    
-    team = User_Team.query.filter_by(idTask = idTask)
-
-    if not team:
-        return send_response(400, 42030, {"message": "No user has this task"}, "error")
-
-    for t in team:
-        user = User.query.filter_by(id = t.idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        users.append(user.id)
-
-    return send_response(200, 42041, {"message": "Users found", "users":users}, "success")"""
 
 @user_team_bp.route("/user_team/change", methods=["PUT"])
 @flask_login.login_required
@@ -312,71 +257,74 @@ def get_by_idUser_and_idTask():
     idUser = request.args.get("idUser", None)
     idTask = request.args.get("idTask", None)
 
+    tasks = None
+
     if not idTask:
         return send_response(400, 45010, {"message": "idTask not entered"}, "error")
     if not idUser:
         return send_response(400, 45020, {"message": "idUser not entered"}, "error")
     
     user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask).first()
-    team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = idTask).first()
+    
     user = User.query.filter_by(id = idUser).first()
     task = Task.query.filter_by(id = idTask).first()
-    version = Version_Team.query.filter_by(idTask=idTask, idTeam = user_team.idTeam).order_by(Version_Team.idVersion.desc()).first()
     
     if not user:
         return send_response(400, 45030, {"message": "Nonexistent user"}, "error")
     if not task:
         return send_response(400, 45040, {"message": "Nonexistent task"}, "error")
-    if not user_team:
-        return send_response(400, 45050, {"message": "Nonexistent user_team"}, "error")
     
-    if not version:
-        elaboration = None
-    else:
-        elaboration = version.elaboration
-    
-    guarantor = User.query.filter_by(id = task.guarantor).first()
-    team_member = {"id": user.id, 
-                    "name": user.name, 
-                    "surname": user.surname, 
-                    "abbreviation": user.abbreviation, 
-                    "role": user.role.value, 
-                    "profilePicture": user.profilePicture, 
-                    "email": user.email, 
-                    "idClass": all_user_classes(user.id),
-                    "createdAt":user.createdAt,
-                    "updatedAt":user.updatedAt
-                }
-    
-    team = {"idTeam":team.idTeam,
-            "status":team.status.value,
-            "elaboration":elaboration, 
-            "review":team.review, 
-            "name":team.name, 
-            "points":team.points, 
-            }
+    if user_team:
+        team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = idTask).first()
+        version = Version_Team.query.filter_by(idTask=idTask, idTeam = user_team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        guarantor = User.query.filter_by(id = task.guarantor).first()
 
-    tasks = {"task":task.task,
-            "name":task.name, 
-            "statDate":task.startDate, 
-            "endDate":task.endDate, 
-            "type":task.type.value,
-            "guarantor":{"id": guarantor.id, 
-                        "name": guarantor.name, 
-                        "surname": guarantor.surname, 
-                        "abbreviation": guarantor.abbreviation, 
-                        "role": guarantor.role.value, 
-                        "profilePicture": guarantor.profilePicture, 
-                        "email": guarantor.email, 
-                        "idClass": all_user_classes(guarantor.id), 
-                        "createdAt":guarantor.createdAt,
-                        "updatedAt":guarantor.updatedAt
-                        },
-            "idTask":task.id,
-            "taskPoints":task.points,
-            "team":team,
-            "teamMember":team_member
-            }
+        if not version:
+            elaboration = None
+        else:
+            elaboration = version.elaboration
+
+        team_member = {"id": user.id, 
+                        "name": user.name, 
+                        "surname": user.surname, 
+                        "abbreviation": user.abbreviation, 
+                        "role": user.role.value, 
+                        "profilePicture": user.profilePicture, 
+                        "email": user.email, 
+                        "idClass": all_user_classes(user.id),
+                        "createdAt":user.createdAt,
+                        "updatedAt":user.updatedAt
+                    }
+        
+        team = {"idTeam":team.idTeam,
+                "status":team.status.value,
+                "elaboration":elaboration, 
+                "review":team.review, 
+                "name":team.name, 
+                "points":team.points, 
+                }
+
+        tasks = {"task":task.task,
+                "name":task.name, 
+                "statDate":task.startDate, 
+                "endDate":task.endDate, 
+                "type":task.type.value,
+                "guarantor":{"id": guarantor.id, 
+                            "name": guarantor.name, 
+                            "surname": guarantor.surname, 
+                            "abbreviation": guarantor.abbreviation, 
+                            "role": guarantor.role.value, 
+                            "profilePicture": guarantor.profilePicture, 
+                            "email": guarantor.email, 
+                            "idClass": all_user_classes(guarantor.id), 
+                            "createdAt":guarantor.createdAt,
+                            "updatedAt":guarantor.updatedAt
+                            },
+                "idTask":task.id,
+                "taskPoints":task.points,
+                "team":team,
+                "teamMember":team_member
+                }
     
     return send_response(200, 45061, {"message": "user_team for this task and user", "task": tasks}, "success")
 

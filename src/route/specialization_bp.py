@@ -123,10 +123,22 @@ def get():
     else:
         specialization, count = specialization_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)
 
-    if not specialization:
-        return send_response (400, 29070, {"message": "No specialization found"}, "error")
-    
     for s in specialization:
         specializations.append({"id":s.id,"name":s.name, "abbreviation":s.abbreviation, "lengthOfStudy":s.lengthOfStudy})
 
-    return send_response (200, 29081, {"message": "Specializations found", "specializations":specializations, "count":count}, "success")
+    return send_response (200, 29071, {"message": "Specializations found", "specializations":specializations, "count":count}, "success")
+
+@specialization_bp.route("/specialization/get/id", methods=["GET"])
+@flask_login.login_required
+def get_by_id():
+    id = request.args.get("id", None)
+
+    if not id:
+        return send_response(400, 54010, {"message": "Id not entered"}, "error")
+
+    specialization = Specialization.query.filter_by(id=id).first()
+    
+    if not specialization:
+        return send_response(404, 54020, {"message": "Specialization not found"}, "error")
+
+    return send_response(200, 54031, {"message": "Specialization found", "specialization": {"id":specialization.id,"name":specialization.name, "abbreviation":specialization.abbreviation, "lengthOfStudy":specialization.lengthOfStudy}}, "success")

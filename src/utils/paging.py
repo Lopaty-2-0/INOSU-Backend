@@ -1,9 +1,11 @@
-from sqlalchemy import or_, func, and_
+from sqlalchemy import or_, func, and_, outerjoin
 from src.models.User import User
 from src.models.Specialization import Specialization
 from src.models.Class import Class
 from src.models.Task import Task
 from src.models.Team import Team
+from src.utils.enums import Role
+from src.models.User_Class import User_Class
 
 def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -21,8 +23,10 @@ def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             )
         )
 
+    if typeOfSpecialSearch == "noClass":
+            return User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).filter(and_(*conditions)).count()
+
     if specialSearch:
-        #I dont think we will use any other than the role
         if not typeOfSpecialSearch:
             return False
         
@@ -32,7 +36,6 @@ def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(User.role == specialSearch)
         if typeOfSpecialSearch == "updatedAt":
             specialConditions.append(User.updatedAt == specialSearch)
-
     return User.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.filter(and_(*conditions, *specialConditions)).count()
 
 def specialization_paging(searchQuery, amountForPaging, pageNumber):
