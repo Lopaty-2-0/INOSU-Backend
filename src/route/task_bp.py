@@ -110,7 +110,8 @@ async def add():
 
     return send_response(201, 26131, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
 
-@flask_login.login_required
+#TODO: kdyžtak smazat
+"""@flask_login.login_required
 @task_bp.route("/task/get/guarantor", methods=["GET"])
 def get_by_guarantor():
     idUser = request.args.get("idUser", None)
@@ -165,7 +166,7 @@ def get_by_guarantor():
             "points":task.points
         })
         
-    return send_response(200, 19081, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
+    return send_response(200, 19081, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")"""
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
@@ -291,3 +292,118 @@ async def delete():
         db.session.commit()
 
     return send_response(200, 28031, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
+
+@flask_login.login_required
+@task_bp.route("/task/get/maturita", methods=["GET"])
+def get_maturita():
+    idUser = request.args.get("idUser", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
+    all_tasks = []
+
+    if not amountForPaging:
+        return send_response(400, 19010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 19020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 19030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 19040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 19050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 19060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not idUser:
+        return send_response(400, 19070, {"message": "No idUser entered"}, "error")
+
+    if not searchQuery:
+        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).count()
+    else:
+        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "maturita")
+
+    for task in tasks:
+        all_tasks.append({
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "guarantor": task.guarantor,
+            "deadline": task.deadline,
+            "points":task.points
+        })
+        
+    return send_response(200, 19081, {"message": "Found maturitas"
+    " for guarantor", "tasks": all_tasks, "count": count}, "success")
+
+@flask_login.login_required
+@task_bp.route("/task/get/task", methods=["GET"])
+def get_task():
+    idUser = request.args.get("idUser", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
+    all_tasks = []
+
+    if not amountForPaging:
+        return send_response(400, 55010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 55020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 55030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 55040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 55050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 55060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not idUser:
+        return send_response(400, 55070, {"message": "No idUser entered"}, "error")
+
+    if not searchQuery:
+        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Task).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Task.query.filter_by(guarantor = idUser, type = Type.Task).count()
+    else:
+        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "task")
+
+    for task in tasks:
+        all_tasks.append({
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "guarantor": task.guarantor,
+            "deadline": task.deadline,
+            "points":task.points
+        })
+        
+    return send_response(200, 55081, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
