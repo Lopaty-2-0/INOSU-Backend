@@ -277,7 +277,6 @@ def get_by_idUser_and_idTask():
     guarantor = User.query.filter_by(id = task.guarantor).first()
 
     user_teams = User_Team.query.filter(User_Team.idTeam == user_team.idTeam, User_Team.idTask == idTask, User_Team.idUser != idUser)
-    count = User_Team.query.filter(User_Team.idTeam == user_team.idTeam, User_Team.idTask == idTask, User_Team.idUser != idUser).count() + 1
 
     for member in user_teams:
         collaborator = User.query.filter_by(id = member.idUser).first()
@@ -335,14 +334,10 @@ def get_by_idUser_and_idTask():
                         "updatedAt":guarantor.updatedAt
                         },
             "idTask":task.id,
-            "taskPoints":task.points,
-            "team":team,
-            "user":team_member,
-            "collaborators":collaborators,
-            "count":count
+            "taskPoints":task.points
             }
     
-    return send_response(200, 45051, {"message": "user_team for this task and user", "task": tasks}, "success")
+    return send_response(200, 45051, {"message": "user_team for this task and user", "task": tasks, "team":team, "user":team_member, "collaborators":collaborators}, "success")
 
 @user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required
