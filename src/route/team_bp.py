@@ -162,26 +162,19 @@ def get_users_task():
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfTeam="users")
     
     for team in teams:
-        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
-
-        if not version:
-            elaboration = None
-        else:
-            elaboration = version.elaboration
-        
         user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first().idUser).first()
+
         users.append({
                     "idTeam":team.idTeam,
-                    "name":team.name,
-                    "status":team.status.value,
-                    "elaboration":elaboration,
-                    "review":team.review, 
                     "points":team.points,
                     "userData":{
                         "id":user.id,
                         "name":user.name,
                         "surname":user.surname,
-                        "profilePicture":user.profilePicture
+                        "profilePicture":user.profilePicture,
+                        "abbreviation": user.abbreviation,
+                        "email": user.email,
+                        "createdAt":user.createdAt,
                     }
                     })
 
@@ -242,13 +235,10 @@ def get_teams_task():
             elaboration = version.elaboration
         
         right_teams.append({
-                    "status":team.status.value,
-                    "review":team.review, 
                     "idTeam":team.idTeam,
                     "count": counts,
                     "name":team.name,
                     "points":team.points,
-                    "elaboration": elaboration
                     })
 
     return send_response(200, 56091, {"message": "All teams for this task", "teams":right_teams, "count": count}, "success")
