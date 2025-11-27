@@ -11,7 +11,7 @@ from src.utils.response import send_response
 from src.utils.team import make_team
 from src.utils.enums import Status
 from src.utils.paging import team_paging
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -118,13 +118,12 @@ async def update():
     return send_response(200, 32091, {"message": "team updated"}, "success")
 
 @flask_login.login_required
-@team_bp.route("/team/get", methods=["GET"])
-def get_by_task():
+@team_bp.route("/team/get/users", methods=["GET"])
+def get_users_task():
     idTask = request.args.get("idTask", None)
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-    right_teams = []
     users = []
 
     if not amountForPaging:
@@ -157,13 +156,12 @@ def get_by_task():
         return send_response(400, 41080, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
-        teams = Team.query.filter_by(idTask = idTask).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.filter_by(idTask = idTask).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfTeam="users")
     
     for team in teams:
-        counts = User_Team.query.filter_by(idTask=idTask, idTeam=team.idTeam).count()
         version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
@@ -171,44 +169,98 @@ def get_by_task():
         else:
             elaboration = version.elaboration
         
-        if counts == 1:
-            user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first().idUser).first()
-            users.append({
-                        "idTeam":team.idTeam,
-                        "name":team.name,
-                        "status":team.status.value,
-                        "elaboration":elaboration,
-                        "review":team.review, 
-                        "points":team.points,
-                        "userData":{
-                            "id":user.id,
-                            "name":user.name,
-                            "surname":user.surname,
-                            "profilePicture":user.profilePicture
-                        }
-                        })
-        else:
-            right_teams.append({
-                        "status":team.status.value,
-                        "elaboration":elaboration,
-                        "review":team.review, 
-                        "idTeam":team.idTeam,
-                        "count": counts,
-                        "name":team.name,
-                        "points":team.points
-                        })
+        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first().idUser).first()
+        users.append({
+                    "idTeam":team.idTeam,
+                    "name":team.name,
+                    "status":team.status.value,
+                    "elaboration":elaboration,
+                    "review":team.review, 
+                    "points":team.points,
+                    "userData":{
+                        "id":user.id,
+                        "name":user.name,
+                        "surname":user.surname,
+                        "profilePicture":user.profilePicture
+                    }
+                    })
 
-    return send_response(200, 41091, {"message": "All teams for this task", "teams":right_teams, "users":users, "count": count}, "success")
+    return send_response(200, 41091, {"message": "All teams for this task", "users":users, "count": count}, "success")
 
-@team_bp.route("/team/get/status/guarantor", methods=["GET"])
 @flask_login.login_required
-def get_by_status_guarantor():
+@team_bp.route("/team/get/teams", methods=["GET"])
+def get_teams_task():
+    idTask = request.args.get("idTask", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+    right_teams = []
+
+
+    if not amountForPaging:
+        return send_response(400, 56010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 56020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 56030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 56040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 56050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 56060, {"message": "pageNumber must be bigger than 0"}, "error")
+
+    if not idTask:
+        return send_response(400, 56070, {"message": "idTask not entered"}, "error")
+    if not Task.query.filter_by(id = idTask).first():
+        return send_response(400, 56080, {"message": "Nonexistent task"}, "error")
+    
+    if not searchQuery:
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).count()
+    else:
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
+    
+    for team in teams:
+        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
+        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+
+        if not version:
+            elaboration = None
+        else:
+            elaboration = version.elaboration
+        
+        right_teams.append({
+                    "status":team.status.value,
+                    "review":team.review, 
+                    "idTeam":team.idTeam,
+                    "count": counts,
+                    "name":team.name,
+                    "points":team.points,
+                    "elaboration": elaboration
+                    })
+
+    return send_response(200, 56091, {"message": "All teams for this task", "teams":right_teams, "count": count}, "success")
+
+@team_bp.route("/team/get/teams/status/guarantor", methods=["GET"])
+@flask_login.login_required
+def get_teams_with_status_and_guarantor():
     status = request.args.get("status", None)
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     right_teams = []
-    users = []
     guarantorIds = []
     
     if not amountForPaging:
@@ -244,8 +296,8 @@ def get_by_status_guarantor():
         guarantorIds.append(task.id)
     
     if not searchQuery:
-        teams = Team.query.filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds)
 
@@ -257,45 +309,102 @@ def get_by_status_guarantor():
             elaboration = None
         else:
             elaboration = version.elaboration
-        
-        if counts == 1:
-            user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
-            users.append({
-                        "idTeam":team.idTeam,
-                        "name":team.name,
-                        "status":team.status.value,
-                        "review":team.review, 
-                        "points":team.points,
-                        "userData":{
-                            "id":user.id,
-                            "name":user.name,
-                            "surname":user.surname,
-                            "profilePicture":user.profilePicture
-                        },
-                        "elaboration": elaboration
-                        })
-        else:
-            right_teams.append({
-                        "status":team.status.value,
-                        "review":team.review, 
-                        "idTeam":team.idTeam,
-                        "count": counts,
-                        "name":team.name,
-                        "points":team.points,
-                        "elaboration": elaboration
-                        })
-    
-    return send_response(200, 40081, {"message": "All guarantor tasks with these statuses for current user", "users":users, "teams":right_teams, "count": count}, "success")
 
-@team_bp.route("/team/get/status/idTask", methods=["GET"])
+        right_teams.append({
+                    "status":team.status.value,
+                    "review":team.review, 
+                    "idTeam":team.idTeam,
+                    "count": counts,
+                    "name":team.name,
+                    "points":team.points,
+                    "elaboration": elaboration
+                    })
+    
+    return send_response(200, 40081, {"message": "All guarantor tasks with these statuses for current user", "teams":right_teams, "count": count}, "success")
+
+@team_bp.route("/team/get/users/status/guarantor", methods=["GET"])
 @flask_login.login_required
-def get_with_status_and_idTask():
+def get_users_with_status_and_guarantor():
+    status = request.args.get("status", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+    users = []
+    guarantorIds = []
+    
+    if not amountForPaging:
+        return send_response(400, 57010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 57020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 57030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 57040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 57050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 57060, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if status not in [stat.value for stat in Status]:
+        return send_response(400, 57070, {"message": "Status not our type"}, "error")
+    
+    tasks = Task.query.filter_by(guarantor = flask_login.current_user.id)
+
+    for task in tasks:
+        guarantorIds.append(task.id)
+    
+    if not searchQuery:
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).count()
+    else:
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds, typeOfTeam="users")
+
+    for team in teams:
+
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+
+        if not version:
+            elaboration = None
+        else:
+            elaboration = version.elaboration
+
+        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
+        users.append({
+                    "idTeam":team.idTeam,
+                    "name":team.name,
+                    "status":team.status.value,
+                    "review":team.review, 
+                    "points":team.points,
+                    "userData":{
+                        "id":user.id,
+                        "name":user.name,
+                        "surname":user.surname,
+                        "profilePicture":user.profilePicture
+                    },
+                    "elaboration": elaboration
+                    })
+    
+    return send_response(200, 57081, {"message": "All guarantor tasks with these statuses for current user", "users":users, "count": count}, "success")
+
+@team_bp.route("/team/get/teams/status/idTask", methods=["GET"])
+@flask_login.login_required
+def get_teams_with_status_and_idTask():
     status = request.args.get("status", None)
     idTask = request.args.get("idTask", None)
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-    users = []
     right_teams = []
 
     if not amountForPaging:
@@ -323,8 +432,8 @@ def get_with_status_and_idTask():
         return send_response(400, 44060, {"message": "Status not our type"}, "error")
     
     if not searchQuery:
-        teams = Team.query.filter_by(idTask = idTask, status = Status(status)).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.filter_by(idTask = idTask, status = Status(status)).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task")
     
@@ -336,35 +445,84 @@ def get_with_status_and_idTask():
             elaboration = None
         else:
             elaboration = version.elaboration
-        
-        if counts == 1:
-            user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
-            users.append({
-                        "idTeam":team.idTeam,
-                        "name":team.name,
-                        "status":team.status.value,
-                        "review":team.review, 
-                        "points":team.points,
-                        "userData":{
-                            "id":user.id,
-                            "name":user.name,
-                            "surname":user.surname,
-                            "profilePicture":user.profilePicture
-                        },
-                        "elaboration": elaboration
-                        })
-        else:
-            right_teams.append({
-                        "status":team.status.value,
-                        "review":team.review, 
-                        "idTeam":team.idTeam,
-                        "count": count,
-                        "name":team.name,
-                        "points":team.points,
-                        "elaboration": elaboration
-                        })
+
+        right_teams.append({
+                    "status":team.status.value,
+                    "review":team.review, 
+                    "idTeam":team.idTeam,
+                    "count": counts,
+                    "name":team.name,
+                    "points":team.points,
+                    "elaboration": elaboration
+                    })
                 
-    return send_response(200, 44071, {"message": "All teams for this task and statuses", "teams": right_teams, "users":users, "count":count}, "success")
+    return send_response(200, 44071, {"message": "All teams for this task and statuses", "teams": right_teams, "count":count}, "success")
+
+@team_bp.route("/team/get/users/status/idTask", methods=["GET"])
+@flask_login.login_required
+def get_users_with_status_and_idTask():
+    status = request.args.get("status", None)
+    idTask = request.args.get("idTask", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+    users = []
+
+    if not amountForPaging:
+        return send_response(400, 58010, {"message": "amountForPaging not entered"}, "error")
+    
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 58020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 58030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 58040, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 58050, {"message": "pageNumber not integer"}, "error")
+    
+    pageNumber -= 1
+    
+    if status not in [stat.value for stat in Status]:
+        return send_response(400, 58060, {"message": "Status not our type"}, "error")
+    
+    if not searchQuery:
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).count()
+    else:
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task", typeOfTeam="users")
+    
+    for team in teams:
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+
+        if not version:
+            elaboration = None
+        else:
+            elaboration = version.elaboration
+        
+        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
+        users.append({
+                    "idTeam":team.idTeam,
+                    "name":team.name,
+                    "status":team.status.value,
+                    "review":team.review, 
+                    "points":team.points,
+                    "userData":{
+                        "id":user.id,
+                        "name":user.name,
+                        "surname":user.surname,
+                        "profilePicture":user.profilePicture
+                    },
+                    "elaboration": elaboration
+                    })
+
+    return send_response(200, 58071, {"message": "All teams for this task and statuses", "users":users, "count":count}, "success")
 
 @team_bp.route("/team/get/status/elaboration", methods=["GET"])
 @flask_login.login_required

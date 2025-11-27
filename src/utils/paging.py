@@ -4,8 +4,9 @@ from src.models.Specialization import Specialization
 from src.models.Class import Class
 from src.models.Task import Task
 from src.models.Team import Team
-from src.utils.enums import Role
+from src.utils.enums import Role, Type
 from src.models.User_Class import User_Class
+from src.models.User_Team import User_Team
 
 def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -87,7 +88,12 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
     if specialSearch:
         if not typeOfSpecialSearch:
             return False
-        
+        if typeOfSpecialSearch == "maturita":
+            specialConditions.append(Task.type == Type.Maturita)
+            specialConditions.append(Task.guarantor == specialSearch)
+        if typeOfSpecialSearch == "task":
+            specialConditions.append(Task.type == Type.Task)
+            specialConditions.append(Task.guarantor == specialSearch)
         if typeOfSpecialSearch == "guarantor":
             specialConditions.append(Task.guarantor == specialSearch)
         if typeOfSpecialSearch == "deadline":
@@ -97,19 +103,32 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
 
     return Task.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.filter(and_(*conditions, *specialConditions)).count()
 
-def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, ids = None, typeOfIds = None):
+def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, ids = None, typeOfIds = None, typeOfTeam = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
 
     conditions = []
     specialConditions = []
-    for word in words:
-        like_pattern = f"%{word}%"
-        conditions.append(
-            or_(
-                func.lower(Team.name).like(like_pattern)
+    if typeOfTeam == "users":
+        for word in words:
+            like_pattern = f"%{word}%"
+            conditions.append(
+                or_(
+                    func.lower(User.name).like(like_pattern),
+                    func.lower(User.surname).like(like_pattern),
+                    func.lower(User.email).like(like_pattern),
+                    func.lower(User.abbreviation).like(like_pattern),
+                )
             )
-        )
 
+    else:
+        for word in words:
+            like_pattern = f"%{word}%"
+            conditions.append(
+                or_(
+                    func.lower(Team.name).like(like_pattern)
+                )
+            )
+    
     if specialSearch:
         if not typeOfSpecialSearch:
             return False
@@ -118,6 +137,7 @@ def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(Team.status == specialSearch)
         if typeOfSpecialSearch == "points":
             specialConditions.append(Team.points == specialSearch)
+
     if ids:
         if not isinstance(ids, list):
             ids = [ids]
@@ -125,5 +145,8 @@ def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(Team.idTask.in_(ids))
         if typeOfIds == "elaboration":
             specialConditions.append(*ids)
-
-    return Team.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.filter(and_(*conditions, *specialConditions)).count()
+    
+    if typeOfTeam == "users":
+        return Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).outerjoin(User, User_Team.idUser == User.id).filter(and_( *specialConditions, *conditions)).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).outerjoin(User, User_Team.idUser == User.id).filter(and_( *specialConditions, *conditions)).group_by(Team.idTeam).having(func.count(User_Team.idUser) == 1).count()
+    
+    return Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(and_(*conditions, *specialConditions)).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(and_(*conditions, *specialConditions)).group_by(Team.idTeam).having(func.count(User_Team.idUser) != 1).count()

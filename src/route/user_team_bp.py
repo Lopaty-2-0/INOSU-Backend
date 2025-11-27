@@ -42,9 +42,9 @@ async def add():
         status = Status.Approved
 
 
-    if not isinstance(idUser, list):
+    if not isinstance(idUser, list) and idUser:
         idUser = [idUser]
-    if not isinstance(idClass, list):
+    if not isinstance(idClass, list) and idClass:
         idClass = [idClass]
 
     if not idTeam:
@@ -57,7 +57,6 @@ async def add():
                 idT = await make_team(idTask = idTask, status = status, name = None)
 
                 newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
-                await team_createDir(idTask, idT)
                 db.session.add(newUser_Team)
                 goodIds.append(idU)
 
@@ -75,12 +74,11 @@ async def add():
                     idT = await make_team(idTask = idTask, status = status, name = None)
 
                     newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
-                    await team_createDir(idTask, idT)
                     db.session.add(newUser_Team)
-                    goodIds.append(idU)
+                    goodIds.append(idCl)
     else:
         for idU in idUser:
-            if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
+            if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first() or not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
                 badIds.append(idU)
                 continue
 
@@ -250,19 +248,16 @@ async def change():
 
     return send_response(200, 43081, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
 
-#TODO:Opravit (idk co)
-@user_team_bp.route("/user_team/get/idUser/idTask", methods = ["GET"])
+@user_team_bp.route("/user_team/get/idTask", methods = ["GET"])
 @flask_login.login_required
 def get_by_idUser_and_idTask():
-    idUser = request.args.get("idUser", None)
     idTask = request.args.get("idTask", None)
+    collaborators = []
 
-    tasks = None
+    idUser = flask_login.current_user.id
 
     if not idTask:
         return send_response(400, 45010, {"message": "idTask not entered"}, "error")
-    if not idUser:
-        return send_response(400, 45020, {"message": "idUser not entered"}, "error")
     
     user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask).first()
     
@@ -270,63 +265,79 @@ def get_by_idUser_and_idTask():
     task = Task.query.filter_by(id = idTask).first()
     
     if not user:
-        return send_response(400, 45030, {"message": "Nonexistent user"}, "error")
+        return send_response(400, 45020, {"message": "Nonexistent user"}, "error")
     if not task:
-        return send_response(400, 45040, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 45030, {"message": "Nonexistent task"}, "error")
     
-    if user_team:
-        team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = idTask).first()
-        version = Version_Team.query.filter_by(idTask=idTask, idTeam = user_team.idTeam).order_by(Version_Team.idVersion.desc()).first()
-        guarantor = User.query.filter_by(id = task.guarantor).first()
+    if not user_team:
+        return send_response(404, 45040, {"message": "User_team not found"}, "error")
+    
+    team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = idTask).first()
+    version = Version_Team.query.filter_by(idTask=idTask, idTeam = user_team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+    guarantor = User.query.filter_by(id = task.guarantor).first()
 
-        if not version:
-            elaboration = None
-        else:
-            elaboration = version.elaboration
+    user_teams = User_Team.query.filter(User_Team.idTeam == user_team.idTeam, User_Team.idTask == idTask, User_Team.idUser != idUser)
 
-        team_member = {"id": user.id, 
-                        "name": user.name, 
-                        "surname": user.surname, 
-                        "abbreviation": user.abbreviation, 
-                        "role": user.role.value, 
-                        "profilePicture": user.profilePicture, 
-                        "email": user.email, 
-                        "idClass": all_user_classes(user.id),
-                        "createdAt":user.createdAt,
-                        "updatedAt":user.updatedAt
-                    }
-        
-        team = {"idTeam":team.idTeam,
-                "status":team.status.value,
-                "elaboration":elaboration, 
-                "review":team.review, 
-                "name":team.name, 
-                "points":team.points, 
-                }
+    for member in user_teams:
+        collaborator = User.query.filter_by(id = member.idUser).first()
+        collaborators.append({"id": collaborator.id, 
+                            "name": collaborator.name, 
+                            "surname": collaborator.surname, 
+                            "abbreviation": collaborator.abbreviation, 
+                            "role": collaborator.role.value, 
+                            "profilePicture": collaborator.profilePicture, 
+                            "email": collaborator.email, 
+                            "idClass": all_user_classes(collaborator.id),
+                            "createdAt":collaborator.createdAt,
+                            "updatedAt":collaborator.updatedAt
+                            })
 
-        tasks = {"task":task.task,
-                "name":task.name, 
-                "statDate":task.startDate, 
-                "endDate":task.endDate, 
-                "type":task.type.value,
-                "guarantor":{"id": guarantor.id, 
-                            "name": guarantor.name, 
-                            "surname": guarantor.surname, 
-                            "abbreviation": guarantor.abbreviation, 
-                            "role": guarantor.role.value, 
-                            "profilePicture": guarantor.profilePicture, 
-                            "email": guarantor.email, 
-                            "idClass": all_user_classes(guarantor.id), 
-                            "createdAt":guarantor.createdAt,
-                            "updatedAt":guarantor.updatedAt
-                            },
-                "idTask":task.id,
-                "taskPoints":task.points,
-                "team":team,
-                "teamMember":team_member
+    if not version:
+        elaboration = None
+    else:
+        elaboration = version.elaboration
+
+    team_member = {"id": user.id, 
+                    "name": user.name, 
+                    "surname": user.surname, 
+                    "abbreviation": user.abbreviation, 
+                    "role": user.role.value, 
+                    "profilePicture": user.profilePicture, 
+                    "email": user.email, 
+                    "idClass": all_user_classes(user.id),
+                    "createdAt":user.createdAt,
+                    "updatedAt":user.updatedAt
                 }
     
-    return send_response(200, 45061, {"message": "user_team for this task and user", "task": tasks}, "success")
+    team = {"idTeam":team.idTeam,
+            "status":team.status.value,
+            "elaboration":elaboration, 
+            "review":team.review, 
+            "name":team.name, 
+            "points":team.points, 
+            }
+
+    tasks = {"task":task.task,
+            "name":task.name, 
+            "statDate":task.startDate, 
+            "endDate":task.endDate, 
+            "type":task.type.value,
+            "guarantor":{"id": guarantor.id, 
+                        "name": guarantor.name, 
+                        "surname": guarantor.surname, 
+                        "abbreviation": guarantor.abbreviation, 
+                        "role": guarantor.role.value, 
+                        "profilePicture": guarantor.profilePicture, 
+                        "email": guarantor.email, 
+                        "idClass": all_user_classes(guarantor.id), 
+                        "createdAt":guarantor.createdAt,
+                        "updatedAt":guarantor.updatedAt
+                        },
+            "idTask":task.id,
+            "taskPoints":task.points
+            }
+    
+    return send_response(200, 45051, {"message": "user_team for this task and user", "task": tasks, "team":team, "user":team_member, "collaborators":collaborators}, "success")
 
 @user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required
