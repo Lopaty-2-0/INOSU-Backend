@@ -12,6 +12,7 @@ from src.utils.team import make_team
 from src.utils.enums import Status
 from src.utils.paging import team_paging
 from sqlalchemy import or_, func
+from src.utils.all_user_classes import all_user_classes
 
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -163,18 +164,31 @@ def get_users_task():
     
     for team in teams:
         user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first().idUser).first()
+        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
 
+        if not version:
+            elaboration = None
+        else:
+            elaboration = version.elaboration
+        
         users.append({
                     "idTeam":team.idTeam,
+                    "name":team.name,
+                    "status":team.status.value,
+                    "elaboration":elaboration,
+                    "review":team.review, 
                     "points":team.points,
                     "userData":{
-                        "id":user.id,
-                        "name":user.name,
-                        "surname":user.surname,
-                        "profilePicture":user.profilePicture,
+                        "id": user.id,
+                        "name": user.name,
+                        "surname": user.surname,
                         "abbreviation": user.abbreviation,
+                        "role": user.role.value,
+                        "profilePicture": user.profilePicture,
                         "email": user.email,
+                        "idClass": all_user_classes(user.id),
                         "createdAt":user.createdAt,
+                        "updatedAt": user.updatedAt
                     }
                     })
 
@@ -238,6 +252,9 @@ def get_teams_task():
                     "idTeam":team.idTeam,
                     "count": counts,
                     "name":team.name,
+                    "status":team.status.value,
+                    "elaboration":elaboration,
+                    "review":team.review, 
                     "points":team.points,
                     })
 
