@@ -92,7 +92,7 @@ try:
     app.register_blueprint(routes_bp)
 
 except OperationalError as db_error:
-    if db_error.code == 1049:
+    if db_error.orig.args[0] == 1049:
         try:
             create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
             print("Creating database")

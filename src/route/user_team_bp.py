@@ -1,6 +1,5 @@
 from flask import request, Blueprint
 import flask_login
-import json
 from app import db
 from src.models.User_Team import User_Team
 from src.models.Task import Task
@@ -10,11 +9,9 @@ from src.models.Team import Team
 from src.utils.enums import Status, Type
 from src.utils.team import make_team
 from src.utils.response import send_response
-from src.utils.team import team_createDir
 from src.utils.all_user_classes import all_user_classes
-from urllib.parse import unquote
 from src.models.Version_Team import Version_Team
-
+#TODO: v celém tomto souboru dodat kontrolu velikostí vstupů od uživatele
 user_team_bp = Blueprint("user_team", __name__)
 
 @user_team_bp.route("/user_team/add", methods=["POST"])

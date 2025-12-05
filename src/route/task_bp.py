@@ -17,6 +17,8 @@ from app import db, ssh, task_path
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
+maxFLOAT = 34.0e+38
+maxINT = 4294967295
 
 @flask_login.login_required
 @check_file_size(32*1024*1024)
@@ -31,33 +33,32 @@ async def add():
 
     startDate = datetime.now()
 
-    if taskName:
-        if len(taskName) > 255:
-            taskName = None
     if not taskName:
         return send_response(400, 26010, {"message": "Name not entered"}, "error")
     if not endDate:
         return send_response(400, 26020, {"message": "endDate  not entered"}, "error")
+    if len(taskName) > 45:
+        return send_response(400, 26030, {"message":"Name too long"}, "error")
     try:
         endDate = datetime.fromtimestamp(int(endDate)/1000)
     except:
-        return send_response(400, 26030, {"message":"End date not integer or is too far"}, "error")
+        return send_response(400, 26040, {"message":"End date not integer or is too far"}, "error")
     if endDate <= startDate:
-        return send_response(400, 26040, {"message":"Ending before begining"}, "error")
+        return send_response(400, 26050, {"message":"Ending before begining"}, "error")
     if not task:
-        return send_response(400, 26050, {"message": "Task not entered"}, "error")
+        return send_response(400, 26060, {"message": "Task not entered"}, "error")
     if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
-        return send_response(400, 26060, {"message": "Wrong file format or too long"}, "error")
+        return send_response(400, 26070, {"message": "Wrong file format or too long"}, "error")
     if flask_login.current_user.role != Role.Student:
         type = Type.Task
         user = flask_login.current_user
     else:
         if not guarantor:
-            return send_response(400, 26070, {"message": "Guarantor not entered"}, "error")
+            return send_response(400, 26080, {"message": "Guarantor not entered"}, "error")
         if not User.query.filter_by(id = guarantor).first():
-            return send_response(400, 26080, {"message": "Nonexistent user"}, "error")
+            return send_response(400, 26090, {"message": "Nonexistent user"}, "error")
         if User.query.filter_by(id = guarantor).first().role == Role.Student:
-            return send_response(400, 26080, {"message": "User can not be guarantor"}, "error")
+            return send_response(400, 260100, {"message": "User can not be guarantor"}, "error")
         
         type = Type.Maturita
         user = flask_login.current_user
@@ -66,16 +67,19 @@ async def add():
             deadline = datetime.fromtimestamp(int(deadline)/1000)
 
             if deadline < startDate:
-                return send_response(400, 26090, {"message":"Deadline before startDate"}, "error")
+                return send_response(400, 26110, {"message":"Deadline before startDate"}, "error")
             if deadline < endDate:
-                return send_response(400, 26100, {"message":"Deadline before endDate"}, "error")
+                return send_response(400, 26120, {"message":"Deadline before endDate"}, "error")
         except:
-            return send_response(400, 26110, {"message":"Deadline not integer or is too far"}, "error")
+            return send_response(400, 26130, {"message":"Deadline not integer or is too far"}, "error")
     if points:
         try:
             points = float(points)
         except:
-            return send_response(400, 26120, {"message":"Points are not float"}, "error")
+            return send_response(400, 26140, {"message":"Points are not float"}, "error")
+
+        if points > maxFLOAT or points <= 0:
+            return send_response(400, 26150, {"message":"Points not valid"}, "error")
     else:
         points = None
 
@@ -108,65 +112,7 @@ async def add():
                 "email":user.email
                 }
 
-    return send_response(201, 26131, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
-
-#TODO: kdyžtak smazat
-"""@flask_login.login_required
-@task_bp.route("/task/get/guarantor", methods=["GET"])
-def get_by_guarantor():
-    idUser = request.args.get("idUser", None)
-    amountForPaging = request.args.get("amountForPaging", None)
-    pageNumber = request.args.get("pageNumber", None)
-    searchQuery = request.args.get("searchQuery", None)
-
-    all_tasks = []
-
-    if not amountForPaging:
-        return send_response(400, 19010, {"message": "amountForPaging not entered"}, "error")
-
-    try:
-        amountForPaging = int(amountForPaging)
-    except:
-        return send_response(400, 19020, {"message": "amountForPaging not integer"}, "error")
-    
-    if amountForPaging < 1:
-        return send_response(400, 19030, {"message": "amountForPaging smaller than 1"}, "error")
-    
-    if not pageNumber:
-        return send_response(400, 19040, {"message": "pageNumber not entered"}, "error")
-    
-    try:
-        pageNumber = int(pageNumber)
-    except:
-        return send_response(400, 19050, {"message": "pageNumber not integer"}, "error")
-    
-    pageNumber -= 1
-
-    if pageNumber < 0:
-        return send_response(400, 19060, {"message": "pageNumber must be bigger than 0"}, "error")
-    
-    if not idUser:
-        return send_response(400, 19070, {"message": "No idUser entered"}, "error")
-
-    if not searchQuery:
-        tasks = Task.query.filter_by(guarantor = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Task.query.filter_by(guarantor = idUser).count()
-    else:
-        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "guarantor")
-
-    for task in tasks:
-        all_tasks.append({
-            "id": task.id,
-            "name": task.name,
-            "startDate": task.startDate,
-            "endDate": task.endDate,
-            "task": task.task,
-            "guarantor": task.guarantor,
-            "deadline": task.deadline,
-            "points":task.points
-        })
-        
-    return send_response(200, 19081, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")"""
+    return send_response(201, 26161, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
@@ -177,9 +123,15 @@ def get_by_id():
 
     if not idTask:
         return send_response(400, 30010, {"message": "No id entered"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 30020, {"message": "Id not integer"}, "error")
+    if idTask > maxINT or idTask <=0:
+        return send_response(400, 30030, {"message": "Id not valid"}, "error")
 
     if not task:
-        return send_response(404, 30020, {"message": "Task not found"}, "error")
+        return send_response(404, 30040, {"message": "Task not found"}, "error")
 
     user = User.query.filter_by(id = task.guarantor).first()
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
@@ -195,7 +147,7 @@ def get_by_id():
         "deadline": task.deadline
     }
     
-    return send_response(200, 30031, {"message": "Task found", "task": task_data}, "success")
+    return send_response(200, 30051, {"message": "Task found", "task": task_data}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
@@ -217,18 +169,18 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 27030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 27040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 27040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 27050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 27050, {"message": "pageNumber not integer"}, "error")
-    
-    pageNumber -= 1
-
-    if pageNumber < 0:
-        return send_response(400, 27060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 27060, {"message": "pageNumber not integer"}, "error")
+    if amountForPaging > maxINT + 1:
+        return send_response(400, 27070, {"message": "amountForPaging too big"}, "error")
 
     if not searchQuery:
         tasks = Task.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -242,9 +194,8 @@ def get():
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
         all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "deadline": task.deadline, "points": task.points})
 
-    return send_response(200, 27071, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
+    return send_response(200, 27081, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
-#TODO: nutno pohlídat jestli je id vůbec velikostně do intu
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
 async def delete():
@@ -263,6 +214,16 @@ async def delete():
         idTask = [idTask]
     
     for id in idTask:
+        try:
+            id = int(id)
+        except:
+            badIds.append(id)
+            continue
+
+        if id > maxINT or id <= 0:
+            badIds.append(id)
+            continue
+
         task = Task.query.filter_by(id = id).first()
 
         if not task or flask_login.current_user.id != task.guarantor:
@@ -314,21 +275,32 @@ def get_maturita():
     if amountForPaging < 1:
         return send_response(400, 19030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 19040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 19040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 19050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 19050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 19060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 19070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 19060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 19080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not idUser:
-        return send_response(400, 19070, {"message": "No idUser entered"}, "error")
+        return send_response(400, 19090, {"message": "No idUser entered"}, "error")
+    try:
+        idUser = int(idUser)
+    except:
+        return send_response(400, 19100, {"message": "IdUser not integer"}, "error")
+    if idUser > maxINT or idUser <=0:
+        return send_response(400, 19110, {"message": "IdUser not valid"}, "error")
 
     if not searchQuery:
         tasks = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -348,7 +320,7 @@ def get_maturita():
             "points":task.points
         })
         
-    return send_response(200, 19081, {"message": "Found maturitas"
+    return send_response(200, 19121, {"message": "Found maturitas"
     " for guarantor", "tasks": all_tasks, "count": count}, "success")
 
 @flask_login.login_required
@@ -372,21 +344,32 @@ def get_task():
     if amountForPaging < 1:
         return send_response(400, 55030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 55040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 55040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 55050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 55050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 55060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 55070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 55060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 55080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not idUser:
-        return send_response(400, 55070, {"message": "No idUser entered"}, "error")
+        return send_response(400, 55090, {"message": "No idUser entered"}, "error")
+    try:
+        idUser = int(idUser)
+    except:
+        return send_response(400, 55100, {"message": "IdUser not integer"}, "error")
+    if idUser > maxINT or idUser <=0:
+        return send_response(400, 55110, {"message": "IdUser not valid"}, "error")
 
     if not searchQuery:
         tasks = Task.query.filter_by(guarantor = idUser, type = Type.Task).offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -406,4 +389,4 @@ def get_task():
             "points":task.points
         })
         
-    return send_response(200, 55081, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
+    return send_response(200, 55121, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")

@@ -1,11 +1,12 @@
 from app import db
+from sqlalchemy.dialects.mysql import INTEGER
 
 class Version_Team(db.Model):
     __tablename__ = "version_team"
 
-    idTeam = db.Column(db.Integer, db.ForeignKey("team.idTeam"), primary_key=True)
-    idVersion = db.Column(db.Integer, primary_key=True)
-    idTask = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key=True)
+    idTeam = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.idTeam"), primary_key=True)
+    idVersion = db.Column(INTEGER(unsigned=True), primary_key=True)
+    idTask = db.Column(INTEGER(unsigned=True), db.ForeignKey("task.id"), primary_key=True)
     elaboration = db.Column(db.String(255), nullable=True)
 
     def __init__(self, idTeam, idTask, elaboration, idVersion):

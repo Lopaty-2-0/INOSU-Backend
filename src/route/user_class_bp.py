@@ -1,16 +1,16 @@
 from flask import request, Blueprint
 import flask_login
-import json
 from app import db
 from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User import User
 from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
-from urllib.parse import unquote
 from src.utils.enums import Role
 
 user_class_bp = Blueprint("user_class", __name__)
+
+maxINT = 4294967295
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
@@ -27,27 +27,42 @@ def add():
         return send_response(400, 33020, {"message": "idUser not entered"}, "error")
     if not idClass:
         return send_response(400, 33030, {"message": "idClass not entered"}, "error")
+    try:
+        idUser = int(idUser)
+    except:
+        return send_response(400, 33040, {"message": "idUser not integer"}, "error")
+    if idUser > maxINT or idUser <=0:
+        return send_response(400, 33050, {"message": "idUser not valid"}, "error")
     if not User.query.filter_by(id = idUser).first():
-        return send_response(400, 33040, {"message": "Nonexistent user"}, "error")
+        return send_response(400, 33060, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return send_response(400, 33050, {"message": "Nonexistent class"}, "error")
+        return send_response(400, 33070, {"message": "Nonexistent class"}, "error")
     if not isinstance(idClass, list):
         idClass = [idClass]
     
     for id in idClass:
-        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = idClass).first() or User.query.filter_by(id = idUser).first().role:
+        try:
+            id = int(id)
+        except:
             badIds.append(id)
-        else:
-            newUserClass = User_Class(idUser=idUser, idClass=id)
-            db.session.add(newUserClass)
-            goodIds.append(id)
+            continue
+        if id > maxINT or id <=0:
+            badIds.append(id)
+            continue
+        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = id).first() or User.query.filter_by(id = idUser).first().role:
+            badIds.append(id)
+            continue
+
+        newUserClass = User_Class(idUser=idUser, idClass=id)
+        db.session.add(newUserClass)
+        goodIds.append(id)
 
     if not goodIds:
-        return send_response(400, 33060, {"message": "Nothing created"}, "error")
+        return send_response(400, 33080, {"message": "Nothing created"}, "error")
 
     db.session.commit()
     
-    return send_response(201, 33071, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(201, 33091, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -62,16 +77,28 @@ async def delete():
         return send_response(400, 34020, {"message": "idUser not entered"}, "error")
     if not idClass:
         return send_response(400, 34030, {"message": "idClass not entered"}, "error")
+    try:
+        idUser = int(idUser)
+    except:
+        return send_response(400, 34040, {"message": "idUser not integer"}, "error")
+    if idUser > maxINT or idUser <=0:
+        return send_response(400, 34050, {"message": "idUser not valid"}, "error")
+    try:
+        idClass = int(idClass)
+    except:
+        return send_response(400, 34060, {"message": "idClass not integer"}, "error")
+    if idClass > maxINT or idClass <=0:
+        return send_response(400, 34070, {"message": "idClass not valid"}, "error")
     
     user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
 
     if not user_cl:
-        return send_response(400, 34040, {"message": "This user is not in this class"}, "error")
+        return send_response(400, 34080, {"message": "This user is not in this class"}, "error")
     
     db.session.delete(user_cl)
     db.session.commit()
 
-    return send_response(200, 34051, {"message": "User deleted from this class"}, "success")
+    return send_response(200, 34091, {"message": "User deleted from this class"}, "success")
 
 @flask_login.login_required
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
@@ -84,7 +111,7 @@ def get_users():
 
     if not amountForPaging:
         return send_response(400, 35010, {"message": "amountForPaging not entered"}, "error")
-    
+
     try:
         amountForPaging = int(amountForPaging)
     except:
@@ -93,23 +120,35 @@ def get_users():
     if amountForPaging < 1:
         return send_response(400, 35030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 35040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 35040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 35050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 35050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 35060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 35070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 35060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 53080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not idClass:
-        return send_response(400, 35070, {"message":"IdClass not entered"}, "error")
+        return send_response(400, 35090, {"message": "idClass not entered"}, "error")
+    try:
+        idClass = int(idClass)
+    except:
+        return send_response(400, 35100, {"message": "idClass not integer"}, "error")
+    if idClass > maxINT or idClass <=0:
+        return send_response(400, 35110, {"message": "idClass not valid"}, "error")
+
     if not Class.query.filter_by(id = idClass).first():
-        return send_response(400, 35080, {"message":"Nonexistent class"}, "error")
+        return send_response(400, 35120, {"message":"Nonexistent class"}, "error")
     
     users = User_Class.query.filter_by(idClass = idClass).offset(pageNumber * amountForPaging).limit(amountForPaging)
     count =  User_Class.query.filter_by(idClass = idClass).count()
@@ -129,4 +168,4 @@ def get_users():
                     "updatedAt":user.updatedAt
                     })
 
-    return send_response(200, 35091, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 35131, {"message": "Users found", "users":right_users, "count":count}, "success")

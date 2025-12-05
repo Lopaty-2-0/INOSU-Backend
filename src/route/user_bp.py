@@ -24,9 +24,11 @@ from src.utils.paging import user_paging
 
 user_bp = Blueprint("user", __name__)
 
+#TODO: v celém tomto souboru dodat kontrolu velikostí vstupů od uživatele
 email_regex = r"^\S+@\S+\.\S+$"
 pfp_extensions = {"jpg", "png", "jpeg"}
 addUser_extensions = {"json"}
+maxINT = 4294967295
 
 @user_bp.route("/user/add", methods = ["POST"])
 @flask_login.login_required
