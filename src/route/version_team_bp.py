@@ -8,12 +8,11 @@ from src.utils.enums import Status
 from src.utils.versions import make_version, version_save, version_delete
 import flask_login
 import datetime
-from app import db
+from app import db, maxINT
 from src.utils.check_file import check_file_size
 
 version_team = Blueprint("version_team", __name__)
 elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
-maxINT = 4294967295
 
 @version_team.route("/version_team/add", methods = ["PUT"])
 @check_file_size(2 * 1024 * 1024)

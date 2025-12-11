@@ -6,10 +6,9 @@ from src.utils.paging import class_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
-from app import db
+from app import db, maxINT
 
 class_bp = Blueprint("class", __name__)
-maxINT = 4294967295
 
 @class_bp.route("/class/add", methods = ["POST"])
 @flask_login.login_required

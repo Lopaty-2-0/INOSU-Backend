@@ -5,10 +5,9 @@ from src.utils.paging import specialization_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
-from app import db
+from app import db, maxINT
 
 specialization_bp = Blueprint("specialization", __name__)
-maxINT = 4294967295
 
 @specialization_bp.route("/specialization/add", methods = ["POST"])
 @flask_login.login_required

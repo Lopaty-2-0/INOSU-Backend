@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db
+from app import db, maxINT
 from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User import User
@@ -9,8 +9,6 @@ from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Role
 
 user_class_bp = Blueprint("user_class", __name__)
-
-maxINT = 4294967295
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required

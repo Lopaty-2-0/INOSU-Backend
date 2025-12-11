@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db
+from app import db, maxFLOAT, maxINT
 from src.models.Team import Team
 from src.models.User import User
 from src.models.Task import Task
@@ -16,8 +16,6 @@ from src.utils.all_user_classes import all_user_classes
 
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
-maxINT = 4294967295
-maxFLOAT = 34.0e+38
 
 @team_bp.route("/team/add", methods=["POST"])
 @flask_login.login_required

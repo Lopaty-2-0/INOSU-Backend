@@ -13,12 +13,10 @@ from src.utils.enums import Status, Type, Role
 from datetime import datetime
 from src.utils.paging import task_paging
 from src.utils.team import make_team
-from app import db, ssh, task_path
+from app import db, ssh, task_path, maxINT, maxFLOAT
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
-maxFLOAT = 34.0e+38
-maxINT = 4294967295
 
 @flask_login.login_required
 @check_file_size(32*1024*1024)
@@ -37,7 +35,7 @@ async def add():
         return send_response(400, 26010, {"message": "Name not entered"}, "error")
     if not endDate:
         return send_response(400, 26020, {"message": "endDate  not entered"}, "error")
-    if len(taskName) > 45:
+    if len(str(taskName)) > 45:
         return send_response(400, 26030, {"message":"Name too long"}, "error")
     try:
         endDate = datetime.fromtimestamp(int(endDate)/1000)
