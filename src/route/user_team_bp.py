@@ -28,7 +28,7 @@ async def add():
 
     if not idTask:
         return send_response(400, 36010, {"message": "idTask not entered"}, "error")
-    if not idUser or not idClass:
+    if not idUser and not idClass:
         return send_response(400, 36020, {"message": "idUser or idClass not entered"}, "error")
     try:
         idTask = int(idTask)
