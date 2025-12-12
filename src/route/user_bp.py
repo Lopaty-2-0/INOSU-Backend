@@ -24,7 +24,6 @@ from src.utils.paging import user_paging
 
 user_bp = Blueprint("user", __name__)
 
-#TODO: v celém tomto souboru dodat kontrolu velikostí vstupů od uživatele
 email_regex = r"^\S+@\S+\.\S+$"
 pfp_extensions = {"jpg", "png", "jpeg"}
 addUser_extensions = {"json"}

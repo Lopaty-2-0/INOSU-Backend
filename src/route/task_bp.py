@@ -177,8 +177,13 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 27060, {"message": "pageNumber not integer"}, "error")
-    if amountForPaging > maxINT + 1:
-        return send_response(400, 27070, {"message": "amountForPaging too big"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 27070, {"message": "pageNumber too big"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 27080, {"message": "pageNumber must be bigger than 0"}, "error")
 
     if not searchQuery:
         tasks = Task.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -192,7 +197,7 @@ def get():
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
         all_tasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "guarantor": guarantor, "deadline": task.deadline, "points": task.points})
 
-    return send_response(200, 27081, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
+    return send_response(200, 27091, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])

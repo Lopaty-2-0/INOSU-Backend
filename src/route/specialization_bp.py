@@ -30,8 +30,8 @@ def add():
         lengthOfStudy = int(lengthOfStudy)
     except:
         return send_response(400, 4050, {"message": "lengthOfStudy not integer"}, "error")
-    if lengthOfStudy > maxINT:
-        return send_response(400, 4060, {"message": "lengthOfStudy too big"}, "error")
+    if lengthOfStudy > maxINT or lengthOfStudy <= 0:
+        return send_response(400, 4060, {"message": "lengthOfStudy not valid"}, "error")
     if len(abbreviation) > 1:
         return send_response(400, 4070, {"message": "abbreviation too long"}, "error")
     if Specialization.query.filter_by(abbreviation = abbreviation).first():
