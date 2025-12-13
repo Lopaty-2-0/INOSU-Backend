@@ -46,7 +46,6 @@ def add():
     email = data.get("email", None)
     password = str(data.get("password", None))
     idClass = data.get("classes", None)
-    lastUser = User.query.order_by(User.id.desc()).first()
 
     if not name:
         return send_response(400, 1020, {"message": "Name is not entered"}, "error")
@@ -84,14 +83,14 @@ def add():
     newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
 
     db.session.add(newUser)
+    db.session.commit()
 
     if idClass:
-        if lastUser:
-            idUser = lastUser.id + 1
-        else:
-            idUser = 1
+        if not isinstance(idClass, list):
+            idClass = [idClass]
+        idUser = newUser.id
 
-        if role == Role.Student:
+        if newUser.role == Role.Student:
             for id in idClass:
                 try:
                     id = int(id)
@@ -106,10 +105,9 @@ def add():
                 newUser_Class = User_Class(idUser, id)
                 goodIds.append(id)
                 db.session.add(newUser_Class)
+            db.session.commit()
 
-    db.session.commit()
-
-    return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}}, "success")
+    return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}, "goodIds": goodIds, "badIds":badIds}, "success")
   
 @user_bp.route("/user/add/file", methods = ["POST"])
 @check_file_size(4*1024*1024)
@@ -262,6 +260,10 @@ async def update():
             secondUser.abbreviation = str(abbreviation).upper()
         if role in [r.value for r in Role]:
             secondUser.role = Role(role)
+            if Role(role)!= Role.Student:
+                User_class = User_Class.query.filter_by(idUser = secondUser.id)
+                for cl in User_class:
+                    db.session.delete(cl)
         if email:
             if not re.match(email_regex, email):
                 return send_response(400, 2140, {"message": "Wrong email format"}, "error")
@@ -292,10 +294,6 @@ async def update():
                     newUser_Class = User_Class(secondUser.id, id)
                     goodIds.append(id)
                     db.session.add(newUser_Class)     
-            else:
-                User_class = User_Class.query.filter_by(idUser = secondUser.id)
-                for cl in User_class:
-                    db.session.delete(cl)
 
         secondUser.updatedAt = datetime.datetime.now()
 
