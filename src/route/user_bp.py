@@ -229,7 +229,7 @@ async def update():
     else:
         if not user.role == Role.Admin:
             return send_response(400, 2050, {"message": "No permission for that"}, "error")
-        if not name and not surname and not abbreviation and not role and not profilePicture and not email and not idClass:
+        if not name and not surname and not abbreviation and not role and not profilePicture and not email:
             return send_response(400, 2060, {"message": "Nothing entered to change"}, "error")
         
         try:
@@ -293,7 +293,11 @@ async def update():
 
                     newUser_Class = User_Class(secondUser.id, id)
                     goodIds.append(id)
-                    db.session.add(newUser_Class)     
+                    db.session.add(newUser_Class)
+        else:
+            User_class = User_Class.query.filter_by(idUser = secondUser.id)
+            for cl in User_class:
+                db.session.delete(cl)
 
         secondUser.updatedAt = datetime.datetime.now()
 
