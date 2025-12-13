@@ -285,7 +285,7 @@ async def update():
                 except:
                     badIds.append(id)
                     continue
-                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
+                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first():
                     badIds.append(id)
                     continue
 
