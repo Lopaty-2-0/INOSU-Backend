@@ -226,85 +226,83 @@ async def update():
         db.session.commit()
 
         return send_response(200, 2041, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
-    else:
-        if not user.role == Role.Admin:
-            return send_response(400, 2050, {"message": "No permission for that"}, "error")
-        if not name and not surname and not abbreviation and not role and not profilePicture and not email:
-            return send_response(400, 2060, {"message": "Nothing entered to change"}, "error")
-        
-        try:
-            idUser = int(idUser)
-        except:
-                return send_response(400, 2070, {"message": "IdUser not integer"}, "error")
-        
-        if idUser > maxINT or idUser <= 0:
-            return send_response(400, 2080, {"message": "IdUser not valid"}, "error")
 
-        secondUser = User.query.filter_by(id = idUser).first()
+    if not user.role == Role.Admin:
+        return send_response(400, 2050, {"message": "No permission for that"}, "error")
+    
+    try:
+        idUser = int(idUser)
+    except:
+            return send_response(400, 2060, {"message": "IdUser not integer"}, "error")
+    
+    if idUser > maxINT or idUser <= 0:
+        return send_response(400, 2070, {"message": "IdUser not valid"}, "error")
 
-        if not secondUser:
-            return send_response(400, 2090, {"message": "Wrong user id"}, "error")
-        if name:
-            if len(str(name)) > 255:
-                return send_response(400, 2100, {"message": "Name too long"}, "error")
-            secondUser.name = str(name)  
-        if surname:
-            if len(str(surname)) > 255:
-                return send_response(400, 2110, {"message": "Surname too long"}, "error")
-            secondUser.surname = str(surname)
-        if abbreviation:
-            if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
-                return send_response(400, 2120, {"message": "Abbreviation is already in use"}, "error")
-            if len(str(abbreviation)) > 4:
-                return send_response(400, 2130, {"message": "Abbreviation is too long"}, "error")
-            secondUser.abbreviation = str(abbreviation).upper()
-        if role in [r.value for r in Role]:
-            secondUser.role = Role(role)
-            if Role(role)!= Role.Student:
-                User_class = User_Class.query.filter_by(idUser = secondUser.id)
-                for cl in User_class:
-                    db.session.delete(cl)
-        if email:
-            if not re.match(email_regex, email):
-                return send_response(400, 2140, {"message": "Wrong email format"}, "error")
-            if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
-                return send_response(400, 2150, {"message": "Email is already in use"}, "error")
-            if len(str(email)) > 255:
-                return send_response(400, 2160, {"message": "Email too long"}, "error")
-            secondUser.email = email
-        if profilePicture:
-            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return send_response(400, 2170, {"message": "Wrong file format"}, "error")
-            if len(str(profilePicture.filename)) > 255:
-                return send_response(400, 2180, {"message": "Filename too long"}, "error")
-            await pfp_save(pfp_path, secondUser, profilePicture)
+    secondUser = User.query.filter_by(id = idUser).first()
 
-        if idClass:
-            if secondUser.role == Role.Student:
-                for id in idClass:
-                    try:
-                        id = int(id)
-                    except:
-                        badIds.append(id)
-                        continue
-                    if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
-                        badIds.append(id)
-                        continue
-
-                    newUser_Class = User_Class(secondUser.id, id)
-                    goodIds.append(id)
-                    db.session.add(newUser_Class)
-        else:
+    if not secondUser:
+        return send_response(400, 2080, {"message": "Wrong user id"}, "error")
+    if name:
+        if len(str(name)) > 255:
+            return send_response(400, 2090, {"message": "Name too long"}, "error")
+        secondUser.name = str(name)  
+    if surname:
+        if len(str(surname)) > 255:
+            return send_response(400, 2100, {"message": "Surname too long"}, "error")
+        secondUser.surname = str(surname)
+    if abbreviation:
+        if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
+            return send_response(400, 2110, {"message": "Abbreviation is already in use"}, "error")
+        if len(str(abbreviation)) > 4:
+            return send_response(400, 2120, {"message": "Abbreviation is too long"}, "error")
+        secondUser.abbreviation = str(abbreviation).upper()
+    if role in [r.value for r in Role]:
+        secondUser.role = Role(role)
+        if Role(role)!= Role.Student:
             User_class = User_Class.query.filter_by(idUser = secondUser.id)
             for cl in User_class:
                 db.session.delete(cl)
+    if email:
+        if not re.match(email_regex, email):
+            return send_response(400, 2130, {"message": "Wrong email format"}, "error")
+        if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
+            return send_response(400, 2140, {"message": "Email is already in use"}, "error")
+        if len(str(email)) > 255:
+            return send_response(400, 2150, {"message": "Email too long"}, "error")
+        secondUser.email = email
+    if profilePicture:
+        if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
+            return send_response(400, 2160, {"message": "Wrong file format"}, "error")
+        if len(str(profilePicture.filename)) > 255:
+            return send_response(400, 2170, {"message": "Filename too long"}, "error")
+        await pfp_save(pfp_path, secondUser, profilePicture)
 
-        secondUser.updatedAt = datetime.datetime.now()
+    if idClass:
+        if secondUser.role == Role.Student:
+            for id in idClass:
+                try:
+                    id = int(id)
+                except:
+                    badIds.append(id)
+                    continue
+                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
+                    badIds.append(id)
+                    continue
 
-        db.session.commit()
+                newUser_Class = User_Class(secondUser.id, id)
+                goodIds.append(id)
+                db.session.add(newUser_Class)
+    else:
+        User_class = User_Class.query.filter_by(idUser = secondUser.id)
+        for cl in User_class:
+            db.session.delete(cl)
 
-        return send_response(200, 2191, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role.value, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt, "reminders":secondUser.reminders}, "badIds":badIds, "goodIds":goodIds}, "success")
-        
+    secondUser.updatedAt = datetime.datetime.now()
+
+    db.session.commit()
+
+    return send_response(200, 2181, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role.value, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt, "reminders":secondUser.reminders}, "badIds":badIds, "goodIds":goodIds}, "success")
+    
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
 async def delete():
