@@ -87,7 +87,7 @@ async def add():
                 users = User_Class.query.filter_by(idClass = idCl)
 
                 for user in users:
-                    idU = user.id
+                    idU = user.idUser
 
                     if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
                         badIds.append(idU)
