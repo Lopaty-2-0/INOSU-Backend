@@ -54,6 +54,8 @@ async def delete():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
+    badIds = []
+    goodIds = []
 
     if not idTask:
         return send_response(400, 31010, {"message": "IdTask not entered"}, "error")
@@ -65,34 +67,44 @@ async def delete():
         return send_response(400, 31030, {"message": "idTask not integer"}, "error")
     if idTask > maxINT or idTask <=0:
         return send_response(400, 31040, {"message": "idTask not valid"}, "error")
-    try:
-        idTeam = int(idTeam)
-    except:
-        return send_response(400, 31050, {"message": "idTeam not integer"}, "error")
-    if idTeam > maxINT or idTeam <=0:
-        return send_response(400, 31060, {"message": "idTeam not valid"}, "error")
     if not Task.query.filter_by(id = idTask).first():
-        return send_response(400, 31070, {"message": "Nonexistent task"}, "error")
-    if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
-        return send_response(400, 31080, {"message": "Nonexistent team"}, "error")
+        return send_response(400, 31050, {"message": "Nonexistent task"}, "error")
     if Task.query.filter_by(id = idTask).first().guarantor != flask_login.current_user.id:
-        return send_response(400, 31090, {"message": "User is not guarantor"}, "error")
-    
-    users = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
-    team = Team.query.filter_by(idTeam = idTeam, idTask = idTask).first()
-    versions = Version_Team.query.filter_by(idTeam = idTeam, idTask = idTask)
+        return send_response(400, 31060, {"message": "User is not guarantor"}, "error")
+    if not isinstance(idTeam, list):
+        idTeam = [idTeam]
 
-    for user in users:
-        db.session.delete(user)
-    
-    for version in versions:
-        db.session.delete(version)
+    for id in idTeam:
+        try:
+            id = int(id)
+        except:
+            badIds.append(id)
+            continue
+        if id > maxINT or id <=0:
+            badIds.append(id)
+            continue
 
-    await team_delete(idTeam = idTeam, idTask = idTask)
-    db.session.delete(team)
+        if not Team.query.filter_by(idTeam = id, idTask = idTask).first():
+            badIds.append(id)
+            continue
+
+        users = User_Team.query.filter_by(idTask = idTask, idTeam = id)
+        team = Team.query.filter_by(idTeam = id, idTask = idTask).first()
+        versions = Version_Team.query.filter_by(idTeam = id, idTask = idTask)
+
+        for user in users:
+            db.session.delete(user)
+        
+        for version in versions:
+            db.session.delete(version)
+
+        await team_delete(idTeam = id, idTask = idTask)
+        db.session.delete(team)
+        goodIds.append(id)
+
     db.session.commit()
 
-    return send_response(200, 31101, {"message": "team deleted successfuly"}, "success")
+    return send_response(200, 31071, {"message": "teams deleted successfuly", "badIds": badIds, "goodIds": goodIds}, "success")
 
 @team_bp.route("/team/update", methods=["PUT"])
 @flask_login.login_required
