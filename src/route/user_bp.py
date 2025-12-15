@@ -276,6 +276,10 @@ async def update():
         if len(str(profilePicture.filename)) > 255:
             return send_response(400, 2170, {"message": "Filename too long"}, "error")
         await pfp_save(pfp_path, secondUser, profilePicture)
+        
+    User_class = User_Class.query.filter_by(idUser = secondUser.id)
+    for cl in User_class:
+        db.session.delete(cl)
 
     if idClass:
         if secondUser.role == Role.Student:
@@ -292,10 +296,6 @@ async def update():
                 newUser_Class = User_Class(secondUser.id, id)
                 goodIds.append(id)
                 db.session.add(newUser_Class)
-    else:
-        User_class = User_Class.query.filter_by(idUser = secondUser.id)
-        for cl in User_class:
-            db.session.delete(cl)
 
     secondUser.updatedAt = datetime.datetime.now()
 
