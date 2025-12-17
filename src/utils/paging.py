@@ -25,8 +25,8 @@ def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
         )
 
     if typeOfSpecialSearch == "noClass":
-            return User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).filter(and_(*conditions)).count()
-
+        return User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).filter(and_(*conditions)).count()
+    
     if specialSearch:
         if not typeOfSpecialSearch:
             return False
@@ -37,6 +37,9 @@ def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(User.role == specialSearch)
         if typeOfSpecialSearch == "updatedAt":
             specialConditions.append(User.updatedAt == specialSearch)
+        if typeOfSpecialSearch == "specialClass":
+            return User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == specialSearch).filter(and_(*conditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == specialSearch).filter(and_(*conditions)).count()
+
     return User.query.filter(and_(*conditions, *specialConditions)).offset(amountForPaging * pageNumber).limit(amountForPaging), User.query.filter(and_(*conditions, *specialConditions)).count()
 
 def specialization_paging(searchQuery, amountForPaging, pageNumber):

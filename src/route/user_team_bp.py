@@ -221,6 +221,7 @@ def get():
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 39120, {"message": "Nonexistent user"}, "error")
     
+    #TODO: přidat query
     user_teams = User_Team.query.filter_by(idUser = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = user_teams.count()
 

@@ -7,6 +7,7 @@ from src.models.User import User
 from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Role
+from src.utils.paging import user_paging
 
 user_class_bp = Blueprint("user_class", __name__)
 
@@ -104,6 +105,7 @@ def get_users():
     idClass = request.args.get("idClass", None)
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
     
     right_users = []
 
@@ -147,12 +149,13 @@ def get_users():
 
     if not Class.query.filter_by(id = idClass).first():
         return send_response(400, 35120, {"message":"Nonexistent class"}, "error")
+    if not searchQuery:
+        users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).count()
+    else:
+        users, count = user_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idClass, typeOfSpecialSearch = "specialClass")
     
-    users = User_Class.query.filter_by(idClass = idClass).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count =  User_Class.query.filter_by(idClass = idClass).count()
-    
-    for u in users:
-        user = User.query.filter_by(id = u.idUser).first()
+    for user in users:
         right_users.append({
                     "id": user.id,
                     "name": user.name,
