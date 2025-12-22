@@ -39,10 +39,11 @@ async def add():
         return send_response(400, 30040, {"message": "Nonexistent task"}, "error")
     if not flask_login.current_user.id == task.guarantor:
         return send_response(400, 30050, {"message": "User is not guarantor"}, "error")
-    if len(name) > 255:
-        return send_response(400, 30060, {"message": "Name too long"}, "error")
-    if Team.query.filter_by(idTask = idTask, name = name).first():
-        return send_response(400, 30070, {"message": "Team with this name already exists"}, "error")
+    if name:
+        if len(name) > 255:
+            return send_response(400, 30060, {"message": "Name too long"}, "error")
+        if Team.query.filter_by(idTask = idTask, name = name).first():
+            return send_response(400, 30070, {"message": "Team with this name already exists"}, "error")
     
     await make_team(idTask = idTask, status = Status.Approved, name = name)
     
