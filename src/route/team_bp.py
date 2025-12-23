@@ -139,44 +139,44 @@ async def update():
     task = Task.query.filter_by(id = idTask).first()
 
     if not task:
-        return send_response(400, 32030, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 32070, {"message": "Nonexistent task"}, "error")
     
     team = Team.query.filter_by(idTeam = idTeam, idTask = idTask).first()
 
     if not team:
-        return send_response(400, 32040, {"message": "Nonexistent team"}, "error")
+        return send_response(400, 32080, {"message": "Nonexistent team"}, "error")
     if not flask_login.current_user.id == task.guarantor:
-        return send_response(400, 32050, {"message": "User doesnt have rights"}, "error")
+        return send_response(400, 32090, {"message": "User doesnt have rights"}, "error")
     if status:
         if status not in [s.value for s in Status]:
-            return send_response(400, 32060, {"message": "Status not our type"}, "error")
+            return send_response(400, 32100, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             team.status = Status(status)
     if points:
         try:
             points = float(points)
         except:
-            return send_response(400, 32070, {"message": "Points are not integer or float"}, "error")
+            return send_response(400, 32110, {"message": "Points are not integer or float"}, "error")
         if points > maxFLOAT or points <= 0:
-            return send_response(400, 32080, {"message": "Points not valid"}, "error")
+            return send_response(400, 32120, {"message": "Points not valid"}, "error")
         if points > task.points:
-            return send_response(400, 32090, {"message": "Can not give more points tha task has"}, "error")
+            return send_response(400, 32130, {"message": "Can not give more points tha task has"}, "error")
         team.points = points
     if review:
         review = str(review)
         if len(review) > 65535:
-            return send_response(400, 32100, {"message": "Review too long"}, "error")
+            return send_response(400, 32140, {"message": "Review too long"}, "error")
         team.review = review
     if name:
         name = str(name)
         if len(name) > 255:
-            return send_response(400, 32110, {"message": "Name too long"}, "error")
+            return send_response(400, 32150, {"message": "Name too long"}, "error")
         
     team.name = name
     
     db.session.commit()
 
-    return send_response(200, 32121, {"message": "team updated"}, "success")
+    return send_response(200, 32161, {"message": "team updated"}, "success")
 
 @flask_login.login_required
 @team_bp.route("/team/get/users", methods=["GET"])
