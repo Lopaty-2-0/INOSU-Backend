@@ -12,7 +12,6 @@ from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
 from src.models.Version_Team import Version_Team
 
-#TODO: může být použito 45XXX
 user_team_bp = Blueprint("user_team", __name__)
 
 @user_team_bp.route("/user_team/add", methods=["POST"])

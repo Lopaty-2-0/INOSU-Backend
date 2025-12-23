@@ -742,3 +742,47 @@ def get_by_status_elaboration():
                         })
                 
     return send_response(200, 53101, {"message": "All tasks with these statuses for current user", "users":users, "teams":right_teams, "count":count}, "success")
+
+@team_bp.route("/team/get/info")
+@flask_login.login_required
+def get_team_info():
+    idTeam = request.args.get("idTeam", None)
+    idTask = request.args.get("idTask", None)
+    users = []
+
+    if not idTeam:
+        return send_response(400, 45010, {"message": "idTeam not entered"}, "error")
+    try:
+        idTeam = int(idTeam)
+    except:
+        return send_response(400, 45020, {"message": "IdTask not integer"}, "error")
+    if idTeam > maxINT or idTeam <=0:
+        return send_response(400, 45030, {"message": "IdTask not valid"}, "error")
+    
+    if not idTask:
+        return send_response(400, 45040, {"message": "idTask not entered"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 45050, {"message": "IdTask not integer"}, "error")
+    if idTask > maxINT or idTask <=0:
+        return send_response(400, 45060, {"message": "IdTask not valid"}, "error")
+    
+    task = Task.query.filter_by(id = idTask).first()
+
+    if not task:
+        return send_response(400, 45070, {"message": "Nonexistent task"}, "error")
+    
+    team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
+
+    if not team:
+        return send_response(400, 45080, {"message": "Nonexistent team"}, "error")
+
+    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
+
+    for user in user_teams:
+        users.append(user.idUser)
+    
+    team_info = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value}
+    
+    return send_response(200, 45091, {"message": "Team info found", "users":users, "team":team_info}, "success")
