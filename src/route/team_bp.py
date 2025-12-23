@@ -126,15 +126,15 @@ async def update():
     try:
         idTask = int(idTask)
     except:
-        return send_response(400, 31030, {"message": "idTask not integer"}, "error")
+        return send_response(400, 32030, {"message": "idTask not integer"}, "error")
     if idTask > maxINT or idTask <=0:
-        return send_response(400, 31040, {"message": "idTask not valid"}, "error")
+        return send_response(400, 32040, {"message": "idTask not valid"}, "error")
     try:
         idTeam = int(idTeam)
     except:
-        return send_response(400, 31050, {"message": "idTeam not integer"}, "error")
+        return send_response(400, 32050, {"message": "idTeam not integer"}, "error")
     if idTeam > maxINT or idTeam <=0:
-        return send_response(400, 31060, {"message": "idTeam not valid"}, "error")
+        return send_response(400, 32060, {"message": "idTeam not valid"}, "error")
     
     task = Task.query.filter_by(id = idTask).first()
 
@@ -149,18 +149,18 @@ async def update():
         return send_response(400, 32050, {"message": "User doesnt have rights"}, "error")
     if status:
         if status not in [s.value for s in Status]:
-            return send_response(400, 32070, {"message": "Status not our type"}, "error")
+            return send_response(400, 32060, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             team.status = Status(status)
     if points:
         try:
             points = float(points)
         except:
-            return send_response(400, 32080, {"message": "Points are not integer or float"}, "error")
+            return send_response(400, 32070, {"message": "Points are not integer or float"}, "error")
         if points > maxFLOAT or points <= 0:
-            return send_response(400, 32090, {"message": "Points not valid"}, "error")
+            return send_response(400, 32080, {"message": "Points not valid"}, "error")
         if points > task.points:
-            return send_response(400, 32100, {"message": "Can not give more points tha task has"}, "error")
+            return send_response(400, 32090, {"message": "Can not give more points tha task has"}, "error")
         team.points = points
     if review:
         review = str(review)
