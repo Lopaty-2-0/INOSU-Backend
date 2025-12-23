@@ -333,6 +333,7 @@ async def change():
             continue
         if User_Team.query.filter_by(idUser = id, idTask = idTask).first():
             differentTeam.append(id)
+            continue
 
         db.session.add(User_Team(idUser = idUser, idTeam = idTeam, idTask = idTask))
         goodIds.append(id)
