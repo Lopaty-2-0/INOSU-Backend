@@ -26,6 +26,9 @@ def add():
         return send_response(400, 4030, {"message": "abbreviation missing"}, "error")
     if not name:
         return send_response(400, 4040, {"message": "name missing"}, "error")
+    
+    name = str(name)
+    
     try:
         lengthOfStudy = int(lengthOfStudy)
     except:

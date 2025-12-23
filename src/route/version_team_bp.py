@@ -73,6 +73,7 @@ async def change():
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
     idVersion = data.get("idVersion", None)
+    
     if not idTeam:
         return send_response(400, 49010, {"message": "idTeam not entered"}, "error")
     if not idTask:

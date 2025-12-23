@@ -44,16 +44,16 @@ def add():
     abbreviation = data.get("abbreviation", None)
     role = data.get("role", None)
     email = data.get("email", None)
-    password = str(data.get("password", None))
+    password = data.get("password", None)
     idClass = data.get("classes", None)
 
     if not name:
         return send_response(400, 1020, {"message": "Name is not entered"}, "error")
-    if len(str(name)) > 100:
+    if len((name)) > 100:
         return send_response(400, 1030, {"message": "Name too long"}, "error")
     if not surname:
         return send_response(400, 1040, {"message": "Surname is not entered"}, "error")
-    if len(str(surname)) > 100:
+    if len((surname)) > 100:
         return send_response(400, 1050, {"message": "Surname too long"}, "error")
     if not role:
         return send_response(400, 1060,{"message": "Role is not entered"}, "error")
@@ -61,18 +61,26 @@ def add():
         return send_response(400, 1070, {"message": "Role not our type"}, "error")
     if not password:
         return send_response(400, 1080, {"message": "Password is not entered"}, "error")
-    if len(str(password)) < 5:
+    
+    password = str(password)
+    email = str(email)
+    name = str(name)
+    surname = str(surname)
+    
+
+    if len(password) < 5:
         return  send_response(400, 1090, {"message": "Password is too short"}, "error")
     if not email:
         return send_response(400, 1100, {"message": "Email is not entered"}, "error")
     if not re.match(email_regex, email):
         return send_response(400, 1110, {"message": "Wrong email format"}, "error")
-    if len(str(email)) > 255:
+    if len(email) > 255:
         return send_response(400, 1120, {"message": "Email too long"}, "error")
     if User.query.filter_by(email = email).first():
         return send_response(400, 1130, {"message": "Email is already in use"}, "error")
     if abbreviation:
-        abbreviation = str(abbreviation).upper()
+        abbreviation = str(abbreviation)
+        abbreviation = (abbreviation).upper()
         if User.query.filter_by(abbreviation = abbreviation).first():
             return send_response(400, 1140, {"message": "Abbreviation is already in use"}, "error")
         if len(abbreviation) > 4:
@@ -80,7 +88,7 @@ def add():
     else:
         abbreviation = None
 
-    newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
+    newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
 
     db.session.add(newUser)
     db.session.commit()
@@ -135,14 +143,24 @@ def add_file():
         abbreviation = userData.get("abbreviation", None)
         role = userData.get("role", None)
         email = userData.get("email", None)
-        password = str(userData.get("password", None))
+        password = (userData.get("password", None))
         idClass = userData.get("classes", None)
 
-        if not name or len(str(name)) > 100 or not surname or len(str(surname)) > 100 or not role or role not in [r.value for r in Role] or not password or len(str(password)) < 5 or not email or len(str(email)) > 255 or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
+        if not name or not surname or not role or not password or not email:
+            badUsers += 1
+            continue
+
+        password = str(password)
+        email = str(email)
+        name = str(name)
+        surname = str(surname)   
+
+        if len(name) > 100 or len(surname) > 100 or role not in [r.value for r in Role] or len(password) < 5 or len(email) > 255 or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
             badUsers += 1
             continue
         if abbreviation:
-            abbreviation = str(abbreviation).upper()
+            abbreviation = str(abbreviation)
+            abbreviation = (abbreviation).upper()
             if User.query.filter_by(abbreviation = abbreviation).first():
                 badUsers += 1
                 continue
@@ -153,7 +171,7 @@ def add_file():
             abbreviation = None
         allUsers += 1
 
-        newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
+        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
         db.session.add(newUser)
         db.session.commit()
 
@@ -211,7 +229,7 @@ async def update():
         if not profilePicture and not reminders:
             return send_response(400, 2010, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
-            if len(str(profilePicture.filename)) > 255:
+            if len(profilePicture.filename) > 255:
                 return send_response(400, 2020, {"message": "Filename too long"}, "error")
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return send_response(400, 2030, {"message": "Wrong file format"}, "error")
@@ -243,19 +261,22 @@ async def update():
     if not secondUser:
         return send_response(400, 2080, {"message": "Wrong user id"}, "error")
     if name:
-        if len(str(name)) > 255:
+        name = str(name)
+        if len(name) > 255:
             return send_response(400, 2090, {"message": "Name too long"}, "error")
-        secondUser.name = str(name)  
+        secondUser.name = (name)  
     if surname:
-        if len(str(surname)) > 255:
+        surname = str(surname)
+        if len(surname) > 255:
             return send_response(400, 2100, {"message": "Surname too long"}, "error")
-        secondUser.surname = str(surname)
+        secondUser.surname = (surname)
     if abbreviation:
+        abbreviation = str(abbreviation)
         if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
             return send_response(400, 2110, {"message": "Abbreviation is already in use"}, "error")
-        if len(str(abbreviation)) > 4:
+        if len(abbreviation) > 4:
             return send_response(400, 2120, {"message": "Abbreviation is too long"}, "error")
-        secondUser.abbreviation = str(abbreviation).upper()
+        secondUser.abbreviation = abbreviation.upper()
     if role in [r.value for r in Role]:
         secondUser.role = Role(role)
         if Role(role)!= Role.Student:
@@ -263,17 +284,18 @@ async def update():
             for cl in User_class:
                 db.session.delete(cl)
     if email:
+        email = str(email)
         if not re.match(email_regex, email):
             return send_response(400, 2130, {"message": "Wrong email format"}, "error")
         if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
             return send_response(400, 2140, {"message": "Email is already in use"}, "error")
-        if len(str(email)) > 255:
+        if len(email) > 255:
             return send_response(400, 2150, {"message": "Email too long"}, "error")
         secondUser.email = email
     if profilePicture:
         if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
             return send_response(400, 2160, {"message": "Wrong file format"}, "error")
-        if len(str(profilePicture.filename)) > 255:
+        if len(profilePicture.filename) > 255:
             return send_response(400, 2170, {"message": "Filename too long"}, "error")
         await pfp_save(pfp_path, secondUser, profilePicture)
         
@@ -363,16 +385,20 @@ async def delete():
 @flask_login.login_required
 def password_reset():
     data = request.get_json(force = True)
-    oldPassword = str(data.get("oldPassword", None))
-    newPassword = str(data.get("newPassword", None))
+    oldPassword = (data.get("oldPassword", None))
+    newPassword = (data.get("newPassword", None))
 
     if not oldPassword:
         return send_response(400, 11010, {"message": "Old password not entered"}, "error")
     if not newPassword:
         return send_response(400, 11020, {"message": "New password not entered"}, "error")
+    
+    newPassword = str(newPassword)
+    oldPassword = str(oldPassword)
+
     if not check_password_hash(flask_login.current_user.password, oldPassword):
         return send_response(400, 11030, {"message": "Wrong password"}, "error")
-    if len(str(newPassword)) < 5:
+    if len(newPassword) < 5:
         return send_response(400, 11040, {"message": "Password is too short"}, "error")
     
     flask_login.current_user.password = generate_password_hash(newPassword)
@@ -387,9 +413,12 @@ def password_res():
     
     if not email:
         return send_response(400, 12010, {"message": "Email is missing"}, "error")
+    
+    email = str(email)
+
     if not re.match(email_regex, email):
         return send_response(400, 12020, {"message": "Wrong email format"}, "error")
-    if len(str(email)) > 255:
+    if len(email) > 255:
         return send_response(400, 12030, {"message": "Email too long"}, "error")
     if not User.query.filter_by(email = email).first():
         return send_response(400, 12040, {"message": "No user with that email addres"}, "error")
@@ -419,11 +448,13 @@ def password_verify():
 def password_new():
     data = request.get_json(force=True)
     email = data.get("email", None)
-    newPassword = str(data.get("newPassword", None))
+    newPassword = (data.get("newPassword", None))
 
+    email = str(email)
+    
     if not re.match(email_regex, email):
         return send_response(400, 14010, {"message": "Wrong email format"}, "error")
-    if len(str(email)) > 255:
+    if len(email) > 255:
         return send_response(400, 14020, {"message": "Email too long"}, "error")
     
     user = User.query.filter_by(email = email).first()
@@ -432,7 +463,10 @@ def password_new():
         return send_response(400, 14030, {"message": "Wrong email"}, "error")
     if not newPassword:
         return send_response(400, 14040, {"message": "Password missing"}, "error")
-    if len(str(newPassword)) < 5:
+    
+    newPassword = str(newPassword)
+
+    if len(newPassword) < 5:
         return send_response(400, 14050, {"message": "Password too short"}, "error")
     
     user.password = generate_password_hash(newPassword)

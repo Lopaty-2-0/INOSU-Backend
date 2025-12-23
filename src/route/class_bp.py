@@ -30,6 +30,10 @@ def add():
         return send_response(400, 8040, {"message": "idSpecialization missing"}, "error")
     if not name:
         return send_response(400, 8050, {"message": "Name missing"}, "error")
+    
+    group = str(group)
+    name = str(name)
+    
     try:
         grade = int(grade)
     except:

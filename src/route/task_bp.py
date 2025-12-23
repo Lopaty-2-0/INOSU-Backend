@@ -35,7 +35,10 @@ async def add():
         return send_response(400, 26010, {"message": "Name not entered"}, "error")
     if not endDate:
         return send_response(400, 26020, {"message": "endDate  not entered"}, "error")
-    if len(str(taskName)) > 45:
+    
+    taskName = str(taskName)
+
+    if len(taskName) > 45:
         return send_response(400, 26030, {"message":"Name too long"}, "error")
     try:
         endDate = datetime.fromtimestamp(int(endDate)/1000)

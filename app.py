@@ -25,7 +25,7 @@ task_path = os.getenv("TASK_PATH")
 pfp_path = os.getenv("PFP_PATH")
 url = os.getenv("URL")
 maxINT = 4294967295
-maxFLOAT = 34.0e+38
+maxFLOAT = 3.40e+38
 
 try:
     app = Flask(__name__)
@@ -44,7 +44,7 @@ try:
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
     app.config["REMEMBER_COOKIE_REFRESH_EACH_REQUEST"] = True
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
-    
+
     ssh = ssh_connect()
     db = sql(app)
     jwt = JWTManager(app)

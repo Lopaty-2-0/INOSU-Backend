@@ -24,6 +24,7 @@ async def add():
     idTeam = data.get("idTeam", None)
     badIds = []
     goodIds = []
+    differentTeam = []
 
     if not idTask:
         return send_response(400, 36010, {"message": "idTask not entered"}, "error")
@@ -62,8 +63,12 @@ async def add():
                     badIds.append(idU)
                     continue
 
-                if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
+                if not User.query.filter_by(id=idU).first():
                     badIds.append(idU)
+                    continue
+
+                if User_Team.query.filter_by(idUser = idU, idTask = idTask).first():
+                    differentTeam.append(idU)
                     continue
 
                 idT = await make_team(idTask = idTask, status = status, name = None)
@@ -88,8 +93,11 @@ async def add():
                 for user in users:
                     idU = user.idUser
 
-                    if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first():
+                    if not User.query.filter_by(id=idU).first():
                         badIds.append(idU)
+                        continue
+                    if User_Team.query.filter_by(idUser = idU, idTask = idTask).first():
+                        differentTeam.append(idU)
                         continue
 
                     idT = await make_team(idTask = idTask, status = status, name = None)
@@ -107,20 +115,23 @@ async def add():
             if idU > maxINT or idU <= 0:
                 badIds.append(idU)
                 continue
-            if User_Team.query.filter_by(idUser = idU, idTask = idTask).first() or not User.query.filter_by(id=idU).first() or not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
+            if not User.query.filter_by(id=idU).first() or not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
                 badIds.append(idU)
+                continue
+            if User_Team.query.filter_by(idUser = idU, idTask = idTask).first():
+                differentTeam.append(idU)
                 continue
 
             newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idTeam)
             db.session.add(newUser_Team)
             goodIds.append(idU)
 
-    if not goodIds:
+    if not goodIds or not differentTeam:
         return send_response(400, 36070, {"message": "Nothing created"}, "error")
 
     db.session.commit()
 
-    return send_response(201, 36081, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(201, 36081, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
 
 @user_team_bp.route("/user_team/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -274,8 +285,7 @@ async def change():
     idTeam = data.get("idTeam", None)
     goodIds = []
     badIds = []
-    ids = []
-    removedIds = []
+    differentTeam = []
 
     if not idTask:
         return send_response(400, 43010, {"message": "idTask not entered"}, "error")
@@ -309,6 +319,9 @@ async def change():
     
     user_team = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
 
+    for team in user_team:
+        db.session.delete(team)
+
     for id in idUser:
         try:
             id = int(id)
@@ -318,24 +331,18 @@ async def change():
         if id > maxINT or id <= 0 or not User.query.filter_by(id = id).first():
             badIds.append(id)
             continue
+        if User_Team.query.filter_by(idUser = id, idTask = idTask).first():
+            differentTeam.append(id)
 
-        ids.append(id)
-
-    for team in user_team:
-        if not team.idUser in ids:
-            db.session.delete(team)
-            removedIds.append(team.idUser)
-            continue
-        else:
-            goodIds.append(team.idUser)
-        ids.remove(team.idUser)
+        db.session.add(User_Team(idUser = idUser, idTeam = idTeam, idTask = idTask))
+        goodIds.append(id)
     
-    if not goodIds and not ids and not removedIds:
+    if not goodIds or not differentTeam:
         return send_response(400, 43110, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
 
-    return send_response(200, 43121, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "removedIds":removedIds}, "success")
+    return send_response(200, 43121, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
 @user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required
