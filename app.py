@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
 from src.utils.enums import Role
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -49,6 +50,8 @@ try:
     db = sql(app)
     jwt = JWTManager(app)
     migration = Migrate(app, db)
+    scheduler = BackgroundScheduler()
+    scheduler.start()
     CORS( 
         app,
         supports_credentials=True,

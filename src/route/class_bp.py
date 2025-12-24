@@ -77,7 +77,7 @@ def delete():
         idClass = [idClass]
     
     for id in idClass:
-        if not Class.query.filter_by(id = id).first() or id > maxINT:
+        if not Class.query.filter_by(id = id).first() or id > maxINT or id <= 0:
             badIds.append(id)
             continue
 

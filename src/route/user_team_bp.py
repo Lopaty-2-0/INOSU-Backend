@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db, maxINT
+from app import db, maxINT, scheduler
 from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.models.User_Class import User_Class
@@ -9,8 +9,8 @@ from src.models.Team import Team
 from src.utils.enums import Status, Type
 from src.utils.team import make_team
 from src.utils.response import send_response
-from src.utils.all_user_classes import all_user_classes
 from src.models.Version_Team import Version_Team
+from src.utils.reminder import create_reminder, cancel_reminder
 
 user_team_bp = Blueprint("user_team", __name__)
 
@@ -75,6 +75,10 @@ async def add():
 
                 newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
                 db.session.add(newUser_Team)
+
+                if User.query.filter_by(id=idU).first().reminders:
+                    create_reminder(idUser = idU, idTask = idTask)
+
                 goodIds.append(idU)
 
         if idClass and not idUser:
@@ -104,7 +108,12 @@ async def add():
 
                     newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
                     db.session.add(newUser_Team)
-                    goodIds.append(idCl)
+
+                    if  User.query.filter_by(id=idU).first().reminders:
+                        create_reminder(idUser = idU, idTask = idTask)
+
+                goodIds.append(idCl)
+
     else:
         for idU in idUser:
             try:
@@ -126,10 +135,13 @@ async def add():
             db.session.add(newUser_Team)
             goodIds.append(idU)
 
-    if not goodIds or not differentTeam:
-        return send_response(400, 36070, {"message": "Nothing created"}, "error")
-
+            if User.query.filter_by(id=idU).first().reminders:
+                create_reminder(idUser = idU, idTask = idTask)
+                
     db.session.commit()
+
+    if not goodIds and not differentTeam:
+        return send_response(400, 36070, {"message": "Nothing created"}, "error")
 
     return send_response(201, 36081, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
 
@@ -179,6 +191,8 @@ def delete():
 
     db.session.delete(user_team)
     db.session.commit()
+
+    cancel_reminder(idUser = idUser, idTask = idTask)
 
     return send_response(200, 37111, {"message": "user_team deleted successfuly"}, "success")
 
@@ -231,7 +245,6 @@ def get():
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 39120, {"message": "Nonexistent user"}, "error")
     
-    #TODO: přidat query
     user_teams = User_Team.query.filter_by(idUser = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = user_teams.count()
 
@@ -322,6 +335,8 @@ async def change():
     for team in user_team:
         db.session.delete(team)
 
+        cancel_reminder(idUser = team.idUser, idTask = idTask)
+
     for id in idUser:
         try:
             id = int(id)
@@ -337,8 +352,11 @@ async def change():
 
         db.session.add(User_Team(idUser = idUser, idTeam = idTeam, idTask = idTask))
         goodIds.append(id)
+
+        if User.query.filter_by(id = id).first().reminders:
+            create_reminder(idUser = id, idTask = idTask)
     
-    if not goodIds or not differentTeam:
+    if not goodIds and not differentTeam:
         return send_response(400, 43110, {"message": "Nothing updated"}, "error")
 
     db.session.commit()

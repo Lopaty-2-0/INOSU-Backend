@@ -14,6 +14,7 @@ from datetime import datetime
 from src.utils.paging import task_paging
 from src.utils.team import make_team
 from app import db, ssh, task_path, maxINT, maxFLOAT
+from src.utils.reminder import cancel_reminder
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -73,6 +74,8 @@ async def add():
                 return send_response(400, 26120, {"message":"Deadline before endDate"}, "error")
         except:
             return send_response(400, 26130, {"message":"Deadline not integer or is too far"}, "error")
+    else:
+        deadline = None
     if points:
         try:
             points = float(points)
@@ -202,6 +205,7 @@ def get():
 
     return send_response(200, 27091, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
+#TODO: Kokotina prej nefunguje
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
 async def delete():
@@ -219,44 +223,46 @@ async def delete():
     if not isinstance(idTask, list):
         idTask = [idTask]
     
-    for id in idTask:
+    for taskId in idTask:
         try:
-            id = int(id)
+            taskId = int(taskId)
         except:
-            badIds.append(id)
+            badIds.append(taskId)
             continue
 
-        if id > maxINT or id <= 0:
-            badIds.append(id)
+        if taskId > maxINT or taskId <= 0:
+            badIds.append(taskId)
             continue
 
-        task = Task.query.filter_by(id = id).first()
+        task = Task.query.filter_by(id = taskId).first()
 
         if not task or flask_login.current_user.id != task.guarantor:
-            badIds.append(id)
+            badIds.append(taskId)
             continue
 
-        teams = Team.query.filter_by(idTask = id)
-        user_team = User_Team.query.filter_by(idTask = id)
+        teams = Team.query.filter_by(idTask=taskId).all()
+        user_team = User_Team.query.filter_by(idTask=taskId).all()
 
         for user in user_team:
             db.session.delete(user)
-            db.session.commit()
+
+            cancel_reminder(idUser = user.idUser, idTask = taskId)
+        
 
         for team in teams:
-            versions = Version_Team.query.filter_by(idTask = id, idTeam = team.idTeam)
+            versions = Version_Team.query.filter_by(idTask = taskId, idTeam = team.idTeam).all()
 
             for ver in versions:
                 db.session.delete(ver)
-                db.session.commit()
 
             db.session.delete(team)
-            db.session.commit()
         
-        db.session.delete(task)
-        await task_delete_sftp(task.id)
-        goodIds.append(id)
         db.session.commit()
+        db.session.delete(task)
+        await task_delete_sftp(taskId)
+        goodIds.append(taskId)
+
+    db.session.commit()
 
     return send_response(200, 28031, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
 

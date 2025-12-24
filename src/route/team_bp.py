@@ -13,6 +13,7 @@ from src.utils.enums import Status
 from src.utils.paging import team_paging
 from sqlalchemy import or_, func
 from src.utils.all_user_classes import all_user_classes
+from src.utils.reminder import cancel_reminder
 
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -96,6 +97,8 @@ async def delete():
 
         for user in users:
             db.session.delete(user)
+
+            cancel_reminder(idUser = user.idUser, idTask = idTask)
         
         for version in versions:
             db.session.delete(version)
