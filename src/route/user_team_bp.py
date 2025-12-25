@@ -302,31 +302,29 @@ async def change():
 
     if not idTask:
         return send_response(400, 43010, {"message": "idTask not entered"}, "error")
-    if not idUser:
-        return send_response(400, 43020, {"message": "idUser not entered"}, "error")
     if not idTeam:
-        return send_response(400, 43030, {"message": "idTeam not entered"}, "error")
+        return send_response(400, 43020, {"message": "idTeam not entered"}, "error")
     try:
         idTask = int(idTask)
     except:
-        return send_response(400, 43040, {"message": "idTask not integer"}, "error")
+        return send_response(400, 43030, {"message": "idTask not integer"}, "error")
     
     if idTask > maxINT or idTask <= 0:
-        return send_response(400, 43050, {"message": "idTask not valid"}, "error")
+        return send_response(400, 43040, {"message": "idTask not valid"}, "error")
 
     try:
         idTeam = int(idTeam)
     except:
-        return send_response(400, 43060, {"message": "idTeam not integer"}, "error")
+        return send_response(400, 43050, {"message": "idTeam not integer"}, "error")
     
     if idTeam > maxINT or idTeam <= 0:
-        return send_response(400, 43070, {"message": "idTeam not valid"}, "error")
+        return send_response(400, 43060, {"message": "idTeam not valid"}, "error")
     if not Task.query.filter_by(id=idTask).first():
-        return send_response(400, 43080, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 43070, {"message": "Nonexistent task"}, "error")
     if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
-        return send_response(400, 43090, {"message": "Nonexistent team"}, "error")
+        return send_response(400, 43080, {"message": "Nonexistent team"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
-        return send_response(403, 43100, {"message": "No permission"}, "error")
+        return send_response(403, 43090, {"message": "No permission"}, "error")
     if not isinstance(idUser, list):
         idUser = [idUser]
     
@@ -355,13 +353,10 @@ async def change():
 
         if User.query.filter_by(id = id).first().reminders:
             create_reminder(idUser = id, idTask = idTask)
-    
-    if not goodIds and not differentTeam:
-        return send_response(400, 43110, {"message": "Nothing updated"}, "error")
 
     db.session.commit()
 
-    return send_response(200, 43121, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
+    return send_response(200, 43101, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
 @user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required
