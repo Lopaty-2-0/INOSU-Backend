@@ -350,7 +350,7 @@ async def change():
             differentTeam.append(id)
             continue
 
-        db.session.add(User_Team(idUser = idUser, idTeam = idTeam, idTask = idTask))
+        db.session.add(User_Team(idUser = id, idTeam = idTeam, idTask = idTask))
         goodIds.append(id)
 
         if User.query.filter_by(id = id).first().reminders:
