@@ -7,7 +7,7 @@ from src.models.User_Class import User_Class
 from src.models.User import User
 from src.models.Team import Team
 from src.utils.enums import Status, Type
-from src.utils.team import make_team
+from src.utils.team import make_team, team_deleteDir
 from src.utils.response import send_response
 from src.models.Version_Team import Version_Team
 from src.utils.reminder import create_reminder, cancel_reminder
@@ -71,7 +71,7 @@ async def add():
                     differentTeam.append(idU)
                     continue
 
-                idT = await make_team(idTask = idTask, status = status, name = None)
+                idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False)
 
                 newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
                 db.session.add(newUser_Team)
@@ -104,7 +104,7 @@ async def add():
                         differentTeam.append(idU)
                         continue
 
-                    idT = await make_team(idTask = idTask, status = status, name = None)
+                    idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False)
 
                     newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
                     db.session.add(newUser_Team)
@@ -321,19 +321,25 @@ async def change():
         return send_response(400, 43060, {"message": "idTeam not valid"}, "error")
     if not Task.query.filter_by(id=idTask).first():
         return send_response(400, 43070, {"message": "Nonexistent task"}, "error")
-    if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
+    
+    team = Team.query.filter_by(idTeam = idTeam, idTask = idTask).first()
+
+    if not team:
         return send_response(400, 43080, {"message": "Nonexistent team"}, "error")
     if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
         return send_response(403, 43090, {"message": "No permission"}, "error")
     if not isinstance(idUser, list):
         idUser = [idUser]
+
+    if len(idUser) > 1 and not team.isTeam:
+        return send_response(403, 43100, {"message": "Can not add more users into this team"}, "error")
     
-    user_team = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
+    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
 
-    for team in user_team:
-        db.session.delete(team)
+    for user_team in user_teams:
+        db.session.delete(user_team)
 
-        cancel_reminder(idUser = team.idUser, idTask = idTask)
+        cancel_reminder(idUser = user_team.idUser, idTask = idTask)
 
     for id in idUser:
         try:
@@ -355,8 +361,20 @@ async def change():
             create_reminder(idUser = id, idTask = idTask)
 
     db.session.commit()
+    
+    if not team.isTeam and not User_Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
+        versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
 
-    return send_response(200, 43101, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
+        for version in versions:
+            db.session.delete(version)
+        
+        db.session.commit()
+        db.session.delete(team)
+        db.session.commit()
+
+        await team_deleteDir(idTeam = idTeam, idTask = idTask)
+
+    return send_response(200, 43111, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
 @user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
 @flask_login.login_required
