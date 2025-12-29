@@ -795,6 +795,6 @@ def get_team_info():
     for user in user_teams:
         users.append(user.idUser)
     
-    team_info = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value}
+    team_info = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value, "isTeam": team.isTeam}
     
     return send_response(200, 45091, {"message": "Team info found", "users":users, "team":team_info}, "success")
