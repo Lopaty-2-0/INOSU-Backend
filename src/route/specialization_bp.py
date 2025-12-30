@@ -85,7 +85,8 @@ def delete():
         if Class.query.filter_by(idSpecialization = id).first():
             classIds.append(id)
             continue
-
+        
+        db.session.commit()
         db.session.delete(Specialization.query.filter_by(id = id).first())
         goodIds.append(id)
 

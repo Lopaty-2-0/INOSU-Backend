@@ -136,7 +136,7 @@ def get_users():
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 53080, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 35080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not idClass:
         return send_response(400, 35090, {"message": "idClass not entered"}, "error")

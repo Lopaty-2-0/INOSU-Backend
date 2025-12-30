@@ -1,6 +1,7 @@
 from app import db
 from src.utils.enums import Status
 from sqlalchemy.dialects.mysql import TEXT, INTEGER, FLOAT
+import datetime
 
 class Team(db.Model):
     __tablename__ = "team"
@@ -12,6 +13,8 @@ class Team(db.Model):
     status = db.Column(db.Enum(Status), nullable=False)
     name = db.Column(db.String(255), nullable=True)
     isTeam = db.Column(db.Boolean, default=True, nullable=False)
+    reviewUpdatedAt = db.Column(db.DateTime, default=None, nullable=True)
+    teamUpdatedAt = db.Column(db.DateTime, default=None, nullable=True)
 
     def __init__(self, idTeam, idTask, name, isTeam, review = None, status = None, points = None):
         self.idTeam = idTeam

@@ -367,9 +367,9 @@ async def delete():
                 await delete_teams_for_task(task.id)
                 await task_delete_sftp(task.id)
                 db.session.delete(task)
-            db.session.commit()
 
             await pfp_delete(pfp_path, delUser)
+            db.session.commit()
             db.session.delete(delUser)
             goodIds.append(id)
         else:

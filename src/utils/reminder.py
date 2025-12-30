@@ -4,9 +4,8 @@ from src.models.User_Team import User_Team
 from src.utils.send_email import send_email
 from src.email.templates.reminder import email_reminder
 from app import scheduler, app
-from datetime import timedelta
+from datetime import timedelta, datetime
 
-#TODO: dodat když je dodanej později
 
 def reminder(idTask, idUser):
     with app.app_context():
@@ -19,7 +18,7 @@ def reminder(idTask, idUser):
         
         text = "Upozornění uzavírky události" + task.name
         
-        send_email(user.email, "Reminder", email_reminder(name = user.name + " " + user.surname, task_datetime = task.endDate, task_name = task.name), text)
+        send_email(user.email, "Reminder", email_reminder(name = user.name + " " + user.surname, task_datetime = datetime.strptime(task.endDate, "%d.%m.%Y %H:%M:%S"), task_name = task.name), text)
     
 def cancel_reminder(idUser, idTask):
     with app.app_context():
@@ -31,6 +30,10 @@ def cancel_reminder(idUser, idTask):
             pass
 
 def create_reminder(idUser, idTask):
+    if Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1) < datetime.now():
+        reminder(idTask = idTask, idUser = idUser)
+        return
+
     with app.app_context():
         job_id = f"reminder_{idUser}_{idTask}"
 

@@ -5,16 +5,17 @@ from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.utils.response import send_response
 from src.utils.enums import Status
-from src.utils.versions import make_version, version_save, version_delete
+from src.utils.version import make_version, version_delete
 import flask_login
 import datetime
 from app import db, maxINT
 from src.utils.check_file import check_file_size
+import datetime
 
-version_team = Blueprint("version_team", __name__)
+version_team_bp = Blueprint("version_team", __name__)
 elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
-@version_team.route("/version_team/add", methods = ["PUT"])
+@version_team_bp.route("/version_team/add", methods = ["POST"])
 @check_file_size(2 * 1024 * 1024)
 @flask_login.login_required
 async def add():
@@ -54,19 +55,14 @@ async def add():
     if Task.query.filter_by(id = idTask).first().deadline < datetime.datetime.now():
         return send_response(400, 38120, {"message": "Cannot update version after deadline"}, "error")
     
-    id = await make_version(idTask = idTask, idTeam = idTeam)
-    status = await version_save(idTeam = idTeam, idTask = idTask, idVersion = id, file = elaboration)
+    status = await make_version(idTask = idTask, idTeam = idTeam, file = elaboration)
 
     if not status:
         return send_response(400, 38130, {"message": "File already exists"}, "error")
     
-    new_version = Version_Team(idTeam = idTeam, idTask = idTask, elaboration = elaboration.filename, idVersion = id)
-    db.session.add(new_version)
-    db.session.commit()
+    return send_response(200, 38141, {"message": "Version_team created"}, "success")
 
-    return send_response(400, 38141, {"message": "Version_team created"}, "success")
-
-@version_team.route("/version_team/change", methods = ["POST"])
+@version_team_bp.route("/version_team/change", methods = ["PUT"])
 @flask_login.login_required
 async def change():
     data = request.get_json(force = True)
@@ -111,9 +107,81 @@ async def change():
     if Task.query.filter_by(id = idTask).first().deadline < datetime.datetime.now():
         return send_response(400, 49130, {"message": "Cannot update version after deadline"}, "error")
     
-    await version_delete(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration)
+    if version.elaboration:
+        await version_delete(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration)
 
-    version.elaboration = None
+        version.elaboration = None
+        version.updatedAt = datetime.datetime.now()
     db.session.commit()
 
-    return send_response(400, 49141, {"message": "Version_team updated"}, "success")
+    return send_response(200, 49141, {"message": "Version_team updated"}, "success")
+
+@version_team_bp.route("/version_team/get", methods = ["GET"])
+@flask_login.login_required
+def get():
+    idTask = request.args.get("idTask", None)
+    idTeam = request.args.get("idTeam", None)
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    versions = []
+
+    if not amountForPaging:
+        return send_response(400, 59010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 59020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 59030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if amountForPaging > maxINT:
+        return send_response(400, 59040, {"message": "amountForPaging too big"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 59050, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 59060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 59070, {"message": "pageNumber too big"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 59080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not idTask:
+        return send_response(400, 59090, {"message": "idTask not entered"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 59100, {"message": "idTask not integer"}, "error")
+    if idTask > maxINT or idTask <=0:
+        return send_response(400, 59110, {"message": "idTask not valid"}, "error")
+    
+    if not Task.query.filter_by(id = idTask).first():
+        return send_response(400, 59120, {"message": "Nonexistent task"}, "error")
+    
+    if not idTeam:
+        return send_response(400, 59130, {"message": "idTask not entered"}, "error")
+    try:
+        idTeam = int(idTeam)
+    except:
+        return send_response(400, 59140, {"message": "idTask not integer"}, "error")
+    if idTeam > maxINT or idTeam <=0:
+        return send_response(400, 59150, {"message": "idTask not valid"}, "error")
+    
+    if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
+        return send_response(400, 59160, {"message": "Nonexistent task"}, "error")
+    
+    versions_team = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    count = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).count()
+
+    for version in versions_team:
+        versions.append({"idVersion":version.idVersion, "elaboration":version.elaboration, "updatedAt":version.updatedAt})
+
+    return send_response(200, 59171, {"message": "All versions for this team", "versions":versions, "count": count}, "success")

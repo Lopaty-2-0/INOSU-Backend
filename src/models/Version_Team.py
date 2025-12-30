@@ -4,10 +4,18 @@ from sqlalchemy.dialects.mysql import INTEGER
 class Version_Team(db.Model):
     __tablename__ = "version_team"
 
-    idTeam = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.idTeam"), primary_key=True)
     idVersion = db.Column(INTEGER(unsigned=True), primary_key=True)
-    idTask = db.Column(INTEGER(unsigned=True), db.ForeignKey("task.id"), primary_key=True)
+    idTeam = db.Column(INTEGER(unsigned=True), primary_key=True)
+    idTask = db.Column(INTEGER(unsigned=True), primary_key=True)
     elaboration = db.Column(db.String(255), nullable=True)
+    updatedAt = db.Column(db.DateTime, default=None, nullable=True)
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ["idTeam", "idTask"],
+            ["team.idTeam", "team.idTask"]
+        ),
+    )
 
     def __init__(self, idTeam, idTask, elaboration, idVersion):
         self.idTeam = idTeam

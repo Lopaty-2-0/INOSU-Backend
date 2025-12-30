@@ -10,9 +10,10 @@ from src.utils.team import team_deleteDir, make_team
 from src.utils.response import send_response
 from src.utils.enums import Status
 from src.utils.paging import team_paging
-from sqlalchemy import or_, func
+from sqlalchemy import or_
 from src.utils.all_user_classes import all_user_classes
 from src.utils.reminder import cancel_reminder
+import datetime
 
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -98,9 +99,7 @@ async def delete():
             db.session.delete(user)
 
             cancel_reminder(idUser = user.idUser, idTask = idTask)
-        
-        db.session.commit()
-        
+             
         for version in versions:
             db.session.delete(version)
         
@@ -158,12 +157,12 @@ async def update():
             return send_response(400, 32100, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             team.status = Status(status)
-    if points:
+    if points or points == 0:
         try:
             points = float(points)
         except:
             return send_response(400, 32110, {"message": "Points are not integer or float"}, "error")
-        if points > maxFLOAT or points <= 0:
+        if points > maxFLOAT or points < 0:
             return send_response(400, 32120, {"message": "Points not valid"}, "error")
         if points > task.points:
             return send_response(400, 32130, {"message": "Can not give more points tha task has"}, "error")
@@ -173,13 +172,18 @@ async def update():
         if len(review) > 65535:
             return send_response(400, 32140, {"message": "Review too long"}, "error")
         team.review = review
+        team.reviewUpdatedAt = datetime.datetime.now()
+    if not review and team.review:
+        team.review = ""
+        team.reviewUpdatedAt = datetime.datetime.now()
     if name:
         name = str(name)
         if len(name) > 255:
             return send_response(400, 32150, {"message": "Name too long"}, "error")
         
     team.name = name
-    
+    team.teamUpdatedAt = datetime.datetime.now()
+
     db.session.commit()
 
     return send_response(200, 32161, {"message": "team updated"}, "success")
@@ -254,8 +258,12 @@ def get_users_task():
                     "name":team.name,
                     "status":team.status.value,
                     "elaboration":elaboration,
+                    "elaborationUpdatedAt":version.updatedAt,
                     "review":team.review, 
                     "points":team.points,
+                    "isTeam": team.isTeam,
+                    "teamUpdatedAt":team.teamUpdatedAt,
+                    "reviewUpdatedAt":team.reviewUpdatedAt,
                     "userData":{
                         "id": user.id,
                         "name": user.name,
@@ -344,8 +352,12 @@ def get_teams_task():
                     "name":team.name,
                     "status":team.status.value,
                     "elaboration":elaboration,
+                    "teamUpdatedAt":team.teamUpdatedAt,
+                    "elaborationUpdatedAt":version.updatedAt,
                     "review":team.review, 
                     "points":team.points,
+                    "isTeam": team.isTeam,
+                    "reviewUpdatedAt":team.reviewUpdatedAt
                     })
 
     return send_response(200, 56131, {"message": "All teams for this task", "teams":right_teams, "count": count}, "success")
@@ -418,7 +430,11 @@ def get_teams_with_status_and_guarantor():
                     "idTeam":team.idTeam,
                     "count": counts,
                     "name":team.name,
+                    "teamUpdatedAt":team.teamUpdatedAt,
+                    "isTeam": team.isTeam,
+                    "reviewUpdatedAt":team.reviewUpdatedAt,
                     "points":team.points,
+                    "elaborationUpdatedAt":version.updatedAt,
                     "elaboration": elaboration
                     })
     
@@ -493,6 +509,10 @@ def get_users_with_status_and_guarantor():
                     "status":team.status.value,
                     "review":team.review, 
                     "points":team.points,
+                    "isTeam": team.isTeam,
+                    "teamUpdatedAt":team.teamUpdatedAt,
+                    "elaborationUpdatedAt":version.updatedAt,
+                    "reviewUpdatedAt":team.reviewUpdatedAt,
                     "userData":{
                         "id":user.id,
                         "name":user.name,
@@ -568,6 +588,10 @@ def get_teams_with_status_and_idTask():
                     "count": counts,
                     "name":team.name,
                     "points":team.points,
+                    "elaborationUpdatedAt":version.updatedAt,
+                    "isTeam": team.isTeam,
+                    "teamUpdatedAt":team.teamUpdatedAt,
+                    "reviewUpdatedAt":team.reviewUpdatedAt,
                     "elaboration": elaboration
                     })
                 
@@ -644,6 +668,10 @@ def get_users_with_status_and_idTask():
                     "status":team.status.value,
                     "review":team.review, 
                     "points":team.points,
+                    "isTeam": team.isTeam,
+                    "elaborationUpdatedAt":version.updatedAt,
+                    "reviewUpdatedAt":team.reviewUpdatedAt,
+                    "teamUpdatedAt":team.teamUpdatedAt,
                     "userData":{
                         "id":user.id,
                         "name":user.name,
@@ -734,6 +762,10 @@ def get_by_status_elaboration():
                         "status":team.status.value,
                         "review":team.review, 
                         "points":team.points,
+                        "isTeam": team.isTeam,
+                        "elaborationUpdatedAt":version.updatedAt,
+                        "reviewUpdatedAt":team.reviewUpdatedAt,
+                        "teamUpdatedAt":team.teamUpdatedAt,
                         "userData":{
                             "id":user.id,
                             "name":user.name,
@@ -747,9 +779,13 @@ def get_by_status_elaboration():
                         "status":team.status.value,
                         "review":team.review, 
                         "idTeam":team.idTeam,
+                        "elaborationUpdatedAt":version.updatedAt,
                         "count": User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count(),
                         "name":team.name,
                         "points":team.points,
+                        "isTeam": team.isTeam,
+                        "teamUpdatedAt":team.teamUpdatedAt,
+                        "reviewUpdatedAt":team.reviewUpdatedAt,
                         "elaboration": elaboration
                         })
                 
@@ -795,6 +831,6 @@ def get_team_info():
     for user in user_teams:
         users.append(user.idUser)
     
-    team_info = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value, "isTeam": team.isTeam}
+    team_info = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value, "isTeam": team.isTeam, "reviewUpdatedAt":team.reviewUpdatedAt, "teamUpdatedAt":team.teamUpdatedAt}
     
     return send_response(200, 45091, {"message": "Team info found", "users":users, "team":team_info}, "success")

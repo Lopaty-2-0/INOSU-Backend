@@ -11,6 +11,8 @@ from src.utils.team import make_team, team_deleteDir
 from src.utils.response import send_response
 from src.models.Version_Team import Version_Team
 from src.utils.reminder import create_reminder, cancel_reminder
+from src.utils.paging import user_team_paging
+from sqlalchemy import and_
 
 user_team_bp = Blueprint("user_team", __name__)
 
@@ -359,8 +361,6 @@ async def change():
 
         if User.query.filter_by(id = id).first().reminders:
             create_reminder(idUser = id, idTask = idTask)
-
-    db.session.commit()
     
     if not team.isTeam and not User_Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
         versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
@@ -370,9 +370,9 @@ async def change():
         
         db.session.commit()
         db.session.delete(team)
-        db.session.commit()
 
         await team_deleteDir(idTeam = idTeam, idTask = idTask)
+    db.session.commit()
 
     return send_response(200, 43111, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
@@ -387,3 +387,82 @@ def count_approved_without_review():
             count += 1
 
     return send_response(200, 47011, {"message": "Count of approved user_teams without review", "count": count}, "success")
+
+@user_team_bp.route("/user_team/get/type", methods = ["GET"])
+@flask_login.login_required
+def get_by_type():
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+    taskType = request.args.get("taskType", None)
+    return_tasks = []
+
+    if not amountForPaging:
+        return send_response(400, 60010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 60020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 60030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if amountForPaging > maxINT:
+        return send_response(400, 60040, {"message": "amountForPaging too big"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 60050, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 60060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 60070, {"message": "pageNumber too big"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 60080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not taskType:
+        return send_response(400, 60090, {"message": "taskType not entered"}, "error")
+    
+    if taskType not in [t.value for t in Type]:
+        return send_response(400, 60100, {"message": "taskType not our type"}, "error")
+    
+    if not searchQuery:      
+        teams = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == flask_login.current_user.id, Task.type == Type(taskType))).group_by(Team.idTeam).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == flask_login.current_user.id, Task.type == Type(taskType))).group_by(Team.idTeam).count()
+    else:
+        teams, count = user_team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, idUser = flask_login.current_user.id, taskType = taskType)
+
+    for team in teams:
+        task = Task.query.filter_by(id = team.idTask).first()
+        user = User.query.filter_by(id = task.guarantor).first()
+        return_team = {
+                        "idTeam":team.idTeam,
+                        "points":team.points,
+                        "review":team.review,
+                        "status":team.status,
+                        "name":team.name,
+                        "isTeam":team.isTeam,
+                        "reviewUpdatedAt":team.reviewUpdatedAt,
+                        "teamUpdatedAt":team.teamUpdatedAt
+                        }
+    
+        guarantor = {
+                    "id":user.id,
+                    "name":user.name,
+                    "surname": user.surname,
+                    "abbreviation": user.abbreviation,
+                    "createdAt": user.createdAt,
+                    "role": user.role.value,
+                    "profilePicture":user.profilePicture,
+                    "email":user.email
+                    }
+
+        return_tasks.append({"idTask":task.id, "name":task.name, "startDate":task.startDate, "endDate":task.endDate, "deadline":task.deadline, "task":task.task, "guarantor":guarantor, "type":task.type.value, "points":task.points, "team":return_team})
+    
+    return send_response(200, 60111, {"message": "All task for current user in this type", "tasks":return_tasks, "count":count}, "success")

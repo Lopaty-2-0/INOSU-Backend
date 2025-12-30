@@ -98,12 +98,12 @@ async def add():
         
     await task_save_sftp(task, id)
 
-    db.session.commit()
 
     if type == Type.Maturita:
         id = await make_team(newTask.id, Status.Pending)
         db.session.add(User_Team(flask_login.current_user.id, id, newTask.id))
-        db.session.commit()
+
+    db.session.commit()
 
     guarantor = {
                 "id":user.id,
@@ -116,7 +116,7 @@ async def add():
                 "email":user.email
                 }
 
-    return send_response(201, 26161, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": task.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": deadline, "points": points}}, "success")
+    return send_response(201, 26161, {"message":"Task created successfuly", "task":{"id": newTask.id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
@@ -205,7 +205,6 @@ def get():
 
     return send_response(200, 27091, {"message":"Found tasks", "tasks":all_tasks, "count":count}, "success")
 
-#TODO: Kokotina prej nefunguje
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
 async def delete():
@@ -332,8 +331,7 @@ def get_maturita():
             "points":task.points
         })
         
-    return send_response(200, 19121, {"message": "Found maturitas"
-    " for guarantor", "tasks": all_tasks, "count": count}, "success")
+    return send_response(200, 19121, {"message": "Found maturitas for guarantor", "tasks": all_tasks, "count": count}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/task", methods=["GET"])
