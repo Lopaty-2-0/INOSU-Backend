@@ -256,10 +256,14 @@ def get():
         user = User.query.filter_by(id = task.guarantor).first()
         team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask).first()
         version = Version_Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask).order_by(Version_Team.idVersion.desc()).first()
+
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
+
         guarantor = {
                     "id":user.id, 
                     "name":user.name, 
@@ -281,7 +285,8 @@ def get():
                                 "team":{
                                         "idTeam":user_team.idTeam, 
                                         "status":team.status.value, 
-                                        "elaboration":elaboration, 
+                                        "elaboration":elaboration,
+                                        "updatedAt":updatedAt, 
                                         "review":team.review, 
                                         "name":team.name, 
                                         "points":team.points
@@ -441,6 +446,15 @@ def get_by_type():
     for team in teams:
         task = Task.query.filter_by(id = team.idTask).first()
         user = User.query.filter_by(id = task.guarantor).first()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+
+        if not version:
+            elaboration = None
+            updatedAt = None
+        else:
+            elaboration = version.elaboration
+            updatedAt = version.updatedAt
+
         return_team = {
                         "idTeam":team.idTeam,
                         "points":team.points,
@@ -449,7 +463,9 @@ def get_by_type():
                         "name":team.name,
                         "isTeam":team.isTeam,
                         "reviewUpdatedAt":team.reviewUpdatedAt,
-                        "teamUpdatedAt":team.teamUpdatedAt
+                        "teamUpdatedAt":team.teamUpdatedAt,
+                        "elaboration":elaboration,
+                        "updatedAt":updatedAt
                         }
     
         guarantor = {

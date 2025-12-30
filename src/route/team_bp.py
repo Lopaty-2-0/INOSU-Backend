@@ -250,15 +250,17 @@ def get_users_task():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
         
         users.append({
                     "idTeam":team.idTeam,
                     "name":team.name,
                     "status":team.status.value,
                     "elaboration":elaboration,
-                    "elaborationUpdatedAt":version.updatedAt,
+                    "updatedAt":updatedAt,
                     "review":team.review, 
                     "points":team.points,
                     "isTeam": team.isTeam,
@@ -343,8 +345,10 @@ def get_teams_task():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
         
         right_teams.append({
                     "idTeam":team.idTeam,
@@ -353,7 +357,7 @@ def get_teams_task():
                     "status":team.status.value,
                     "elaboration":elaboration,
                     "teamUpdatedAt":team.teamUpdatedAt,
-                    "elaborationUpdatedAt":version.updatedAt,
+                    "updatedAt":updatedAt,
                     "review":team.review, 
                     "points":team.points,
                     "isTeam": team.isTeam,
@@ -421,8 +425,10 @@ def get_teams_with_status_and_guarantor():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
 
         right_teams.append({
                     "status":team.status.value,
@@ -434,7 +440,7 @@ def get_teams_with_status_and_guarantor():
                     "isTeam": team.isTeam,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
                     "points":team.points,
-                    "elaborationUpdatedAt":version.updatedAt,
+                    "updatedAt":updatedAt,
                     "elaboration": elaboration
                     })
     
@@ -499,8 +505,10 @@ def get_users_with_status_and_guarantor():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
 
         user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
         users.append({
@@ -511,7 +519,7 @@ def get_users_with_status_and_guarantor():
                     "points":team.points,
                     "isTeam": team.isTeam,
                     "teamUpdatedAt":team.teamUpdatedAt,
-                    "elaborationUpdatedAt":version.updatedAt,
+                    "updatedAt":updatedAt,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
                     "userData":{
                         "id":user.id,
@@ -578,8 +586,10 @@ def get_teams_with_status_and_idTask():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
 
         right_teams.append({
                     "status":team.status.value,
@@ -588,7 +598,7 @@ def get_teams_with_status_and_idTask():
                     "count": counts,
                     "name":team.name,
                     "points":team.points,
-                    "elaborationUpdatedAt":version.updatedAt,
+                    "updatedAt":updatedAt,
                     "isTeam": team.isTeam,
                     "teamUpdatedAt":team.teamUpdatedAt,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
@@ -658,8 +668,10 @@ def get_users_with_status_and_idTask():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
         
         user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
         users.append({
@@ -669,7 +681,7 @@ def get_users_with_status_and_idTask():
                     "review":team.review, 
                     "points":team.points,
                     "isTeam": team.isTeam,
-                    "elaborationUpdatedAt":version.updatedAt,
+                    "updatedAt":updatedAt,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
                     "teamUpdatedAt":team.teamUpdatedAt,
                     "userData":{
@@ -751,8 +763,10 @@ def get_by_status_elaboration():
 
         if not version:
             elaboration = None
+            updatedAt = None
         else:
             elaboration = version.elaboration
+            updatedAt = version.updatedAt
         
         if team.isTeam:
             user = flask_login.current_user
@@ -763,7 +777,7 @@ def get_by_status_elaboration():
                         "review":team.review, 
                         "points":team.points,
                         "isTeam": team.isTeam,
-                        "elaborationUpdatedAt":version.updatedAt,
+                        "updatedAt":updatedAt,
                         "reviewUpdatedAt":team.reviewUpdatedAt,
                         "teamUpdatedAt":team.teamUpdatedAt,
                         "userData":{
@@ -779,7 +793,7 @@ def get_by_status_elaboration():
                         "status":team.status.value,
                         "review":team.review, 
                         "idTeam":team.idTeam,
-                        "elaborationUpdatedAt":version.updatedAt,
+                        "updatedAt":updatedAt,
                         "count": User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count(),
                         "name":team.name,
                         "points":team.points,
