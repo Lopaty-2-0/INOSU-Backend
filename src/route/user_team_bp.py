@@ -459,7 +459,7 @@ def get_by_type():
                         "idTeam":team.idTeam,
                         "points":team.points,
                         "review":team.review,
-                        "status":team.status,
+                        "status":team.status.value,
                         "name":team.name,
                         "isTeam":team.isTeam,
                         "reviewUpdatedAt":team.reviewUpdatedAt,
