@@ -168,4 +168,4 @@ def user_team_paging(searchQuery, amountForPaging, pageNumber, idUser, taskType)
             )
         )
 
-    return Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == idUser, Task.type == Type(taskType), *conditions)).group_by(Team.idTeam).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == idUser, Task.type == Type(taskType), *conditions)).group_by(Team.idTeam).count()
+    return Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == idUser, Task.type == Type(taskType), *conditions)).group_by(Team.idTeam, Team.idTask).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == idUser, Task.type == Type(taskType), *conditions)).group_by(Team.idTeam, Team.idTask).count()
