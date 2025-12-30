@@ -438,8 +438,8 @@ def get_by_type():
         return send_response(400, 60100, {"message": "taskType not our type"}, "error")
     
     if not searchQuery:      
-        teams = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == 2, Task.type == Type(taskType))).group_by(Team.idTeam, Team.idTask).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == 2, Task.type == Type(taskType))).group_by(Team.idTeam, Team.idTask).count()
+        teams = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == flask_login.current_user.id, Task.type == Type(taskType))).group_by(Team.idTeam, Team.idTask).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == flask_login.current_user.id, Task.type == Type(taskType))).group_by(Team.idTeam, Team.idTask).count()
     else:
         teams, count = user_team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, idUser = flask_login.current_user.id, taskType = taskType)
 
