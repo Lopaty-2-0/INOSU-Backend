@@ -57,7 +57,8 @@ async def add():
     if len(elaboration.filename) > 255:
         return send_response(400, 38120, {"message": "File name too long"}, "error")
     if task.deadline:
-        if  task.deadline< datetime.datetime.now(datetime.timezone.utc):
+        deadline = task.deadline.replace(tzinfo=datetime.timezone.utc)
+        if deadline< datetime.datetime.now(datetime.timezone.utc):
             return send_response(400, 38130, {"message": "Cannot update version after deadline"}, "error")
     
     status = await make_version(idTask = idTask, idTeam = idTeam, file = elaboration)
@@ -109,8 +110,12 @@ async def change():
         return send_response(400, 49110, {"message": "This version doesnt exist"}, "error")
     if not User_Team.query.filter_by(idUser = flask_login.current_user.id, idTeam = idTeam, idTask = idTask).first() or team.status != Status.Approved:
         return send_response(400, 49120, {"message": "User doesnt have rights"}, "error")
-    if Task.query.filter_by(id = idTask).first().deadline < datetime.datetime.now(datetime.timezone.utc):
-        return send_response(400, 49130, {"message": "Cannot update version after deadline"}, "error")
+    
+    deadline = Task.query.filter_by(id = idTask).first().deadline
+    if deadline:
+        deadline = deadline.replace(tzinfo=datetime.timezone.utc)
+        if deadline< datetime.datetime.now(datetime.timezone.utc):
+            return send_response(400, 49130, {"message": "Cannot update version after deadline"}, "error")
     
     if version.elaboration:
         await version_delete(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration)

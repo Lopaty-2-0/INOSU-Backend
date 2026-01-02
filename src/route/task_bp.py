@@ -10,7 +10,7 @@ from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.models.Version_Team import Version_Team
 from src.utils.enums import Status, Type, Role
-from datetime import datetime
+import datetime
 from src.utils.paging import task_paging
 from src.utils.team import make_team
 from app import db, ssh, task_path, maxINT, maxFLOAT
@@ -30,7 +30,7 @@ async def add():
     deadline = request.form.get("deadline", None)
     points = request.form.get("points", None)
 
-    startDate = datetime.now()
+    startDate = datetime.datetime.now(datetime.timezone.utc)
 
     if not taskName:
         return send_response(400, 26010, {"message": "Name not entered"}, "error")
@@ -42,7 +42,7 @@ async def add():
     if len(taskName) > 45:
         return send_response(400, 26030, {"message":"Name too long"}, "error")
     try:
-        endDate = datetime.fromtimestamp(int(endDate)/1000)
+        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 26040, {"message":"End date not integer or is too far"}, "error")
     if endDate <= startDate:
@@ -66,7 +66,7 @@ async def add():
         user = flask_login.current_user
     if deadline:
         try:
-            deadline = datetime.fromtimestamp(int(deadline)/1000)
+            deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
 
             if deadline < startDate:
                 return send_response(400, 26110, {"message":"Deadline before startDate"}, "error")
