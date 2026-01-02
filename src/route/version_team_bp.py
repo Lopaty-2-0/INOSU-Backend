@@ -39,28 +39,34 @@ async def add():
         return send_response(400, 38050, {"message": "idTask not integer"}, "error")
     if idTask > maxINT or idTask <=0:
         return send_response(400, 38060, {"message": "idTask not valid"}, "error")
+    
+    task = Task.query.filter_by(id = idTask).first()
 
+    if not task:
+        return send_response(400, 38070, {"message": "This task doesnt exist"}, "error")
+    
     team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
     
     if not team:
-        return send_response(400, 38070, {"message": "This team doesnt exist"}, "error")
+        return send_response(400, 38080, {"message": "This team doesnt exist"}, "error")
     if not User_Team.query.filter_by(idUser = flask_login.current_user.id, idTeam = idTeam, idTask = idTask).first() or team.status != Status.Approved:
-        return send_response(400, 38080, {"message": "User doesnt have rights"}, "error")
+        return send_response(400, 38090, {"message": "User doesnt have rights"}, "error")
     if not elaboration:
-        return send_response(400, 38090, {"message": "Elaboration not entered"}, "error")
+        return send_response(400, 38100, {"message": "Elaboration not entered"}, "error")
     if not elaboration.filename.rsplit(".", 1)[1].lower() in elaboration_extensions:
-        return send_response(400, 38100, {"message": "Wrong file format"}, "error")
+        return send_response(400, 38110, {"message": "Wrong file format"}, "error")
     if len(elaboration.filename) > 255:
-        return send_response(400, 38110, {"message": "File name too long"}, "error")
-    if Task.query.filter_by(id = idTask).first().deadline < datetime.datetime.now():
-        return send_response(400, 38120, {"message": "Cannot update version after deadline"}, "error")
+        return send_response(400, 38120, {"message": "File name too long"}, "error")
+    if task.deadline:
+        if  task.deadline< datetime.datetime.now():
+            return send_response(400, 38130, {"message": "Cannot update version after deadline"}, "error")
     
     status = await make_version(idTask = idTask, idTeam = idTeam, file = elaboration)
 
     if not status:
-        return send_response(400, 38130, {"message": "File already exists"}, "error")
+        return send_response(400, 38140, {"message": "File already exists"}, "error")
     
-    return send_response(200, 38141, {"message": "Version_team created"}, "success")
+    return send_response(200, 38151, {"message": "Version_team created"}, "success")
 
 @version_team_bp.route("/version_team/change", methods = ["PUT"])
 @flask_login.login_required
@@ -111,7 +117,6 @@ async def change():
         await version_delete(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration)
 
         version.elaboration = None
-        version.updatedAt = datetime.datetime.now()
     db.session.commit()
 
     return send_response(200, 49141, {"message": "Version_team updated"}, "success")
@@ -176,12 +181,12 @@ def get():
         return send_response(400, 59150, {"message": "idTask not valid"}, "error")
     
     if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
-        return send_response(400, 59160, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 59160, {"message": "Nonexistent team"}, "error")
     
     versions_team = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).count()
 
     for version in versions_team:
-        versions.append({"idVersion":version.idVersion, "elaboration":version.elaboration, "updatedAt":version.updatedAt})
+        versions.append({"idVersion":version.idVersion, "elaboration":version.elaboration, "createdAt":version.createdAt})
 
     return send_response(200, 59171, {"message": "All versions for this team", "versions":versions, "count": count}, "success")

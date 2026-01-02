@@ -141,52 +141,50 @@ async def update():
     if idTeam > maxINT or idTeam <=0:
         return send_response(400, 32060, {"message": "idTeam not valid"}, "error")
     
+    if not status and not review and not points and not name:
+        return send_response(400, 32070, {"message": "Nothing entered to update"}, "error")
+
     task = Task.query.filter_by(id = idTask).first()
 
     if not task:
-        return send_response(400, 32070, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 32080, {"message": "Nonexistent task"}, "error")
     
     team = Team.query.filter_by(idTeam = idTeam, idTask = idTask).first()
 
     if not team:
-        return send_response(400, 32080, {"message": "Nonexistent team"}, "error")
+        return send_response(400, 32090, {"message": "Nonexistent team"}, "error")
     if not flask_login.current_user.id == task.guarantor:
-        return send_response(400, 32090, {"message": "User doesnt have rights"}, "error")
+        return send_response(400, 32100, {"message": "User doesnt have rights"}, "error")
     if status:
         if status not in [s.value for s in Status]:
-            return send_response(400, 32100, {"message": "Status not our type"}, "error")
+            return send_response(400, 32110, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             team.status = Status(status)
     if points or points == 0:
         try:
             points = float(points)
         except:
-            return send_response(400, 32110, {"message": "Points are not integer or float"}, "error")
+            return send_response(400, 32120, {"message": "Points are not integer or float"}, "error")
         if points > maxFLOAT or points < 0:
-            return send_response(400, 32120, {"message": "Points not valid"}, "error")
+            return send_response(400, 32130, {"message": "Points not valid"}, "error")
         if points > task.points:
-            return send_response(400, 32130, {"message": "Can not give more points tha task has"}, "error")
+            return send_response(400, 32140, {"message": "Can not give more points tha task has"}, "error")
         team.points = points
-    if review:
+    if isinstance(review, str):
         review = str(review)
         if len(review) > 65535:
-            return send_response(400, 32140, {"message": "Review too long"}, "error")
+            return send_response(400, 32150, {"message": "Review too long"}, "error")
         team.review = review
         team.reviewUpdatedAt = datetime.datetime.now()
-    if not review and team.review:
-        team.review = ""
-        team.reviewUpdatedAt = datetime.datetime.now()
-    if name:
-        name = str(name)
+    if isinstance(name, str):
         if len(name) > 255:
-            return send_response(400, 32150, {"message": "Name too long"}, "error")
-        
-    team.name = name
-    team.teamUpdatedAt = datetime.datetime.now()
+            return send_response(400, 32160, {"message": "Name too long"}, "error")
+        team.name = name
+        team.teamUpdatedAt = datetime.datetime.now()
 
     db.session.commit()
 
-    return send_response(200, 32161, {"message": "team updated"}, "success")
+    return send_response(200, 32171, {"message": "team updated"}, "success")
 
 @flask_login.login_required
 @team_bp.route("/team/get/users", methods=["GET"])
@@ -250,17 +248,17 @@ def get_users_task():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
         
         users.append({
                     "idTeam":team.idTeam,
                     "name":team.name,
                     "status":team.status.value,
                     "elaboration":elaboration,
-                    "updatedAt":updatedAt,
+                    "createdAt":createdAt,
                     "review":team.review, 
                     "points":team.points,
                     "isTeam": team.isTeam,
@@ -345,10 +343,10 @@ def get_teams_task():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
         
         right_teams.append({
                     "idTeam":team.idTeam,
@@ -357,7 +355,7 @@ def get_teams_task():
                     "status":team.status.value,
                     "elaboration":elaboration,
                     "teamUpdatedAt":team.teamUpdatedAt,
-                    "updatedAt":updatedAt,
+                    "createdAt":createdAt,
                     "review":team.review, 
                     "points":team.points,
                     "isTeam": team.isTeam,
@@ -425,10 +423,10 @@ def get_teams_with_status_and_guarantor():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
 
         right_teams.append({
                     "status":team.status.value,
@@ -440,7 +438,7 @@ def get_teams_with_status_and_guarantor():
                     "isTeam": team.isTeam,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
                     "points":team.points,
-                    "updatedAt":updatedAt,
+                    "createdAt":createdAt,
                     "elaboration": elaboration
                     })
     
@@ -505,10 +503,10 @@ def get_users_with_status_and_guarantor():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
 
         user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
         users.append({
@@ -519,7 +517,7 @@ def get_users_with_status_and_guarantor():
                     "points":team.points,
                     "isTeam": team.isTeam,
                     "teamUpdatedAt":team.teamUpdatedAt,
-                    "updatedAt":updatedAt,
+                    "createdAt":createdAt,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
                     "userData":{
                         "id":user.id,
@@ -586,10 +584,10 @@ def get_teams_with_status_and_idTask():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
 
         right_teams.append({
                     "status":team.status.value,
@@ -598,7 +596,7 @@ def get_teams_with_status_and_idTask():
                     "count": counts,
                     "name":team.name,
                     "points":team.points,
-                    "updatedAt":updatedAt,
+                    "createdAt":createdAt,
                     "isTeam": team.isTeam,
                     "teamUpdatedAt":team.teamUpdatedAt,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
@@ -668,10 +666,10 @@ def get_users_with_status_and_idTask():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
         
         user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
         users.append({
@@ -681,7 +679,7 @@ def get_users_with_status_and_idTask():
                     "review":team.review, 
                     "points":team.points,
                     "isTeam": team.isTeam,
-                    "updatedAt":updatedAt,
+                    "createdAt":createdAt,
                     "reviewUpdatedAt":team.reviewUpdatedAt,
                     "teamUpdatedAt":team.teamUpdatedAt,
                     "userData":{
@@ -763,10 +761,10 @@ def get_by_status_elaboration():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
         
         if team.isTeam:
             user = flask_login.current_user
@@ -777,7 +775,7 @@ def get_by_status_elaboration():
                         "review":team.review, 
                         "points":team.points,
                         "isTeam": team.isTeam,
-                        "updatedAt":updatedAt,
+                        "createdAt":createdAt,
                         "reviewUpdatedAt":team.reviewUpdatedAt,
                         "teamUpdatedAt":team.teamUpdatedAt,
                         "userData":{
@@ -793,7 +791,7 @@ def get_by_status_elaboration():
                         "status":team.status.value,
                         "review":team.review, 
                         "idTeam":team.idTeam,
-                        "updatedAt":updatedAt,
+                        "createdAt":createdAt,
                         "count": User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count(),
                         "name":team.name,
                         "points":team.points,

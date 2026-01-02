@@ -8,7 +8,7 @@ class Version_Team(db.Model):
     idTeam = db.Column(INTEGER(unsigned=True), primary_key=True)
     idTask = db.Column(INTEGER(unsigned=True), primary_key=True)
     elaboration = db.Column(db.String(255), nullable=True)
-    updatedAt = db.Column(db.DateTime, default=None, nullable=True)
+    createdAt = db.Column(db.DateTime, default=None, nullable=True)
 
     __table_args__ = (
         db.ForeignKeyConstraint(

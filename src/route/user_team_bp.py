@@ -259,10 +259,10 @@ def get():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
 
         guarantor = {
                     "id":user.id, 
@@ -286,7 +286,7 @@ def get():
                                         "idTeam":user_team.idTeam, 
                                         "status":team.status.value, 
                                         "elaboration":elaboration,
-                                        "updatedAt":updatedAt, 
+                                        "createdAt":createdAt, 
                                         "review":team.review, 
                                         "name":team.name, 
                                         "points":team.points
@@ -450,10 +450,10 @@ def get_by_type():
 
         if not version:
             elaboration = None
-            updatedAt = None
+            createdAt = None
         else:
             elaboration = version.elaboration
-            updatedAt = version.updatedAt
+            createdAt = version.createdAt
 
         return_team = {
                         "idTeam":team.idTeam,
@@ -465,7 +465,7 @@ def get_by_type():
                         "reviewUpdatedAt":team.reviewUpdatedAt,
                         "teamUpdatedAt":team.teamUpdatedAt,
                         "elaboration":elaboration,
-                        "updatedAt":updatedAt
+                        "createdAt":createdAt
                         }
     
         guarantor = {
