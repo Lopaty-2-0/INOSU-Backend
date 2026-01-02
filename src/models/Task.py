@@ -8,9 +8,9 @@ class Task(db.Model):
 
     id = db.Column(INTEGER(unsigned=True), primary_key = True, autoincrement = True)
     name = db.Column(db.VARCHAR(45), nullable = False)
-    startDate = db.Column(db.DateTime, default = datetime.datetime.now, nullable = False)
-    endDate = db.Column(db.DateTime, nullable = False)
-    deadline = db.Column(db.DateTime, nullable = True)
+    startDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable = False)
+    endDate = db.Column(db.DateTime(timezone = True), nullable = False)
+    deadline = db.Column(db.DateTime(timezone = True), nullable = True)
     task = db.Column(db.VARCHAR(255), nullable = False)
     guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id"), nullable = False)
     type = db.Column(db.Enum(Type), nullable = False)

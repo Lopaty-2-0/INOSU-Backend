@@ -7,7 +7,6 @@ from src.utils.response import send_response
 from src.utils.enums import Status
 from src.utils.version import make_version, version_delete
 import flask_login
-import datetime
 from app import db, maxINT
 from src.utils.check_file import check_file_size
 import datetime
@@ -58,7 +57,7 @@ async def add():
     if len(elaboration.filename) > 255:
         return send_response(400, 38120, {"message": "File name too long"}, "error")
     if task.deadline:
-        if  task.deadline< datetime.datetime.now():
+        if  task.deadline< datetime.datetime.now(datetime.timezone.utc):
             return send_response(400, 38130, {"message": "Cannot update version after deadline"}, "error")
     
     status = await make_version(idTask = idTask, idTeam = idTeam, file = elaboration)
@@ -110,7 +109,7 @@ async def change():
         return send_response(400, 49110, {"message": "This version doesnt exist"}, "error")
     if not User_Team.query.filter_by(idUser = flask_login.current_user.id, idTeam = idTeam, idTask = idTask).first() or team.status != Status.Approved:
         return send_response(400, 49120, {"message": "User doesnt have rights"}, "error")
-    if Task.query.filter_by(id = idTask).first().deadline < datetime.datetime.now():
+    if Task.query.filter_by(id = idTask).first().deadline < datetime.datetime.now(datetime.timezone.utc):
         return send_response(400, 49130, {"message": "Cannot update version after deadline"}, "error")
     
     if version.elaboration:
@@ -183,7 +182,7 @@ def get():
     if not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
         return send_response(400, 59160, {"message": "Nonexistent team"}, "error")
     
-    versions_team = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    versions_team = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).order_by(Version_Team.idVersion.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam).count()
 
     for version in versions_team:

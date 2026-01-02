@@ -72,7 +72,7 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     if not Task.query.filter_by(id = idTask).first():
         return False
     
-    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first() and not Task.query.filter_by(id = idTask, guarantor = idUser).first():
+    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first() and Task.query.filter_by(id = idTask).first().quarantor != idUser:
         return False
     
     if not idTeam and not idVersion:

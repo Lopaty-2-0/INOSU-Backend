@@ -172,12 +172,12 @@ async def update():
         if len(review) > 65535:
             return send_response(400, 32140, {"message": "Review too long"}, "error")
         team.review = review
-        team.reviewUpdatedAt = datetime.datetime.now()
+        team.reviewUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
     if isinstance(name, str):
         if len(name) > 255:
             return send_response(400, 32150, {"message": "Name too long"}, "error")
         team.name = name
-        team.teamUpdatedAt = datetime.datetime.now()
+        team.teamUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
 
     db.session.commit()
 

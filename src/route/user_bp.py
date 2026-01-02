@@ -239,7 +239,7 @@ async def update():
         if reminders:
             user.reminders = reminders.lower() == "true"
 
-        user.updatedAt = datetime.datetime.now()
+        user.updatedAt = datetime.datetime.now(datetime.timezone.utc)
         
         db.session.commit()
 
@@ -319,7 +319,7 @@ async def update():
                 goodIds.append(id)
                 db.session.add(newUser_Class)
 
-    secondUser.updatedAt = datetime.datetime.now()
+    secondUser.updatedAt = datetime.datetime.now(datetime.timezone.utc)
 
     db.session.commit()
 

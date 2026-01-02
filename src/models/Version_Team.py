@@ -1,5 +1,6 @@
 from app import db
 from sqlalchemy.dialects.mysql import INTEGER
+import datetime
 
 class Version_Team(db.Model):
     __tablename__ = "version_team"
@@ -8,7 +9,7 @@ class Version_Team(db.Model):
     idTeam = db.Column(INTEGER(unsigned=True), primary_key=True)
     idTask = db.Column(INTEGER(unsigned=True), primary_key=True)
     elaboration = db.Column(db.String(255), nullable=True)
-    createdAt = db.Column(db.DateTime, default=None, nullable=True)
+    createdAt = db.Column(db.DateTime(timezone=True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
 
     __table_args__ = (
         db.ForeignKeyConstraint(
