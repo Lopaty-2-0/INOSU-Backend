@@ -1,12 +1,13 @@
 from app import db
+from sqlalchemy.dialects.mysql import INTEGER
 
 class Specialization(db.Model):
     __tablename__ = "specialization"
 
-    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    id = db.Column(INTEGER(unsigned=True), primary_key = True, autoincrement = True)
     name = db.Column(db.VARCHAR(45), unique = True, nullable = False)
     abbreviation = db.Column(db.CHAR(1), unique = True, nullable = False)
-    lengthOfStudy = db.Column(db.Integer, nullable = False)
+    lengthOfStudy = db.Column(INTEGER(unsigned=True), nullable = False)
 
     def __init__(self, name, abbreviation, lengthOfStudy):
         self.name = name

@@ -10,8 +10,11 @@ def create_db(gHost, gUser, gPasswd, gDatabase):
 
     cursor = create_db.cursor()
     cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{gDatabase}`")
-
+    create_db.commit()
     cursor.execute("SHOW DATABASES")
 
     for db in cursor:
         print(db)
+    
+    create_db.close()
+    cursor.close()

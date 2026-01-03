@@ -5,7 +5,7 @@ from src.utils.paging import specialization_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
-from app import db
+from app import db, maxINT
 
 specialization_bp = Blueprint("specialization", __name__)
 
@@ -22,31 +22,33 @@ def add():
 
     if not lengthOfStudy:
         return send_response(400, 4020, {"message": "lengthOfStudy missing"}, "error")
+    if not abbreviation:
+        return send_response(400, 4030, {"message": "abbreviation missing"}, "error")
+    if not name:
+        return send_response(400, 4040, {"message": "name missing"}, "error")
+    
+    name = str(name)
+    
     try:
         lengthOfStudy = int(lengthOfStudy)
-        if lengthOfStudy > 2147483647:
-            lengthOfStudy = "a"
-            lengthOfStudy = int(lengthOfStudy)
     except:
-        return send_response(400, 4030, {"message": "lengthOfStudy not integer"}, "error")
-    if not abbreviation:
-        return send_response(400, 4040, {"message": "abbreviation missing"}, "error")
+        return send_response(400, 4050, {"message": "lengthOfStudy not integer"}, "error")
+    if lengthOfStudy > maxINT or lengthOfStudy <= 0:
+        return send_response(400, 4060, {"message": "lengthOfStudy not valid"}, "error")
     if len(abbreviation) > 1:
-        return send_response(400, 4050, {"message": "abbreviation too long"}, "error")
+        return send_response(400, 4070, {"message": "abbreviation too long"}, "error")
     if Specialization.query.filter_by(abbreviation = abbreviation).first():
-        return send_response(400, 4060, {"message": "abbreviation already in use"}, "error")
-    if not name:
-        return send_response(400, 4070, {"message": "name missing"}, "error")
-    if len(name) > 100:
-            return send_response(400, 4080, {"message": "Name too long"}, "error")
+        return send_response(400, 4080, {"message": "abbreviation already in use"}, "error")
+    if len(name) > 45:
+            return send_response(400, 4090, {"message": "Name too long"}, "error")
     if Specialization.query.filter_by(name = name).first():
-        return send_response(400, 4090, {"message": "name already in use"}, "error")
+        return send_response(400, 4100, {"message": "name already in use"}, "error")
     
     newSpecialization = Specialization(lengthOfStudy = lengthOfStudy, abbreviation = abbreviation, name = name)
     db.session.add(newSpecialization)
     db.session.commit()
 
-    return send_response (201, 4101, {"message": "Specialization created successfuly", "specialization":{"lengthOfStudy":newSpecialization.lengthOfStudy, "abbreviation":newSpecialization.abbreviation, "name":newSpecialization.name, "id":newSpecialization.id}}, "success")
+    return send_response (201, 4111, {"message": "Specialization created successfuly", "specialization":{"lengthOfStudy":newSpecialization.lengthOfStudy, "abbreviation":newSpecialization.abbreviation, "name":newSpecialization.name, "id":newSpecialization.id}}, "success")
 
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -67,13 +69,24 @@ def delete():
         idSpecialization = [idSpecialization]
     
     for id in idSpecialization:
-        if not Specialization.query.filter_by(id = id).first():
+        try:
+            id = int(id)
+        except:
+            badIds.append(id)
+            continue
+
+        if id > maxINT or id <= 0:
+            badIds.append(id)
+            continue
+
+        if not Specialization.query.filter_by(id = id).first() :
             badIds.append(id)
             continue
         if Class.query.filter_by(idSpecialization = id).first():
             classIds.append(id)
             continue
-
+        
+        db.session.commit()
         db.session.delete(Specialization.query.filter_by(id = id).first())
         goodIds.append(id)
 
@@ -104,18 +117,23 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 29030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 29040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 29040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 29050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 29050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 29060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 29070, {"message": "amountForPaging too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 29060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 29080, {"message": "pageNumber must be bigger than 0"}, "error")
 
     if not searchQuery:
         specialization = Specialization.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -123,10 +141,28 @@ def get():
     else:
         specialization, count = specialization_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)
 
-    if not specialization:
-        return send_response (400, 29070, {"message": "No specialization found"}, "error")
-    
     for s in specialization:
         specializations.append({"id":s.id,"name":s.name, "abbreviation":s.abbreviation, "lengthOfStudy":s.lengthOfStudy})
 
-    return send_response (200, 29081, {"message": "Specializations found", "specializations":specializations, "count":count}, "success")
+    return send_response (200, 29091, {"message": "Specializations found", "specializations":specializations, "count":count}, "success")
+
+@specialization_bp.route("/specialization/get/id", methods=["GET"])
+@flask_login.login_required
+def get_by_id():
+    id = request.args.get("id", None)
+
+    if not id:
+        return send_response(400, 54010, {"message": "Id not entered"}, "error")
+    try:
+        id = int(id)
+    except:
+        return send_response(400, 54020, {"message": "Id not integer"}, "error")
+    if id > maxINT or id <=0:
+        return send_response(400, 54030, {"message": "Id not valid"}, "error")
+
+    specialization = Specialization.query.filter_by(id=id).first()
+    
+    if not specialization:
+        return send_response(404, 54040, {"message": "Specialization not found"}, "error")
+
+    return send_response(200, 54051, {"message": "Specialization found", "specialization": {"id":specialization.id,"name":specialization.name, "abbreviation":specialization.abbreviation, "lengthOfStudy":specialization.lengthOfStudy}}, "success")

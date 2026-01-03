@@ -9,6 +9,7 @@ from src.route.user_class_bp import user_class_bp
 from src.route.user_team_bp import user_team_bp
 from src.route.team_bp import team_bp
 from src.route.check_file_bp import check_file_bp
+from src.route.version_team_bp import version_team_bp
 
 routes_bp = Blueprint("routes", __name__)
 routes_bp.register_blueprint(auth_bp)
@@ -21,3 +22,4 @@ routes_bp.register_blueprint(user_class_bp)
 routes_bp.register_blueprint(user_team_bp)
 routes_bp.register_blueprint(team_bp)
 routes_bp.register_blueprint(check_file_bp)
+routes_bp.register_blueprint(version_team_bp)

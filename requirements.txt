@@ -11,3 +11,4 @@ flask-cors
 paramiko
 flask[async]
 Flask-Migrate
+APScheduler

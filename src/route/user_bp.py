@@ -10,7 +10,7 @@ from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db, pfp_path, url
+from app import db, pfp_path, url, maxINT
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
@@ -44,17 +44,16 @@ def add():
     abbreviation = data.get("abbreviation", None)
     role = data.get("role", None)
     email = data.get("email", None)
-    password = str(data.get("password", None))
+    password = data.get("password", None)
     idClass = data.get("classes", None)
-    lastUser = User.query.order_by(User.id.desc()).first()
 
     if not name:
         return send_response(400, 1020, {"message": "Name is not entered"}, "error")
-    if len(name) > 100:
+    if len((name)) > 100:
         return send_response(400, 1030, {"message": "Name too long"}, "error")
     if not surname:
         return send_response(400, 1040, {"message": "Surname is not entered"}, "error")
-    if len(surname) > 100:
+    if len((surname)) > 100:
         return send_response(400, 1050, {"message": "Surname too long"}, "error")
     if not role:
         return send_response(400, 1060,{"message": "Role is not entered"}, "error")
@@ -62,6 +61,13 @@ def add():
         return send_response(400, 1070, {"message": "Role not our type"}, "error")
     if not password:
         return send_response(400, 1080, {"message": "Password is not entered"}, "error")
+    
+    password = str(password)
+    email = str(email)
+    name = str(name)
+    surname = str(surname)
+    
+
     if len(password) < 5:
         return  send_response(400, 1090, {"message": "Password is too short"}, "error")
     if not email:
@@ -73,7 +79,8 @@ def add():
     if User.query.filter_by(email = email).first():
         return send_response(400, 1130, {"message": "Email is already in use"}, "error")
     if abbreviation:
-        abbreviation = str(abbreviation).upper()
+        abbreviation = str(abbreviation)
+        abbreviation = (abbreviation).upper()
         if User.query.filter_by(abbreviation = abbreviation).first():
             return send_response(400, 1140, {"message": "Abbreviation is already in use"}, "error")
         if len(abbreviation) > 4:
@@ -81,32 +88,35 @@ def add():
     else:
         abbreviation = None
 
-    newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
+    newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
 
     db.session.add(newUser)
+    db.session.commit()
 
     if idClass:
-        if lastUser:
-            idUser = lastUser.id + 1
-        else:
-            idUser = 1
+        if not isinstance(idClass, list):
+            idClass = [idClass]
+        idUser = newUser.id
 
-        if role == Role.Student:
+        if newUser.role == Role.Student:
             for id in idClass:
-                if not Class.query.filter_by(id=id).first():
+                try:
+                    id = int(id)
+                except:
+                    badIds.append(id)
+                    continue
+
+                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
                     badIds.append(id)
                     continue
 
                 newUser_Class = User_Class(idUser, id)
                 goodIds.append(id)
                 db.session.add(newUser_Class)
+            db.session.commit()
 
-    db.session.commit()
-
-    return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}}, "success")
-
-
-    
+    return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}, "goodIds": goodIds, "badIds":badIds}, "success")
+  
 @user_bp.route("/user/add/file", methods = ["POST"])
 @check_file_size(4*1024*1024)
 @flask_login.login_required
@@ -133,14 +143,24 @@ def add_file():
         abbreviation = userData.get("abbreviation", None)
         role = userData.get("role", None)
         email = userData.get("email", None)
-        password = str(userData.get("password", None))
+        password = (userData.get("password", None))
         idClass = userData.get("classes", None)
 
-        if not name or not surname or not role or role not in [r.value for r in Role] or not password or len(password) < 5 or not email or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
+        if not name or not surname or not role or not password or not email:
+            badUsers += 1
+            continue
+
+        password = str(password)
+        email = str(email)
+        name = str(name)
+        surname = str(surname)   
+
+        if len(name) > 100 or len(surname) > 100 or role not in [r.value for r in Role] or len(password) < 5 or len(email) > 255 or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
             badUsers += 1
             continue
         if abbreviation:
-            abbreviation = str(abbreviation).upper()
+            abbreviation = str(abbreviation)
+            abbreviation = (abbreviation).upper()
             if User.query.filter_by(abbreviation = abbreviation).first():
                 badUsers += 1
                 continue
@@ -151,14 +171,19 @@ def add_file():
             abbreviation = None
         allUsers += 1
 
-        newUser = User(name = str(name), surname = str(surname), abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
+        newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
         db.session.add(newUser)
         db.session.commit()
 
         if idClass:
             if newUser.role == Role.Student:
                 for id in idClass:
-                    if not Class.query.filter_by(id=id).first():
+                    try:
+                        id = int(id)
+                    except:
+                        badIds.append(id)
+                        continue
+                    if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
                         badIds.append(id)
                         continue
 
@@ -185,6 +210,7 @@ async def update():
     idUser = request.form.get("idUser", None)
     reminders = request.form.get("reminders", None)
     raw_id_class = request.form.get("idClass", "")
+    profilePicture = request.files.get("profilePicture", None)
     
     try:
         idClass = json.loads(raw_id_class) if raw_id_class.strip() else []
@@ -193,9 +219,7 @@ async def update():
 
     if not isinstance(idClass, list):
         idClass = [idClass]
-    
-    #gets profile picture
-    profilePicture = request.files.get("profilePicture", None)
+
     user = flask_login.current_user
     badIds = []
     goodIds = []
@@ -205,74 +229,102 @@ async def update():
         if not profilePicture and not reminders:
             return send_response(400, 2010, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
+            if len(profilePicture.filename) > 255:
+                return send_response(400, 2020, {"message": "Filename too long"}, "error")
             if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return send_response(400, 2020, {"message": "Wrong file format"}, "error")
+                return send_response(400, 2030, {"message": "Wrong file format"}, "error")
+                
             await pfp_save(pfp_path, user, profilePicture)
 
         if reminders:
             user.reminders = reminders.lower() == "true"
 
-        user.updatedAt = datetime.datetime.now()
+        user.updatedAt = datetime.datetime.now(datetime.timezone.utc)
         
         db.session.commit()
 
-        return send_response(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
-    else:
-        if not user.role == Role.Admin:
-            return send_response(400, 2040, {"message": "No permission for that"}, "error")
-        if not name and not surname and not abbreviation and not role and not profilePicture and not email and not idClass:
-            return send_response(400, 2050, {"message": "Nothing entered to change"}, "error")
+        return send_response(200, 2041, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
 
-        secondUser = User.query.filter_by(id = idUser).first()
+    if not user.role == Role.Admin:
+        return send_response(400, 2050, {"message": "No permission for that"}, "error")
+    
+    try:
+        idUser = int(idUser)
+    except:
+            return send_response(400, 2060, {"message": "IdUser not integer"}, "error")
+    
+    if idUser > maxINT or idUser <= 0:
+        return send_response(400, 2070, {"message": "IdUser not valid"}, "error")
 
-        if not secondUser:
-            return send_response(400, 2060, {"message": "Wrong user id"}, "error")
-        if name:
-            secondUser.name = str(name)  
-        if surname:
-            secondUser.surname = str(surname)
-        if abbreviation:
-            if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
-                return send_response(400, 2070, {"message": "Abbreviation is already in use"}, "error")
-            if len(str(abbreviation)) > 4:
-                return send_response(400, 2080, {"message": "Abbreviation is too long"}, "error")
-            secondUser.abbreviation = str(abbreviation).upper()
-        if role in [r.value for r in Role]:
-            secondUser.role = Role(role)
-        if email:
-            if not re.match(email_regex, email):
-                return send_response(400, 2090, {"message": "Wrong email format"}, "error")
-            if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
-                return send_response(400, 2100, {"message": "Email is already in use"}, "error")
-            if len(email) > 255:
-                return send_response(400, 2110, {"message": "Email too long"}, "error")
-            secondUser.email = email
-        if profilePicture:
-            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return send_response(400, 2120, {"message": "Wrong file format"}, "error")
-            await pfp_save(pfp_path, secondUser, profilePicture)
+    secondUser = User.query.filter_by(id = idUser).first()
 
-        if idClass:
-            if secondUser.role == Role.Student:
-                for id in idClass:
-                    if not Class.query.filter_by(id=id).first():
-                        badIds.append(id)
-                        continue
-
-                    newUser_Class = User_Class(secondUser.id, id)
-                    goodIds.append(id)
-                    db.session.add(newUser_Class)     
-            else:
-                User_class = User_Class.query.filter_by(idUser = secondUser.id)
-                for cl in User_class:
-                    db.session.delete(cl)
-
-        secondUser.updatedAt = datetime.datetime.now()
-
-        db.session.commit()
-
-        return send_response(200, 2131, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role.value, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt, "reminders":secondUser.reminders}, "badIds":badIds, "goodIds":goodIds}, "success")
+    if not secondUser:
+        return send_response(400, 2080, {"message": "Wrong user id"}, "error")
+    if name:
+        name = str(name)
+        if len(name) > 255:
+            return send_response(400, 2090, {"message": "Name too long"}, "error")
+        secondUser.name = (name)  
+    if surname:
+        surname = str(surname)
+        if len(surname) > 255:
+            return send_response(400, 2100, {"message": "Surname too long"}, "error")
+        secondUser.surname = (surname)
+    if abbreviation:
+        abbreviation = str(abbreviation)
+        if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
+            return send_response(400, 2110, {"message": "Abbreviation is already in use"}, "error")
+        if len(abbreviation) > 4:
+            return send_response(400, 2120, {"message": "Abbreviation is too long"}, "error")
+        secondUser.abbreviation = abbreviation.upper()
+    if role in [r.value for r in Role]:
+        secondUser.role = Role(role)
+        if Role(role)!= Role.Student:
+            User_class = User_Class.query.filter_by(idUser = secondUser.id)
+            for cl in User_class:
+                db.session.delete(cl)
+    if email:
+        email = str(email)
+        if not re.match(email_regex, email):
+            return send_response(400, 2130, {"message": "Wrong email format"}, "error")
+        if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
+            return send_response(400, 2140, {"message": "Email is already in use"}, "error")
+        if len(email) > 255:
+            return send_response(400, 2150, {"message": "Email too long"}, "error")
+        secondUser.email = email
+    if profilePicture:
+        if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
+            return send_response(400, 2160, {"message": "Wrong file format"}, "error")
+        if len(profilePicture.filename) > 255:
+            return send_response(400, 2170, {"message": "Filename too long"}, "error")
+        await pfp_save(pfp_path, secondUser, profilePicture)
         
+    User_class = User_Class.query.filter_by(idUser = secondUser.id)
+    for cl in User_class:
+        db.session.delete(cl)
+
+    if idClass:
+        if secondUser.role == Role.Student:
+            for id in idClass:
+                try:
+                    id = int(id)
+                except:
+                    badIds.append(id)
+                    continue
+                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first():
+                    badIds.append(id)
+                    continue
+
+                newUser_Class = User_Class(secondUser.id, id)
+                goodIds.append(id)
+                db.session.add(newUser_Class)
+
+    secondUser.updatedAt = datetime.datetime.now(datetime.timezone.utc)
+
+    db.session.commit()
+
+    return send_response(200, 2181, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role.value, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt, "reminders":secondUser.reminders}, "badIds":badIds, "goodIds":goodIds}, "success")
+    
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
 async def delete():
@@ -288,8 +340,18 @@ async def delete():
     if not isinstance(idUser, list):
         idUser = [idUser]
     for id in idUser:
+        try:
+            id = int(id)
+        except:
+            badIds.append(id)
+            continue
+
+        if id > maxINT or id <= 0:
+            badIds.append(id)
+            continue
         if flask_login.current_user.id == id:
             return send_response(400, 3030, {"message": "Can not delete yourself"}, "error")
+        
         delUser = User.query.filter_by(id = id).first()
 
         if delUser:
@@ -305,9 +367,9 @@ async def delete():
                 await delete_teams_for_task(task.id)
                 await task_delete_sftp(task.id)
                 db.session.delete(task)
-            db.session.commit()
 
             await pfp_delete(pfp_path, delUser)
+            db.session.commit()
             db.session.delete(delUser)
             goodIds.append(id)
         else:
@@ -317,28 +379,32 @@ async def delete():
 
     db.session.commit()
 
-    return send_response(200, 3040, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
+    return send_response(200, 3051, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 
 @user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required
 def password_reset():
     data = request.get_json(force = True)
-    oldPassword = str(data.get("oldPassword", None))
-    newPassword = str(data.get("newPassword", None))
+    oldPassword = (data.get("oldPassword", None))
+    newPassword = (data.get("newPassword", None))
 
     if not oldPassword:
         return send_response(400, 11010, {"message": "Old password not entered"}, "error")
     if not newPassword:
         return send_response(400, 11020, {"message": "New password not entered"}, "error")
+    
+    newPassword = str(newPassword)
+    oldPassword = str(oldPassword)
+
     if not check_password_hash(flask_login.current_user.password, oldPassword):
         return send_response(400, 11030, {"message": "Wrong password"}, "error")
-    if len(str(newPassword)) < 5:
+    if len(newPassword) < 5:
         return send_response(400, 11040, {"message": "Password is too short"}, "error")
     
     flask_login.current_user.password = generate_password_hash(newPassword)
     db.session.commit()
 
-    return send_response(200, 11040, {"message": "Password changed successfuly"}, "success")
+    return send_response(200, 11051, {"message": "Password changed successfuly"}, "success")
 
 @user_bp.route("/user/password/new", methods = ["POST"])
 def password_res():
@@ -347,10 +413,15 @@ def password_res():
     
     if not email:
         return send_response(400, 12010, {"message": "Email is missing"}, "error")
+    
+    email = str(email)
+
     if not re.match(email_regex, email):
         return send_response(400, 12020, {"message": "Wrong email format"}, "error")
+    if len(email) > 255:
+        return send_response(400, 12030, {"message": "Email too long"}, "error")
     if not User.query.filter_by(email = email).first():
-        return send_response(400, 12030, {"message": "No user with that email addres"}, "error")
+        return send_response(400, 12040, {"message": "No user with that email addres"}, "error")
     
     token = flask_jwt_extended.create_access_token(fresh = True, identity = email, expires_delta= datetime.timedelta(hours = 1),additional_claims = {"email": email})
     link = url + "/password/forget/reset?token=" + token
@@ -359,7 +430,7 @@ def password_res():
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
     send_email(email, "Password reset", html, text)
 
-    return send_response(200, 12041, {"message": "Token created successfuly and send to email"}, "success")
+    return send_response(200, 12051, {"message": "Token created successfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["POST"])
 def password_verify():
@@ -377,23 +448,31 @@ def password_verify():
 def password_new():
     data = request.get_json(force=True)
     email = data.get("email", None)
-    newPassword = str(data.get("newPassword", None))
+    newPassword = (data.get("newPassword", None))
 
+    email = str(email)
+    
     if not re.match(email_regex, email):
         return send_response(400, 14010, {"message": "Wrong email format"}, "error")
+    if len(email) > 255:
+        return send_response(400, 14020, {"message": "Email too long"}, "error")
+    
     user = User.query.filter_by(email = email).first()
 
     if not user:
-        return send_response(400, 14020, {"message": "Wrong email"}, "error")
+        return send_response(400, 14030, {"message": "Wrong email"}, "error")
     if not newPassword:
-        return send_response(400, 14030, {"message": "Password missing"}, "error")
-    if len(str(newPassword)) < 5:
-        return send_response(400, 14040, {"message": "Password too short"}, "error")
+        return send_response(400, 14040, {"message": "Password missing"}, "error")
+    
+    newPassword = str(newPassword)
+
+    if len(newPassword) < 5:
+        return send_response(400, 14050, {"message": "Password too short"}, "error")
     
     user.password = generate_password_hash(newPassword)
     db.session.commit()
     
-    return send_response(200, 14040, {"message": "Password reseted successfuly"}, "success")
+    return send_response(200, 14061, {"message": "Password reseted successfuly"}, "success")
 
 @user_bp.route("/user/get/id", methods = ["GET"])
 @flask_login.login_required
@@ -402,30 +481,21 @@ def get_by_id():
 
     if not id:
         return send_response(400, 18010, {"message": "Id not entered"}, "error")
+    
+    try:
+        id = int(id)
+    except:
+        return send_response(400, 18020, {"message": "Id not integer"}, "error")
+    
+    if id > maxINT or id <= 0:
+        return send_response(400, 18030, {"message": "Id not valid"}, "error")
 
     user = User.query.filter_by(id = id).first()
     
     if not user:
-        return send_response(400, 18020, {"message": "User not found"}, "error")
+        return send_response(404, 18040, {"message": "User not found"}, "error")
     
-    return send_response(200, 18031, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
-
-@user_bp.route("/user/get/email", methods = ["GET"])
-@flask_login.login_required
-def get_by_email():
-    email = request.args.get("email", None)
-
-    if not email:
-        return send_response(400, 19010, {"message": "Email not entered"}, "error")
-    if not re.match(email_regex, email):
-        return send_response(400, 19020, {"message": "Wrong email format"}, "error")
-    
-    user = User.query.filter_by(email = email).first()
-    
-    if not user:
-        return send_response(400, 19030, {"message": "User not found"}, "error")
-    
-    return send_response(200, 19041, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
+    return send_response(200, 18051, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
 @flask_login.login_required
 @user_bp.route("/user/get/role", methods = ["GET"])
@@ -439,7 +509,7 @@ def get_by_role():
 
     if not amountForPaging:
         return send_response(400, 20010, {"message": "amountForPaging not entered"}, "error")
-    
+
     try:
         amountForPaging = int(amountForPaging)
     except:
@@ -448,24 +518,29 @@ def get_by_role():
     if amountForPaging < 1:
         return send_response(400, 20030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 20040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 20040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 20050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 20050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 20060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 20070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 20060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 20080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not role:
-        return send_response(400, 20070, {"message": "Role not entered"}, "error")
+        return send_response(400, 20090, {"message": "Role not entered"}, "error")
     
     if role not in [r.value for r in Role]:
-        return send_response(400, 20080, {"message": "Role not our type"}, "error")
+        return send_response(400, 20100, {"message": "Role not our type"}, "error")
     
     if not searchQuery:
         user = User.query.filter_by(role = Role(role)).offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -473,9 +548,6 @@ def get_by_role():
 
     else:
         user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
-
-    if not user:
-        return send_response(400, 20090, {"message":"No users found"}, "error")
             
     for u in user:
         users.append({
@@ -491,7 +563,7 @@ def get_by_role():
                         "updatedAt":u.updatedAt
                         })
     
-    return send_response(200, 20101, {"message": "Users found", "users": users, "count":count}, "success")
+    return send_response(200, 20111, {"message": "Users found", "users": users, "count":count}, "success")
 
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
@@ -529,7 +601,7 @@ def get_no_class():
 
     if not amountForPaging:
         return send_response(400, 51010, {"message": "amountForPaging not entered"}, "error")
-    
+
     try:
         amountForPaging = int(amountForPaging)
     except:
@@ -538,28 +610,31 @@ def get_no_class():
     if amountForPaging < 1:
         return send_response(400, 51030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 51040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 51040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 51050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 51050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 51060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 51070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 51060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 51080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
-        user = User.query.filter_by(role = Role.Student).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.filter_by(role = Role.Student).count()
+        user = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).count()
 
     else:
-        user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role.Student, typeOfSpecialSearch = "role")
+        user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfSpecialSearch = "noClass")
 
-    if not user:
-        return send_response(400, 51070, {"message":"No users found"}, "error")
 
     for s in user:
         if not User_Class.query.filter_by(idUser = s.id).first():
@@ -575,7 +650,7 @@ def get_no_class():
                         "updatedAt":s.updatedAt
                         })
 
-    return send_response(200, 51081, {"message": "All students without class", "users": users, "count": count}, "success")
+    return send_response(200, 51091, {"message": "All students without class", "users": users, "count": count}, "success")
 
 @flask_login.login_required
 @user_bp.route("/user/get/count/byRole", methods=["GET"])
@@ -611,7 +686,7 @@ def get_user_page():
 
     if not amountForPaging:
         return send_response(400, 52010, {"message": "amountForPaging not entered"}, "error")
-    
+
     try:
         amountForPaging = int(amountForPaging)
     except:
@@ -620,27 +695,29 @@ def get_user_page():
     if amountForPaging < 1:
         return send_response(400, 52030, {"message": "amountForPaging smaller than 1"}, "error")
     
+    if amountForPaging > maxINT:
+        return send_response(400, 52040, {"message": "amountForPaging too big"}, "error")
+    
     if not pageNumber:
-        return send_response(400, 52040, {"message": "pageNumber not entered"}, "error")
+        return send_response(400, 52050, {"message": "pageNumber not entered"}, "error")
     
     try:
         pageNumber = int(pageNumber)
     except:
-        return send_response(400, 52050, {"message": "pageNumber not integer"}, "error")
+        return send_response(400, 52060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 52070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
 
     if pageNumber < 0:
-        return send_response(400, 52060, {"message": "pageNumber must be bigger than 0"}, "error")
+        return send_response(400, 52080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
         users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = User.query.count()
     else:
         users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
-
-    if not users:
-        return send_response(400, 52070, {"message":"No users found"}, "error")
 
     for user in users:
         right_users.append({
@@ -656,5 +733,4 @@ def get_user_page():
                             "updatedAt":user.updatedAt,
                             "reminders":user.reminders
                         })
-
-    return send_response(200, 52081, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 52091, {"message": "Users found", "users":right_users, "count":count}, "success")

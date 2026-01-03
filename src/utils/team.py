@@ -3,13 +3,13 @@ from src.models.User_Team import User_Team
 from src.utils.sftp_utils import sftp_stat_async, sftp_removeDir_async, sftp_createDir_async
 from app import db, task_path, ssh
 
-async def make_team(idTask, status, name):
+async def make_team(idTask, status, name, isTeam):
     if not Team.query.filter_by(idTask = idTask).first():
         id = 1
     else:
         id = Team.query.filter_by(idTask=idTask).order_by(Team.idTeam.desc()).first().idTeam + 1
     
-    new_team = Team(idTeam = id, idTask = idTask, review = None, status = status, name = name, points = None)
+    new_team = Team(idTeam = id, idTask = idTask, review = None, status = status, name = name, points = None, isTeam = isTeam)
     await team_createDir(id, idTask)
     db.session.add(new_team)
     db.session.commit()
@@ -26,11 +26,11 @@ async def delete_teams_for_task(idTask):
             db.session.delete(user)
 
         db.session.delete(team)
-        await team_delete(team.idTeam, idTask)
+        await team_deleteDir(team.idTeam, idTask)
         
     db.session.commit()
 
-async def team_delete(idTeam, idTask):
+async def team_deleteDir(idTeam, idTask):
     file_path = task_path + str(idTask) + "/" + str(idTeam)
     if not await sftp_stat_async(ssh, file_path):
         return False

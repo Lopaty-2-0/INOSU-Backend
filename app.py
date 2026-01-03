@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
 from src.utils.enums import Role
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -24,6 +25,8 @@ secret_key = os.getenv("SECRET_KEY")
 task_path = os.getenv("TASK_PATH")
 pfp_path = os.getenv("PFP_PATH")
 url = os.getenv("URL")
+maxINT = 4294967295
+maxFLOAT = 3.40e+38
 
 try:
     app = Flask(__name__)
@@ -34,19 +37,21 @@ try:
     app.config["JWT_SECRET_KEY"] = secret_key.encode("utf-8")
     app.config["UPLOAD_FOLDER"] = "/files/profilePictures"
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True
-    app.config["REMEMBER_COOKIE_SECURE"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = False
     app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
     app.config["SESSION_COOKIE_SAMESITE"] = "None"
-    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
     app.config["REMEMBER_COOKIE_REFRESH_EACH_REQUEST"] = True
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
-    
+
     ssh = ssh_connect()
     db = sql(app)
     jwt = JWTManager(app)
     migration = Migrate(app, db)
+    scheduler = BackgroundScheduler()
+    scheduler.start()
     CORS( 
         app,
         supports_credentials=True,
@@ -92,7 +97,7 @@ try:
     app.register_blueprint(routes_bp)
 
 except OperationalError as db_error:
-    if db_error.code == 1049:
+    if db_error.orig.args[0] == 1049:
         try:
             create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
             print("Creating database")
