@@ -75,11 +75,14 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     if not User.query.filter_by(id = idUser).first():
         return False
         
+    task = Task.query.filter_by(id = idTask).first()
     
-    if not Task.query.filter_by(id = idTask).first():
+    if not task:
         return False
-    
-    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser).first() and Task.query.filter_by(id = idTask).first().guarantor != idUser:
+
+    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser).first()
+
+    if not user_team and task.guarantor != idUser:
         return False
     
     if not idTeam and not idVersion:
@@ -87,8 +90,9 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     else:
         if not Team.query.filter_by(idTask = idTask, idTeam = idTeam).first():
             return False
-        if User_Team.query.filter_by(idTask = idTask, idUser = idUser).first().idTeam != idTeam:
-            return False
+        if user_team:
+            if user_team.idTeam != idTeam:
+                return False
         if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion).first():
             return False
         
