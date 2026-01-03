@@ -18,7 +18,7 @@ expires_in = 600
 @check_file_bp.route("/file/pfp/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("profilePictures")
-def check_pfp(filename, idTask, idTeam, idVersion):
+def check_pfp(filename):
     message = pfp_path + filename
     expiry_timestamp = int(time.time()) + expires_in
     payload = f"{message}:{expiry_timestamp}"
@@ -62,7 +62,7 @@ def check_tasks(filename, idTask, idTeam, idVersion):
 @check_file_bp.route("/file/task/<string:idTask>/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("task")
-def check_task(filename, idTask, idTeam, idVersion):
+def check_task(filename, idTask):
     message = task_path + idTask + "/" + filename
 
     expiry_timestamp = int(time.time()) + expires_in
