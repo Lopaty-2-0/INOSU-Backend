@@ -23,8 +23,13 @@ def check_file_size(max_length):
 def check_file_access(folder_type):
     def decorator(func):
         @wraps(func)
-        async def wrapper(filename, id = None, id2=None, id3 = None ,*args, **kwargs):
+        async def wrapper(*args, **kwargs):
+            idTask = kwargs.get("idTask")
+            idTeam = kwargs.get("idTeam")
+            idVersion = kwargs.get("idVersion")
+            filename = kwargs.get("filename")
             idUser = flask_login.current_user.id
+
             if not idUser:
                 abort(403)
 
@@ -32,15 +37,15 @@ def check_file_access(folder_type):
                 if not await has_access_to_pfp(idUser, filename):
                     abort(403)
             elif folder_type == "tasks":
-                if not await has_access_to_tasks(idUser, id, id2, id3 ,filename):
+                if not await has_access_to_tasks(idUser, idTask, idTeam, idVersion ,filename):
                     abort(403)
             elif folder_type == "task":
-                if not await has_access_to_tasks(idUser, id, None, None, filename):
+                if not await has_access_to_tasks(idUser, idTask, None, None, filename):
                     abort(403)
             else:
                 abort(403)
 
-            return func(filename, id, id2, id3, *args, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
     return decorator
 
@@ -61,18 +66,24 @@ async def has_access_to_pfp(idUser, filename):
 
 async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     if not idUser:
+        print("kokot")
         return False
     
     if not idTask:
+        print("debil")
         return False
     
     if not User.query.filter_by(id = idUser).first():
+        print("retard")
         return False
+        
     
     if not Task.query.filter_by(id = idTask).first():
+        print("pes")
         return False
     
     if not User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first() and Task.query.filter_by(id = idTask).first().guarantor != idUser:
+        print("no nene")
         return False
     
     if not idTeam and not idVersion:
