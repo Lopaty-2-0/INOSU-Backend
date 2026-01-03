@@ -88,10 +88,11 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     if not idTeam and not idVersion:
         path = task_path + idTask + "/" + filename
     else:
-        if not Team.query.filter_by(idTask = idTask, idTeam = idTeam).first():
+        team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
+        if not team:
             return False
         if user_team:
-            if user_team.idTeam != idTeam:
+            if user_team.idTeam != team.idTeam:
                 return False
         if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion).first():
             return False
