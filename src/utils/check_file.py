@@ -8,6 +8,7 @@ from src.models.Task import Task
 from src.models.User import User
 from src.models.User_Team import User_Team
 from src.models.Team import Team
+from src.models.Version_Team import Version_Team
 
 def check_file_size(max_length):
     def decorator(f):
@@ -66,29 +67,31 @@ async def has_access_to_pfp(idUser, filename):
 
 async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     if not idUser:
-        print("kokot")
         return False
     
     if not idTask:
-        print("debil")
         return False
     
     if not User.query.filter_by(id = idUser).first():
-        print("retard")
         return False
         
     
     if not Task.query.filter_by(id = idTask).first():
-        print("pes")
         return False
     
-    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first() and Task.query.filter_by(id = idTask).first().guarantor != idUser:
-        print("no nene")
+    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser).first() and Task.query.filter_by(id = idTask).first().guarantor != idUser:
         return False
     
     if not idTeam and not idVersion:
         path = task_path + idTask + "/" + filename
     else:
+        if not Team.query.filter_by(idTask = idTask, idTeam = idTeam).first():
+            return False
+        if User_Team.query.filter_by(idTask = idTask, idUser = idUser).first().idTeam != idTeam:
+            return False
+        if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion).first():
+            return False
+        
         path = task_path + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
     
     if not await sftp_stat_async(ssh, path):
