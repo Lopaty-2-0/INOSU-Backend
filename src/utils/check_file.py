@@ -8,6 +8,7 @@ from src.models.Task import Task
 from src.models.User import User
 from src.models.User_Team import User_Team
 from src.models.Team import Team
+from src.models.Version_Team import Version_Team
 
 def check_file_size(max_length):
     def decorator(f):
@@ -23,8 +24,13 @@ def check_file_size(max_length):
 def check_file_access(folder_type):
     def decorator(func):
         @wraps(func)
-        async def wrapper(filename, id = None, id2=None, id3 = None ,*args, **kwargs):
+        async def wrapper(*args, **kwargs):
+            idTask = kwargs.get("idTask")
+            idTeam = kwargs.get("idTeam")
+            idVersion = kwargs.get("idVersion")
+            filename = kwargs.get("filename")
             idUser = flask_login.current_user.id
+
             if not idUser:
                 abort(403)
 
@@ -32,15 +38,15 @@ def check_file_access(folder_type):
                 if not await has_access_to_pfp(idUser, filename):
                     abort(403)
             elif folder_type == "tasks":
-                if not await has_access_to_tasks(idUser, id, id2, id3 ,filename):
+                if not await has_access_to_tasks(idUser, idTask, idTeam, idVersion ,filename):
                     abort(403)
             elif folder_type == "task":
-                if not await has_access_to_tasks(idUser, id, None, None, filename):
+                if not await has_access_to_tasks(idUser, idTask, None, None, filename):
                     abort(403)
             else:
                 abort(403)
 
-            return func(filename, id, id2, id3, *args, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
     return decorator
 
@@ -68,16 +74,29 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
     
     if not User.query.filter_by(id = idUser).first():
         return False
+        
+    task = Task.query.filter_by(id = idTask).first()
     
-    if not Task.query.filter_by(id = idTask).first():
+    if not task:
         return False
-    
-    if not User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first() and not Task.query.filter_by(id = idTask, guarantor = idUser).first():
+
+    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser).first()
+
+    if not user_team and task.guarantor != idUser:
         return False
     
     if not idTeam and not idVersion:
         path = task_path + idTask + "/" + filename
     else:
+        team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
+        if not team:
+            return False
+        if user_team:
+            if user_team.idTeam != team.idTeam:
+                return False
+        if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion).first():
+            return False
+        
         path = task_path + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
     
     if not await sftp_stat_async(ssh, path):

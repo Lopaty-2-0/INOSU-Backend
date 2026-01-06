@@ -1,6 +1,6 @@
 import flask_login
 from sqlalchemy import or_
-from flask import Blueprint, request, session
+from flask import Blueprint, request, session, make_response
 from werkzeug.security import check_password_hash
 from src.utils.response import send_response
 from src.models.User import User
@@ -33,7 +33,10 @@ def logout():
     flask_login.logout_user()
     session.clear()
     
-    return send_response(200, 7011, {"message": "Logged out"}, "success")
+    resp = make_response({"statuscode": 200, "resCode": 7011, "data": {"message": "Logged out"}, "resType": "success"}, 200) # zde je nutné přímo použít jejich make_response, jinak nelze smazat tu cookie
+    resp.delete_cookie("remember_token")
+    
+    return resp
 
 @auth_bp.route("/auth/verify", methods=["GET"])
 def verify():

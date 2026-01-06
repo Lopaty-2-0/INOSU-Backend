@@ -1,12 +1,22 @@
 from app import db
+from sqlalchemy.dialects.mysql import INTEGER
+import datetime
 
 class Version_Team(db.Model):
     __tablename__ = "version_team"
 
-    idTeam = db.Column(db.Integer, db.ForeignKey("team.idTeam"), primary_key=True)
-    idVersion = db.Column(db.Integer, primary_key=True)
-    idTask = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key=True)
+    idVersion = db.Column(INTEGER(unsigned=True), primary_key=True)
+    idTeam = db.Column(INTEGER(unsigned=True), primary_key=True)
+    idTask = db.Column(INTEGER(unsigned=True), primary_key=True)
     elaboration = db.Column(db.String(255), nullable=True)
+    createdAt = db.Column(db.DateTime(timezone=True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ["idTeam", "idTask"],
+            ["team.idTeam", "team.idTask"]
+        ),
+    )
 
     def __init__(self, idTeam, idTask, elaboration, idVersion):
         self.idTeam = idTeam

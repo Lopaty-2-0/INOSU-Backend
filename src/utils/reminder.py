@@ -1,0 +1,47 @@
+from src.models.Task import Task
+from src.models.User import User
+from src.models.User_Team import User_Team
+from src.utils.send_email import send_email
+from src.email.templates.reminder import email_reminder
+from app import scheduler, app
+from datetime import timedelta, datetime
+
+
+def reminder(idTask, idUser):
+    with app.app_context():
+        task = Task.query.filter_by(id = idTask).first()
+        user = User.query.filter_by(id = idUser).first()
+        user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask).first()
+
+        if not task or not user or not user_team or not user.reminders:
+            return
+        
+        text = "Upozornění uzavírky události" + task.name
+        
+        send_email(user.email, "Reminder", email_reminder(name = user.name + " " + user.surname, task_datetime = datetime.strptime(task.endDate, "%d.%m.%Y %H:%M:%S"), task_name = task.name), text)
+    
+def cancel_reminder(idUser, idTask):
+    with app.app_context():
+        job_id = f"reminder_{idUser}_{idTask}"
+
+        try:
+            scheduler.remove_job(job_id)
+        except:
+            pass
+
+def create_reminder(idUser, idTask):
+    if Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1) < datetime.now():
+        reminder(idTask = idTask, idUser = idUser)
+        return
+
+    with app.app_context():
+        job_id = f"reminder_{idUser}_{idTask}"
+
+        scheduler.add_job(
+            reminder,
+            trigger="date",
+            run_date=Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1),
+            args=[idTask, idUser],
+            id=job_id,
+            replace_existing=True
+        )
