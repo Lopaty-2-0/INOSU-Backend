@@ -381,17 +381,19 @@ async def change():
 
     return send_response(200, 43111, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
-@user_team_bp.route("/user_team/count/approved_without_review", methods=["GET"])
+@user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
-def count_approved_without_review():
-    count = 0
+def count_user_tasks():
     user_team = User_Team.query.filter_by(idUser = flask_login.current_user.id)
+    count = user_team.count()
 
-    for team in user_team:
-        if Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask).review == None:
-            count += 1
+    for ut in user_team:
+        task = Task.query.filter_by(id = ut.idTask).first()
+        
+        if not task or task.type == Type.Maturita:
+            count -= 1
 
-    return send_response(200, 47011, {"message": "Count of approved user_teams without review", "count": count}, "success")
+    return send_response(200, 47011, {"message": "Count of user tasks", "count": count}, "success")
 
 @user_team_bp.route("/user_team/get/type", methods = ["GET"])
 @flask_login.login_required
