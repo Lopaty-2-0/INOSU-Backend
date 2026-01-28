@@ -1,5 +1,6 @@
 from flask import request, Blueprint
 import flask_login
+import datetime
 from app import db, maxINT, scheduler
 from src.models.User_Team import User_Team
 from src.models.Task import Task
@@ -384,16 +385,24 @@ async def change():
 @user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
 def count_user_tasks():
-    user_team = User_Team.query.filter_by(idUser = flask_login.current_user.id)
-    count = user_team.count()
+    user_team = User_Team.query.filter_by(idUser=flask_login.current_user.id)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    count = 0
 
     for ut in user_team:
-        task = Task.query.filter_by(id = ut.idTask).first()
-        
-        if not task or task.type == Type.Maturita:
-            count -= 1
+        task = Task.query.get(ut.idTask)
 
-    return send_response(200, 47011, {"message": "Count of user tasks", "count": count}, "success")
+        if task.type == Type.Maturita:
+            continue
+
+        end_time = task.deadline if task.deadline else task.endDate
+        if not end_time:
+            continue
+
+        if now < end_time.replace(tzinfo=datetime.timezone.utc):
+            count += 1
+
+    return send_response(200, 47011, { "message": "Count of user tasks", "count": count }, "success")
 
 @user_team_bp.route("/user_team/get/type", methods = ["GET"])
 @flask_login.login_required
