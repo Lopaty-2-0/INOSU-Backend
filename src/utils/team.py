@@ -1,5 +1,6 @@
 from src.models.Team import Team
 from src.models.User_Team import User_Team
+from src.models.Version_Team import Version_Team
 from src.utils.sftp_utils import sftp_stat_async, sftp_removeDir_async, sftp_createDir_async
 from app import db, task_path, ssh
 
@@ -21,10 +22,15 @@ async def delete_teams_for_task(idTask):
 
     for team in teams:
         users = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam)
+        versions = Version_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam)
+
+        for version in versions:
+            db.session.delete(version)
 
         for user in users:
             db.session.delete(user)
 
+        db.session.commit()
         db.session.delete(team)
         await team_deleteDir(team.idTeam, idTask)
         

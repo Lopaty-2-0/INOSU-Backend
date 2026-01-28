@@ -385,7 +385,7 @@ async def change():
 @user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
 def count_user_tasks():
-    user_team = User_Team.query.filter_by(idUser=flask_login.current_user.id)
+    user_team = User_Team.query.filter_by(idUser=flask_login.current_user.id).all()
     now = datetime.datetime.now(datetime.timezone.utc)
     count = 0
 
@@ -399,8 +399,10 @@ def count_user_tasks():
         if not end_time:
             continue
 
-        if now < end_time.replace(tzinfo=datetime.timezone.utc):
-            count += 1
+        if now > end_time.replace(tzinfo=datetime.timezone.utc):
+            continue
+        
+        count += 1
 
     return send_response(200, 47011, { "message": "Count of user tasks", "count": count }, "success")
 
@@ -449,8 +451,8 @@ def get_by_type():
         return send_response(400, 60100, {"message": "taskType not our type"}, "error")
     
     if not searchQuery:      
-        teams = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == flask_login.current_user.id, Task.type == Type(taskType))).group_by(Team.idTeam, Team.idTask).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == flask_login.current_user.id, Task.type == Type(taskType))).group_by(Team.idTeam, Team.idTask).count()
+        teams = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().count()
     else:
         teams, count = user_team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, idUser = flask_login.current_user.id, taskType = taskType)
 
