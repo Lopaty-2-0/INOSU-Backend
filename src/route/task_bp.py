@@ -452,6 +452,7 @@ async def delete():
 
             for ver in versions:
                 db.session.delete(ver)
+            db.session.commit()
 
             db.session.delete(team)
         
