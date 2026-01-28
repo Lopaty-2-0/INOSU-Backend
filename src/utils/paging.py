@@ -150,9 +150,9 @@ def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(*ids)
     
     if typeOfTeam == "users":
-        return Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).outerjoin(User, User_Team.idUser == User.id).filter(and_( *specialConditions, *conditions)).group_by(Team.idTeam).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).outerjoin(User, User_Team.idUser == User.id).filter(and_( *specialConditions, *conditions)).group_by(Team.idTeam).having(Team.isTeam == False).count()
+        return Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).outerjoin(User, User_Team.idUser == User.id).filter(and_( *specialConditions, *conditions)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).outerjoin(User, User_Team.idUser == User.id).filter(and_( *specialConditions, *conditions)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     
-    return Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(and_(*conditions, *specialConditions)).group_by(Team.idTeam).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(and_(*conditions, *specialConditions)).group_by(Team.idTeam).having(Team.isTeam == True).count()
+    return Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(and_(*conditions, *specialConditions)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(and_(*conditions, *specialConditions)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
 
 def user_team_paging(searchQuery, amountForPaging, pageNumber, idUser, taskType):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -168,4 +168,4 @@ def user_team_paging(searchQuery, amountForPaging, pageNumber, idUser, taskType)
             )
         )
 
-    return Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == idUser, Task.type == Type(taskType), *conditions)).group_by(Team.idTeam, Team.idTask).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, Team.idTeam == User_Team.idTeam).join(Task, Team.idTask == Task.id).filter(and_(User_Team.idUser == idUser, Task.type == Type(taskType), *conditions)).group_by(Team.idTeam, Team.idTask).count()
+    return Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().count()

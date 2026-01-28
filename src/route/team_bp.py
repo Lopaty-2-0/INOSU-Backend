@@ -234,8 +234,8 @@ def get_users_task():
         return send_response(400, 41120, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(Team.isTeam == False).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfTeam="users")
     
@@ -329,8 +329,8 @@ def get_teams_task():
         return send_response(400, 56120, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam).having(Team.isTeam == True).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
     
@@ -409,8 +409,8 @@ def get_teams_with_status_and_guarantor():
         guarantorIds.append(task.id)
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == True).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds)
 
@@ -489,8 +489,8 @@ def get_users_with_status_and_guarantor():
         guarantorIds.append(task.id)
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == False).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds, typeOfTeam="users")
 
@@ -570,8 +570,8 @@ def get_teams_with_status_and_idTask():
         return send_response(400, 44090, {"message": "Status not our type"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == True).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task")
     
@@ -653,8 +653,8 @@ def get_users_with_status_and_idTask():
         return send_response(400, 58120, {"message": "Status not our type"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam).having(Team.isTeam == False).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     else:
         teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task", typeOfTeam="users")
     
