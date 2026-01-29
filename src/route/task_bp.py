@@ -3,18 +3,21 @@ import flask_login
 from src.utils.response import send_response
 from src.utils.check_file import check_file_size
 from src.utils.task import make_task, task_delete_sftp
-from src.utils.sftp_utils import sftp_stat_async
 from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.models.Version_Team import Version_Team
+from src.models.Maturita_Task import Maturita_Task
 from src.utils.enums import Status, Type, Role
 import datetime
 from src.utils.paging import task_paging
 from src.utils.team import make_team
-from app import db, ssh, task_path, maxINT, maxFLOAT
+from app import db, maxINT, maxFLOAT
 from src.utils.reminder import cancel_reminder
+
+#TODO: nutné dodat u všech get, kde se získává maturita, získání topic, maturita
+#TODO: při vytváření maturit je nutné dělat i maturita_task (kontrolovat s topic, maturita a possible_user)
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -424,6 +427,12 @@ async def delete():
         if not task:
             badIds.append(taskId)
             continue
+
+        if task.type == Type.Maturita:
+            maturita = Maturita_Task.query.filter_by(guarantor = flask_login.current_user.id, idTask = taskId).first()
+
+            if maturita:
+                db.session.delete(maturita)
 
         teams = Team.query.filter_by(idTask=taskId).all()
         user_team = User_Team.query.filter_by(idTask=taskId).all()

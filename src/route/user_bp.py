@@ -16,6 +16,9 @@ from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
 from src.models.Task import Task
+from src.models.Team import Team
+from src.models.Maturita_Task import Maturita_Task
+from src.models.Version_Team import Version_Team
 from src.utils.task import task_delete_sftp
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
@@ -333,7 +336,7 @@ async def delete():
     goodIds = []
     badIds = []
 
-    if not flask_login.current_user.role == Role.Admin:
+    if flask_login.current_user.role != Role.Admin:
         return send_response(400, 3010, {"message": "No permission for that"}, "error")
     if not idUser:
         return send_response(400, 3020, {"message": "No idUser"}, "error")
@@ -358,12 +361,29 @@ async def delete():
             cl = User_Class.query.filter_by(idUser = id)
             ta = User_Team.query.filter_by(idUser = id)
             tas = Task.query.filter_by(guarantor = id)
+            guarants = Maturita_Task.query.filter_by(guarantor = id)
 
             for t in ta:
                 db.session.delete(t)
             for c in cl:
                 db.session.delete(c)
+            for guarant in guarants:
+                db.session.delete(guarant)
             for task in tas:
+                teams = Team.query.filter_by(guarantor = id, idTask = task.id)
+
+                for team in teams:
+                    user_teams = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
+                    versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
+
+                    for user_team in user_teams:
+                        db.session.delete(user_team)
+                    for version in versions:
+                        db.session.delete(version)
+
+                    db.session.delete(team)
+
+                db.session.commit()
                 await delete_teams_for_task(task.id)
                 await task_delete_sftp(task.id)
                 db.session.delete(task)
