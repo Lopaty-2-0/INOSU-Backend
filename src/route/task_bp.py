@@ -391,7 +391,7 @@ def get():
         return send_response(400, 27080, {"message": "pageNumber must be bigger than 0"}, "error")
 
     if not searchQuery:
-        tasks = Task.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        tasks = Task.query.order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Task.query.count()
     else:
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
@@ -514,7 +514,7 @@ def get_maturita():
         return send_response(400, 19110, {"message": "IdUser not valid"}, "error")
 
     if not searchQuery:
-        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).count()
     else:
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "maturita")
@@ -582,7 +582,7 @@ def get_task():
         return send_response(400, 55110, {"message": "IdUser not valid"}, "error")
 
     if not searchQuery:
-        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Task).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Task).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Task.query.filter_by(guarantor = idUser, type = Type.Task).count()
     else:
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "task")

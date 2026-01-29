@@ -150,8 +150,8 @@ def get_users():
     if not Class.query.filter_by(id = idClass).first():
         return send_response(400, 35120, {"message":"Nonexistent class"}, "error")
     if not searchQuery:
-        users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).count()
+        users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).count()
     else:
         users, count = user_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idClass, typeOfSpecialSearch = "specialClass")
     

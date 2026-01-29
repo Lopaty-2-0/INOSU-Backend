@@ -152,7 +152,7 @@ def get():
         return send_response(400, 23080, {"message": "pageNumber must be bigger than 0"}, "error")
 
     if not searchQuery:
-        classes = Class.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        classes = Class.query.order_by(Class.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Class.query.count()
     else:
         classes, count = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
