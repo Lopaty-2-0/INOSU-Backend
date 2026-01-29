@@ -23,6 +23,7 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 async def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
+    guarantor = data.get("guarantor", None)
     name = data.get("name", None)
 
     if not idTask:
@@ -34,22 +35,20 @@ async def add():
     if idTask > maxINT or idTask <=0:
         return send_response(400, 30030, {"message": "idTask not valid"}, "error")
     
-    task = Task.query.filter_by(id = idTask).first()
+    task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
 
     if not task:
         return send_response(400, 30040, {"message": "Nonexistent task"}, "error")
-    if not flask_login.current_user.id == task.guarantor:
-        return send_response(400, 30050, {"message": "User is not guarantor"}, "error")
     if name:
         name = str(name)
         if len(name) > 255:
-            return send_response(400, 30060, {"message": "Name too long"}, "error")
-        if Team.query.filter_by(idTask = idTask, name = name).first():
-            return send_response(400, 30070, {"message": "Team with this name already exists"}, "error")
+            return send_response(400, 30050, {"message": "Name too long"}, "error")
+        if Team.query.filter_by(idTask = idTask,  name = name, guarantor = flask_login.current_user.id).first():
+            return send_response(400, 30060, {"message": "Team with this name already exists"}, "error")
     
-    await make_team(idTask = idTask, status = Status.Approved, name = name, isTeam = True)
+    await make_team(idTask = idTask, status = Status.Approved, name = name, isTeam = True, guarantor = flask_login.current_user.id)
     
-    return send_response(201, 30081, {"message": "Team created successfuly"}, "success")
+    return send_response(201, 30071, {"message": "Team created successfuly"}, "success")
 
 @team_bp.route("/team/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -70,10 +69,8 @@ async def delete():
         return send_response(400, 31030, {"message": "idTask not integer"}, "error")
     if idTask > maxINT or idTask <=0:
         return send_response(400, 31040, {"message": "idTask not valid"}, "error")
-    if not Task.query.filter_by(id = idTask).first():
+    if not Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 31050, {"message": "Nonexistent task"}, "error")
-    if Task.query.filter_by(id = idTask).first().guarantor != flask_login.current_user.id:
-        return send_response(400, 31060, {"message": "User is not guarantor"}, "error")
     if not isinstance(idTeam, list):
         idTeam = [idTeam]
 
@@ -91,9 +88,9 @@ async def delete():
             badIds.append(id)
             continue
 
-        users = User_Team.query.filter_by(idTask = idTask, idTeam = id)
-        team = Team.query.filter_by(idTeam = id, idTask = idTask).first()
-        versions = Version_Team.query.filter_by(idTeam = id, idTask = idTask)
+        users = User_Team.query.filter_by(idTask = idTask, idTeam = id, guarantor = flask_login.current_user.id)
+        team = Team.query.filter_by(idTeam = id, idTask = idTask, guarantor = flask_login.current_user.id).first()
+        versions = Version_Team.query.filter_by(idTeam = id, idTask = idTask, guarantor = flask_login.current_user.id)
 
         for user in users:
             db.session.delete(user)
@@ -141,47 +138,45 @@ async def update():
     if idTeam > maxINT or idTeam <=0:
         return send_response(400, 32060, {"message": "idTeam not valid"}, "error")
     
-    task = Task.query.filter_by(id = idTask).first()
+    task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
 
     if not task:
         return send_response(400, 32070, {"message": "Nonexistent task"}, "error")
     
-    team = Team.query.filter_by(idTeam = idTeam, idTask = idTask).first()
+    team = Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
 
     if not team:
         return send_response(400, 32080, {"message": "Nonexistent team"}, "error")
-    if not flask_login.current_user.id == task.guarantor:
-        return send_response(400, 32090, {"message": "User doesnt have rights"}, "error")
     if status:
         if status not in [s.value for s in Status]:
-            return send_response(400, 32100, {"message": "Status not our type"}, "error")
+            return send_response(400, 32090, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             team.status = Status(status)
     if points or points == 0:
         try:
             points = float(points)
         except:
-            return send_response(400, 32110, {"message": "Points are not integer or float"}, "error")
+            return send_response(400, 32100, {"message": "Points are not integer or float"}, "error")
         if points > maxFLOAT or points < 0:
-            return send_response(400, 32120, {"message": "Points not valid"}, "error")
+            return send_response(400, 32110, {"message": "Points not valid"}, "error")
         if points > task.points:
-            return send_response(400, 32130, {"message": "Can not give more points tha task has"}, "error")
+            return send_response(400, 32120, {"message": "Can not give more points tha task has"}, "error")
         team.points = points
     if isinstance(review, str):
         review = str(review)
         if len(review) > 65535:
-            return send_response(400, 32140, {"message": "Review too long"}, "error")
+            return send_response(400, 32130, {"message": "Review too long"}, "error")
         team.review = review
         team.reviewUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
     if isinstance(name, str):
         if len(name) > 255:
-            return send_response(400, 32150, {"message": "Name too long"}, "error")
+            return send_response(400, 32140, {"message": "Name too long"}, "error")
         team.name = name
         team.teamUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
 
     db.session.commit()
 
-    return send_response(200, 32161, {"message": "team updated"}, "success")
+    return send_response(200, 32151, {"message": "team updated"}, "success")
 
 @flask_login.login_required
 @team_bp.route("/team/get/users", methods=["GET"])
@@ -234,14 +229,14 @@ def get_users_task():
         return send_response(400, 41120, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfTeam="users")
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfTeam="users", guarantor = flask_login.current_user.id)
     
     for team in teams:
-        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam).first().idUser).first()
-        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).first().idUser).first()
+        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -329,14 +324,14 @@ def get_teams_task():
         return send_response(400, 56120, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, guarantor = flask_login.current_user.id)
     
     for team in teams:
-        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
-        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam, guarantor = flask_login.current_user.id).count()
+        version = Version_Team.query.filter_by(idTask=idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -369,8 +364,7 @@ def get_teams_with_status_and_guarantor():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     right_teams = []
-    guarantorIds = []
-    
+
     if not amountForPaging:
         return send_response(400, 40010, {"message": "amountForPaging not entered"}, "error")
 
@@ -403,20 +397,15 @@ def get_teams_with_status_and_guarantor():
     if status not in [stat.value for stat in Status]:
         return send_response(400, 40090, {"message": "Status not our type"}, "error")
     
-    tasks = Task.query.filter_by(guarantor = flask_login.current_user.id)
-
-    for task in tasks:
-        guarantorIds.append(task.id)
-    
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.guarantor == flask_login.current_user.id, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.guarantor == flask_login.current_user.id, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds)
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", guarantor=flask_login.current_user.id)
 
     for team in teams:
-        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
-        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam, guarantor = flask_login.current_user.id).count()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -449,7 +438,7 @@ def get_users_with_status_and_guarantor():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     users = []
-    guarantorIds = []
+
     
     if not amountForPaging:
         return send_response(400, 57010, {"message": "amountForPaging not entered"}, "error")
@@ -483,20 +472,15 @@ def get_users_with_status_and_guarantor():
     if status not in [stat.value for stat in Status]:
         return send_response(400, 57090, {"message": "Status not our type"}, "error")
     
-    tasks = Task.query.filter_by(guarantor = flask_login.current_user.id)
-
-    for task in tasks:
-        guarantorIds.append(task.id)
-    
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask.in_(guarantorIds), Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.guarantor == flask_login.current_user.id, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.guarantor == flask_login.current_user.id, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=guarantorIds, typeOfTeam="users")
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", guarantor=flask_login.current_user.id, typeOfTeam="users")
 
     for team in teams:
 
-        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -505,7 +489,7 @@ def get_users_with_status_and_guarantor():
             elaboration = version.elaboration
             createdAt = version.createdAt
 
-        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
+        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).first().idUser).first()
         users.append({
                     "idTeam":team.idTeam,
                     "name":team.name,
@@ -570,14 +554,14 @@ def get_teams_with_status_and_idTask():
         return send_response(400, 44090, {"message": "Status not our type"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status), Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status), Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task")
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task", guarantor=flask_login.current_user.id)
     
     for team in teams:
-        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count()
-        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        counts = User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam, guarantor = flask_login.current_user.id).count()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -653,13 +637,13 @@ def get_users_with_status_and_idTask():
         return send_response(400, 58120, {"message": "Status not our type"}, "error")
     
     if not searchQuery:
-        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status)).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
+        teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status), Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.status == Status(status),Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).count()
     else:
-        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task", typeOfTeam="users")
+        teams, count = team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Status(status), typeOfSpecialSearch="status", ids=idTask, typeOfIds = "task", typeOfTeam="users", guarantor = flask_login.current_user.id)
     
     for team in teams:
-        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -668,7 +652,7 @@ def get_users_with_status_and_idTask():
             elaboration = version.elaboration
             createdAt = version.createdAt
         
-        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam).first().idUser).first()
+        user = User.query.filter_by(id = User_Team.query.filter_by(idTask = team.idTask, idTeam = team.idTeam, guarantor = flask_login.current_user.id).first().idUser).first()
         users.append({
                     "idTeam":team.idTeam,
                     "name":team.name,
@@ -736,12 +720,12 @@ def get_by_status_elaboration():
     user_teams = User_Team.query.filter_by(idUser = flask_login.current_user.id)
 
     for user_team in user_teams:
-        pairs.append((user_team.idTeam, user_team.idTask))
+        pairs.append((user_team.idTeam, user_team.idTask, user_team.guarantor))
 
     if pairs:
         conditions = [
-            (Team.idTeam == team_id) & (Team.idTask == task_id)
-            for team_id, task_id in pairs
+            (Team.idTeam == team_id) & (Team.idTask == task_id) & (Team.guarantor == guarantor)
+            for team_id, task_id, guarantor in pairs
             ]
         
         if not searchQuery:
@@ -754,7 +738,7 @@ def get_by_status_elaboration():
         teams = []
     
     for team in teams:
-        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam, guarantor = team.guarantor).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -789,7 +773,7 @@ def get_by_status_elaboration():
                         "review":team.review, 
                         "idTeam":team.idTeam,
                         "createdAt":createdAt,
-                        "count": User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam).count(),
+                        "count": User_Team.query.filter_by(idTask=team.idTask, idTeam=team.idTeam, guarantor = team.guarantor).count(),
                         "name":team.name,
                         "points":team.points,
                         "isTeam": team.isTeam,
@@ -805,6 +789,7 @@ def get_by_status_elaboration():
 def get_team_info():
     idTeam = request.args.get("idTeam", None)
     idTask = request.args.get("idTask", None)
+    guarantor = request.args.get("guarantor", None)
     users = []
 
     if not idTeam:
@@ -816,26 +801,40 @@ def get_team_info():
     if idTeam > maxINT or idTeam <=0:
         return send_response(400, 45030, {"message": "IdTask not valid"}, "error")
     
+    if not guarantor:
+        return send_response(400, 45040, {"message": "guarantor not entered"}, "error")
+    try:
+        guarantor = int(guarantor)
+    except:
+        return send_response(400, 45050, {"message": "guarantor not integer"}, "error")
+    if guarantor > maxINT or guarantor <=0:
+        return send_response(400, 45060, {"message": "guarantor not valid"}, "error")
+    
+    user = User.query.filter_by(id = guarantor).first()
+
+    if not user:
+        return send_response(400, 45070, {"message": "Nonexistent guarantor"}, "error")
+    
     if not idTask:
-        return send_response(400, 45040, {"message": "idTask not entered"}, "error")
+        return send_response(400, 45080, {"message": "idTask not entered"}, "error")
     try:
         idTask = int(idTask)
     except:
-        return send_response(400, 45050, {"message": "IdTask not integer"}, "error")
+        return send_response(400, 45090, {"message": "IdTask not integer"}, "error")
     if idTask > maxINT or idTask <=0:
-        return send_response(400, 45060, {"message": "IdTask not valid"}, "error")
+        return send_response(400, 45100, {"message": "IdTask not valid"}, "error")
     
-    task = Task.query.filter_by(id = idTask).first()
+    task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
 
     if not task:
-        return send_response(400, 45070, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 45110, {"message": "Nonexistent task"}, "error")
     
-    team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
+    team = Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
 
     if not team:
-        return send_response(400, 45080, {"message": "Nonexistent team"}, "error")
+        return send_response(400, 45120, {"message": "Nonexistent team"}, "error")
 
-    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam).order_by(User_Team.idUser.desc())
+    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).order_by(User_Team.idUser.desc())
 
     for user in user_teams:
         users.append(user.idUser)

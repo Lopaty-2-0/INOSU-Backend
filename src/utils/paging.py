@@ -106,7 +106,7 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
 
     return Task.query.filter(and_(*conditions, *specialConditions)).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.filter(and_(*conditions, *specialConditions)).count()
 
-def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, ids = None, typeOfIds = None, typeOfTeam = None):
+def team_paging(searchQuery, amountForPaging, pageNumber, guarantor = None, specialSearch = None, typeOfSpecialSearch = None, ids = None, typeOfIds = None, typeOfTeam = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
 
     conditions = []
@@ -140,7 +140,8 @@ def team_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(Team.status == specialSearch)
         if typeOfSpecialSearch == "points":
             specialConditions.append(Team.points == specialSearch)
-
+    if guarantor:
+        specialConditions.append(Team.guarantor == guarantor)
     if ids:
         if not isinstance(ids, list):
             ids = [ids]

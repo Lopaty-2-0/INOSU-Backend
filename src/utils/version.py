@@ -2,34 +2,35 @@ from src.models.Version_Team import Version_Team
 from app import db, task_path, ssh
 from src.utils.sftp_utils import sftp_createDir_async, sftp_stat_async, sftp_removeDir_async, sftp_put_async, sftp_remove_async
 import os
+from src.utils.team import team_createDir
 
-async def make_version(idTask, idTeam, file):
-    if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam).first():
+async def make_version(idTask, idTeam, file, guarantor):
+    if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first():
         id = 1
     else:
-        id = Version_Team.query.filter_by(idTask=idTask, idTeam = idTeam).order_by(Version_Team.idVersion.desc()).first().idVersion + 1
+        id = Version_Team.query.filter_by(idTask=idTask, idTeam = idTeam, guarantor = guarantor).order_by(Version_Team.idVersion.desc()).first().idVersion + 1
 
-    status = await version_save(idTeam, idTask, id, file)
+    status = await version_save(idTeam, idTask, id, file, guarantor = guarantor)
 
     if status:
-        new_version = Version_Team(idVersion = id, idTask = idTask, elaboration = file.filename, idTeam = idTeam)
+        new_version = Version_Team(idVersion = id, idTask = idTask, elaboration = file.filename, idTeam = idTeam, guarantor = guarantor)
         
         db.session.add(new_version)
         db.session.commit()
 
     return status
 
-async def delete_versions_for_team(idTask, idTeam):
-    versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
+async def delete_versions_for_team(idTask, idTeam, guarantor):
+    versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor)
 
     for version in versions:
         db.session.delete(version)
-        await version_deleteDir(idTeam, idTask, version.idVersion)
+        await version_deleteDir(idTeam, idTask, version.idVersion, guarantor)
         
     db.session.commit()
 
-async def version_deleteDir(idTeam, idTask, idVersion):
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
+async def version_deleteDir(idTeam, idTask, idVersion, guarantor):
+    file_path = task_path + str(guarantor) + "/" +  str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
     if not await sftp_stat_async(ssh, file_path):
         return False
     
@@ -37,21 +38,25 @@ async def version_deleteDir(idTeam, idTask, idVersion):
 
     return True
 
-async def version_createDir(idTeam, idTask, idVersion):
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
+async def version_createDir(idTeam, idTask, idVersion, guarantor):
+    file_path = task_path + str(guarantor) + "/" +  str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
 
     if await sftp_stat_async(ssh, file_path):
         return False
     
-    await sftp_createDir_async(ssh, file_path)
+    try:
+        await sftp_createDir_async(ssh, file_path)
+    except:
+        await team_createDir(idTeam = idTeam, idTask = idTask, guarantor = guarantor)
+        await version_createDir(idTeam, idTask, idVersion, guarantor)
 
     return True
 
-async def version_save(idTeam, idTask, idVersion, file):
+async def version_save(idTeam, idTask, idVersion, file, guarantor):
     fileName = file.filename
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
+    file_path = task_path + str(guarantor) + "/" +  str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
 
-    await version_createDir(idTeam, idTask, idVersion)
+    await version_createDir(idTeam, idTask, idVersion, guarantor)
 
     if await sftp_stat_async(ssh, file_path + "/" + fileName):
         return False 
@@ -62,8 +67,8 @@ async def version_save(idTeam, idTask, idVersion, file):
 
     return True
 
-async def version_delete(idTeam, idTask, idVersion, fileName):
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + fileName
+async def version_delete(idTeam, idTask, idVersion, fileName, guarantor):
+    file_path = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + fileName
 
     if not await sftp_stat_async(ssh, file_path):
         return False 

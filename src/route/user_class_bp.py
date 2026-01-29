@@ -48,7 +48,7 @@ def add():
         if id > maxINT or id <=0:
             badIds.append(id)
             continue
-        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = id).first() or User.query.filter_by(id = idUser).first().role:
+        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = id).first() or User.query.filter_by(id = idUser).first().role != Role.Student:
             badIds.append(id)
             continue
 

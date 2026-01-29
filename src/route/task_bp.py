@@ -2,7 +2,7 @@ from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
 from src.utils.check_file import check_file_size
-from src.utils.task import task_save_sftp, task_delete_sftp
+from src.utils.task import make_task, task_delete_sftp
 from src.utils.sftp_utils import sftp_stat_async
 from src.models.User import User
 from src.models.Task import Task
@@ -80,18 +80,7 @@ async def add():
     else:
         points = None
 
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type, points = points, deadline = deadline)
-
-    db.session.add(newTask)
-
-    id = Task.query.order_by(Task.id.desc()).first().id
-
-    if await sftp_stat_async(ssh, task_path + str(id)):
-        await task_delete_sftp(id)
-        
-    await task_save_sftp(task, id)
-
-    db.session.commit()
+    newTask, id = await make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, file = task, type = type, points = points, deadline = deadline)
 
     guarantor = {
                 "id":user.id,
@@ -184,16 +173,7 @@ async def add_maturita_guarantor():
     else:
         points = None
 
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type, points = points, deadline = deadline)
-
-    db.session.add(newTask)
-    
-    idTask = Task.query.order_by(Task.id.desc()).first().id
-
-    if await sftp_stat_async(ssh, task_path + str(idTask)):
-        await task_delete_sftp(idTask)
-        
-    await task_save_sftp(task, idTask)
+    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, file = task, type = type, points = points, deadline = deadline)
 
     id = await make_team(idTask = idTask, status = Status.Approved, name = None, isTeam = False)
     db.session.add(User_Team(idUser, id, idTask))
@@ -288,16 +268,7 @@ async def add_maturita_student():
     else:
         points = None
 
-    newTask = Task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, task = task.filename, type = type, points = points, deadline = deadline)
-
-    db.session.add(newTask)
-
-    idTask = Task.query.order_by(Task.id.desc()).first().id
-
-    if await sftp_stat_async(ssh, task_path + str(idTask)):
-        await task_delete_sftp(idTask)
-        
-    await task_save_sftp(task, idTask)
+    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=idUser, file = task, type = type, points = points, deadline = deadline)
 
     id = await make_team(idTask = idTask, status = Status.Pending, name = None, isTeam = False)
     db.session.add(User_Team(flask_login.current_user.id, id, idTask))
@@ -321,7 +292,8 @@ async def add_maturita_student():
 @task_bp.route("/task/get/id", methods=["GET"]) 
 def get_by_id():
     idTask = request.args.get("idTask", None)
-    task = Task.query.filter_by(id=idTask).first()
+    guarantor = request.args.get("guarantor", None)
+    
     task_data = None
 
     if not idTask:
@@ -332,11 +304,26 @@ def get_by_id():
         return send_response(400, 30020, {"message": "Id not integer"}, "error")
     if idTask > maxINT or idTask <=0:
         return send_response(400, 30030, {"message": "Id not valid"}, "error")
+    
+    if not guarantor:
+        return send_response(400, 30040, {"message": "No guarantor entered"}, "error")
+    try:
+        guarantor = int(guarantor)
+    except:
+        return send_response(400, 30050, {"message": "Guarantor not integer"}, "error")
+    if guarantor > maxINT or guarantor <=0:
+        return send_response(400, 30060, {"message": "Guarantor not valid"}, "error")
+
+    user = User.query.filter_by(id = guarantor).first()
+    
+    if not user:
+        return send_response(404, 30070, {"message": "Guarantor not found"}, "error")
+    
+    task = Task.query.filter_by(id=idTask, guarantor = guarantor).first()
 
     if not task:
-        return send_response(404, 30040, {"message": "Task not found"}, "error")
+        return send_response(404, 30080, {"message": "Task not found"}, "error")
 
-    user = User.query.filter_by(id = task.guarantor).first()
     guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
 
     task_data = {
@@ -350,7 +337,7 @@ def get_by_id():
         "deadline": task.deadline
     }
     
-    return send_response(200, 30051, {"message": "Task found", "task": task_data}, "success")
+    return send_response(200, 30091, {"message": "Task found", "task": task_data}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get", methods=["GET"])
@@ -432,9 +419,9 @@ async def delete():
             badIds.append(taskId)
             continue
 
-        task = Task.query.filter_by(id = taskId).first()
+        task = Task.query.filter_by(id = taskId, guarantor = flask_login.current_user.id).first()
 
-        if not task or flask_login.current_user.id != task.guarantor:
+        if not task:
             badIds.append(taskId)
             continue
 
@@ -444,7 +431,7 @@ async def delete():
         for user in user_team:
             db.session.delete(user)
 
-            cancel_reminder(idUser = user.idUser, idTask = taskId)
+            cancel_reminder(idUser = user.idUser, idTask = taskId, guarantor = flask_login.current_user.id)
         
 
         for team in teams:
@@ -458,7 +445,7 @@ async def delete():
         
         db.session.commit()
         db.session.delete(task)
-        await task_delete_sftp(taskId)
+        await task_delete_sftp(taskId, flask_login.current_user.id)
         goodIds.append(taskId)
 
     db.session.commit()

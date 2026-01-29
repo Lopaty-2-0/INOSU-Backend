@@ -42,23 +42,27 @@ def add():
         return send_response(400, 8070, {"message": "Grade not valid"}, "error")
     if len(group) > 1:
         return send_response(400, 8080, {"message": "Group too long"}, "error")
+    try:
+        idSpecialization = int(idSpecialization)
+    except:
+        return send_response(400, 8090, {"message": "idSpecialization not integer"}, "error")
     if idSpecialization > maxINT or idSpecialization <= 0:
-        return send_response(400, 8090, {"message": "idSpecialization not valid"}, "error")
+        return send_response(400, 8100, {"message": "idSpecialization not valid"}, "error")
     if not Specialization.query.filter_by(id = idSpecialization).first():
-        return send_response(400, 8100, {"message": "Wrong idSpecialization"}, "error")
+        return send_response(400, 8110, {"message": "Wrong idSpecialization"}, "error")
     if int(Specialization.query.filter_by(id = idSpecialization).first().lengthOfStudy) < grade:
-        return send_response(400, 8110, {"message": "Grade is too much"}, "error")
+        return send_response(400, 8120, {"message": "Grade is too much"}, "error")
     if len(name)>255:
-        return send_response(400, 8120, {"message": "Name too long"}, "error")
+        return send_response(400, 8130, {"message": "Name too long"}, "error")
     if Class.query.filter_by(name = name).first():
-        return send_response(400, 8130, {"message": "Name already in use"}, "error")
+        return send_response(400, 8140, {"message": "Name already in use"}, "error")
     
     newClass = Class(grade = grade, group = group, idSpecialization = idSpecialization, name=name)
     specialization = Specialization.query.filter_by(id=idSpecialization).first()
     db.session.add(newClass)
     db.session.commit()
 
-    return send_response (201, 8141, {"message": "Class created succesfuly", "class": {"id": newClass.id, "grade": newClass.grade, "group": newClass.group, "name":newClass.name, "specialization": specialization.abbreviation}}, "success")
+    return send_response (201, 8151, {"message": "Class created succesfuly", "class": {"id": newClass.id, "grade": newClass.grade, "group": newClass.group, "name":newClass.name, "specialization": specialization.abbreviation}}, "success")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required

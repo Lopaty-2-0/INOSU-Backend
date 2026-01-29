@@ -39,11 +39,9 @@ async def add():
         return send_response(400, 36030, {"message": "idTask not integer"}, "error")
     if idTask > maxINT or idTask <= 0:
         return send_response(400, 36040, {"message": "idTask not valid"}, "error")
-    if not Task.query.filter_by(id=idTask).first():
+    if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 36050, {"message": "Nonexistent task"}, "error")
-    if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
-        return send_response(400, 36060, {"message": "User is not a guarantor"}, "error")
-    if not idClass and Task.query.filter_by(id = idTask).first().type == Type.Maturita:
+    if not idClass and Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first().type == Type.Maturita:
         status = Status.Pending
     else:
         status = Status.Approved
@@ -70,17 +68,17 @@ async def add():
                     badIds.append(idU)
                     continue
 
-                if User_Team.query.filter_by(idUser = idU, idTask = idTask).first():
+                if User_Team.query.filter_by(idUser = idU, idTask = idTask, guarantor = flask_login.current_user.id).first():
                     differentTeam.append(idU)
                     continue
 
-                idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False)
+                idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False, guarantor = flask_login.current_user.id)
 
-                newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
+                newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT, guarantor = flask_login.current_user.id)
                 db.session.add(newUser_Team)
 
                 if User.query.filter_by(id=idU).first().reminders:
-                    create_reminder(idUser = idU, idTask = idTask)
+                    create_reminder(idUser = idU, idTask = idTask, guarantor = flask_login.current_user.id)
 
                 goodIds.append(idU)
 
@@ -103,17 +101,17 @@ async def add():
                     if not User.query.filter_by(id=idU).first():
                         badIds.append(idU)
                         continue
-                    if User_Team.query.filter_by(idUser = idU, idTask = idTask).first():
+                    if User_Team.query.filter_by(idUser = idU, idTask = idTask, guarantor = flask_login.current_user.id).first():
                         differentTeam.append(idU)
                         continue
 
-                    idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False)
+                    idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False, guarantor = flask_login.current_user.id)
 
-                    newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT)
+                    newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT, guarantor = flask_login.current_user.id)
                     db.session.add(newUser_Team)
 
                     if  User.query.filter_by(id=idU).first().reminders:
-                        create_reminder(idUser = idU, idTask = idTask)
+                        create_reminder(idUser = idU, idTask = idTask, guarantor = flask_login.current_user.id)
 
                 goodIds.append(idCl)
 
@@ -127,19 +125,19 @@ async def add():
             if idU > maxINT or idU <= 0:
                 badIds.append(idU)
                 continue
-            if not User.query.filter_by(id=idU).first() or not Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
+            if not User.query.filter_by(id=idU).first() or not Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first():
                 badIds.append(idU)
                 continue
-            if User_Team.query.filter_by(idUser = idU, idTask = idTask).first():
+            if User_Team.query.filter_by(idUser = idU, idTask = idTask, guarantor = flask_login.current_user.id).first():
                 differentTeam.append(idU)
                 continue
 
-            newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idTeam)
+            newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idTeam, guarantor = flask_login.current_user.id)
             db.session.add(newUser_Team)
             goodIds.append(idU)
 
             if User.query.filter_by(id=idU).first().reminders:
-                create_reminder(idUser = idU, idTask = idTask)
+                create_reminder(idUser = idU, idTask = idTask, guarantor = flask_login.current_user.id)
                 
     db.session.commit()
 
@@ -187,7 +185,7 @@ def delete():
         return send_response(400, 37090, {"message": "idTeam not valid"}, "error")
 
     
-    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam).first()
+    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam, guarantor = flask_login.current_user.id).first()
 
     if not user_team:
         return send_response(400, 37100, {"message": "Nonexistent user_team"}, "error")
@@ -195,7 +193,7 @@ def delete():
     db.session.delete(user_team)
     db.session.commit()
 
-    cancel_reminder(idUser = idUser, idTask = idTask)
+    cancel_reminder(idUser = idUser, idTask = idTask, guarantor = flask_login.current_user.id)
 
     return send_response(200, 37111, {"message": "user_team deleted successfuly"}, "success")
 
@@ -253,10 +251,10 @@ def get():
 
     for user_team in user_teams:
         
-        task = Task.query.filter_by(id = user_team.idTask).first()
+        task = Task.query.filter_by(id = user_team.idTask, guarantor = user_team.guarantor).first()
         user = User.query.filter_by(id = task.guarantor).first()
-        team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask).first()
-        version = Version_Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask).order_by(Version_Team.idVersion.desc()).first()
+        team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask, guarantor = user_team.guarantor).first()
+        version = Version_Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask, guarantor = user_team.guarantor).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -331,24 +329,22 @@ async def change():
     if not Task.query.filter_by(id=idTask).first():
         return send_response(400, 43070, {"message": "Nonexistent task"}, "error")
     
-    team = Team.query.filter_by(idTeam = idTeam, idTask = idTask).first()
+    team = Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
 
     if not team:
         return send_response(400, 43080, {"message": "Nonexistent team"}, "error")
-    if flask_login.current_user.id != Task.query.filter_by(id = idTask).first().guarantor:
-        return send_response(403, 43090, {"message": "No permission"}, "error")
     if not isinstance(idUser, list):
         idUser = [idUser]
 
     if len(idUser) > 1 and not team.isTeam:
-        return send_response(403, 43100, {"message": "Can not add more users into this team"}, "error")
+        return send_response(403, 43090, {"message": "Can not add more users into this team"}, "error")
     
-    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
+    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = flask_login.current_user.id)
 
     for user_team in user_teams:
         db.session.delete(user_team)
 
-        cancel_reminder(idUser = user_team.idUser, idTask = idTask)
+        cancel_reminder(idUser = user_team.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
 
     for id in idUser:
         try:
@@ -359,18 +355,18 @@ async def change():
         if id > maxINT or id <= 0 or not User.query.filter_by(id = id).first():
             badIds.append(id)
             continue
-        if User_Team.query.filter_by(idUser = id, idTask = idTask).first():
+        if User_Team.query.filter_by(idUser = id, idTask = idTask, guarantor = flask_login.current_user.id).first():
             differentTeam.append(id)
             continue
 
-        db.session.add(User_Team(idUser = id, idTeam = idTeam, idTask = idTask))
+        db.session.add(User_Team(idUser = id, idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id))
         goodIds.append(id)
 
         if User.query.filter_by(id = id).first().reminders:
-            create_reminder(idUser = id, idTask = idTask)
+            create_reminder(idUser = id, idTask = idTask, guarantor = flask_login.current_user.id)
     
     if not team.isTeam and not User_Team.query.filter_by(idTeam = idTeam, idTask = idTask).first():
-        versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
+        versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = flask_login.current_user.id)
 
         for version in versions:
             db.session.delete(version)
@@ -378,7 +374,7 @@ async def change():
         db.session.commit()
         db.session.delete(team)
 
-        await team_deleteDir(idTeam = idTeam, idTask = idTask)
+        await team_deleteDir(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id)
     db.session.commit()
 
     return send_response(200, 43111, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
@@ -452,15 +448,15 @@ def get_by_type():
         return send_response(400, 60100, {"message": "taskType not our type"}, "error")
     
     if not searchQuery:      
-        teams = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).order_by(Team.idTask.desc()).distinct().offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).order_by(Team.idTask.desc()).distinct().count()
+        teams = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id, Team.guarantor == User_Team.guarantor)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).order_by(Team.idTask.desc()).distinct().offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id, Team.guarantor == User_Team.guarantor)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).order_by(Team.idTask.desc()).distinct().count()
     else:
         teams, count = user_team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, idUser = flask_login.current_user.id, taskType = taskType)
 
     for team in teams:
-        task = Task.query.filter_by(id = team.idTask).first()
-        user = User.query.filter_by(id = task.guarantor).first()
-        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam).order_by(Version_Team.idVersion.desc()).first()
+        task = Task.query.filter_by(id = team.idTask, guarantor = team.guarantor).first()
+        user = User.query.filter_by(id = task.guarantor, guarantor = team.guarantor).first()
+        version = Version_Team.query.filter_by(idTask=team.idTask, idTeam = team.idTeam, guarantor = team.guarantor).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None

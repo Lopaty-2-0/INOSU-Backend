@@ -6,6 +6,7 @@ from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db, maxINT
+from src.models.User_Class import User_Class
 
 specialization_bp = Blueprint("specialization", __name__)
 
@@ -82,9 +83,16 @@ def delete():
         if not Specialization.query.filter_by(id = id).first() :
             badIds.append(id)
             continue
-        if Class.query.filter_by(idSpecialization = id).first():
-            classIds.append(id)
-            continue
+
+        classes = Class.query.filter_by(idSpecialization = id)
+
+        for specific_class in classes:
+            users = User_Class.query.filter_by(idClass = specific_class.id)
+
+            for user in users:
+                db.session.delete(user)
+            db.session.commit()
+            db.session.delete(specific_class)
         
         db.session.commit()
         db.session.delete(Specialization.query.filter_by(id = id).first())
