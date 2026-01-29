@@ -248,7 +248,7 @@ def get():
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 39120, {"message": "Nonexistent user"}, "error")
     
-    user_teams = User_Team.query.filter_by(idUser = idUser).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    user_teams = User_Team.query.filter_by(idUser = idUser).order_by(User_Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = user_teams.count()
 
     for user_team in user_teams:
@@ -283,6 +283,7 @@ def get():
                                 "endDate":task.endDate, 
                                 "task":task.task, 
                                 "guarantor":guarantor,
+                                "points":task.points,
                                 "team":{
                                         "idTeam":user_team.idTeam, 
                                         "status":team.status.value, 
@@ -451,8 +452,8 @@ def get_by_type():
         return send_response(400, 60100, {"message": "taskType not our type"}, "error")
     
     if not searchQuery:      
-        teams = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().count()
+        teams = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).order_by(Team.idTask.desc()).distinct().offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == flask_login.current_user.id)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).order_by(Team.idTask.desc()).distinct().count()
     else:
         teams, count = user_team_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, idUser = flask_login.current_user.id, taskType = taskType)
 
