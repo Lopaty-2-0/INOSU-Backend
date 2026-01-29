@@ -136,7 +136,7 @@ def get():
         return send_response(400, 29080, {"message": "pageNumber must be bigger than 0"}, "error")
 
     if not searchQuery:
-        specialization = Specialization.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        specialization = Specialization.query.order_by(Specialization.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = Specialization.query.count()
     else:
         specialization, count = specialization_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)

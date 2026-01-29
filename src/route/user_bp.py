@@ -543,8 +543,8 @@ def get_by_role():
         return send_response(400, 20100, {"message": "Role not our type"}, "error")
     
     if not searchQuery:
-        user = User.query.filter_by(role = Role(role)).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.filter_by(role = Role(role)).count()
+        user = User.query.filter_by(role = Role(role)).order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = User.query.filter_by(role = Role(role)).order_by(User.id.desc()).count()
 
     else:
         user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
@@ -576,7 +576,7 @@ def get_of_users():
 @flask_login.login_required
 def get_roles():
     roles = []
-    users = User.query.all()
+    users = User.query.order_by(User.id.desc()).all()
 
     for user in users:
         role = user.role.value
@@ -629,8 +629,8 @@ def get_no_class():
         return send_response(400, 51080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
-        user = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).count()
+        user = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).order_by(User.id.desc()).count()
 
     else:
         user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfSpecialSearch = "noClass")
@@ -714,7 +714,7 @@ def get_user_page():
         return send_response(400, 52080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     if not searchQuery:
-        users = User.query.offset(amountForPaging * pageNumber).limit(amountForPaging)
+        users = User.query.order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count = User.query.count()
     else:
         users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
