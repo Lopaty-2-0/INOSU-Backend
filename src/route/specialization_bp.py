@@ -55,17 +55,16 @@ def add():
 @flask_login.login_required
 def delete():
     badIds = []
-    classIds = []
     goodIds = []
     
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 5010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    idSpecialization = data.get("idSpecialization", None)
+    idSpecialization = data.get("id", None)
 
     if not idSpecialization:
-        return send_response(400, 5020, {"message": "IdSpecialization is missing"}, "error")
+        return send_response(400, 5020, {"message": "Id is missing"}, "error")
     if not isinstance(idSpecialization, list):
         idSpecialization = [idSpecialization]
     
@@ -103,7 +102,7 @@ def delete():
     if not goodIds:
         return send_response (400, 5030, {"message": "No deletion"}, "error")
     
-    return send_response (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds, "classIds":classIds}, "success")
+    return send_response (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 
 @specialization_bp.route("/specialization/get", methods = ["GET"])
 @flask_login.login_required

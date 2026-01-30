@@ -362,6 +362,7 @@ async def delete():
             ta = User_Team.query.filter_by(idUser = id)
             tas = Task.query.filter_by(guarantor = id)
             guarants = Maturita_Task.query.filter_by(guarantor = id)
+            objects = Maturita_Task.query.filter_by(objector = id)
 
             for t in ta:
                 db.session.delete(t)
@@ -369,6 +370,8 @@ async def delete():
                 db.session.delete(c)
             for guarant in guarants:
                 db.session.delete(guarant)
+            for object in objects:
+                object.objector = None
             for task in tas:
                 teams = Team.query.filter_by(guarantor = id, idTask = task.id)
 
@@ -391,13 +394,12 @@ async def delete():
             await pfp_delete(pfp_path, delUser)
             db.session.commit()
             db.session.delete(delUser)
+            db.session.commit()
             goodIds.append(id)
         else:
             badIds.append(id)
     if not goodIds:
         return send_response(400, 3040, {"message": "Nothing deleted"}, "error")
-
-    db.session.commit()
 
     return send_response(200, 3051, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 

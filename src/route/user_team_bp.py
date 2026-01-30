@@ -41,11 +41,10 @@ async def add():
         return send_response(400, 36040, {"message": "idTask not valid"}, "error")
     if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 36050, {"message": "Nonexistent task"}, "error")
-    if not idClass and Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first().type == Type.Maturita:
-        status = Status.Pending
-    else:
-        status = Status.Approved
+    if Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first().type == Type.Maturita:
+        return send_response(400, 36060, {"message": "This route is not used for maturita tasks"}, "error")
 
+    status = Status.Approved
 
     if not isinstance(idUser, list) and idUser:
         idUser = [idUser]

@@ -1,8 +1,8 @@
 from app import db
 from sqlalchemy.dialects.mysql import INTEGER
 
-class Possible_User(db.Model):
-    __tablename__ = "possible_user"
+class Evaluator(db.Model):
+    __tablename__ = "evaluator"
     idUser = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id"), primary_key = True)
     idMaturita = db.Column(INTEGER(unsigned=True), db.ForeignKey("maturita.id"), primary_key = True)    
     
@@ -11,4 +11,4 @@ class Possible_User(db.Model):
         self.idMaturita = idMaturita
 
     def __repr__(self):
-        return f"<possible_user {self.idUser, self.idMaturita!r}>"
+        return f"<evaluator{self.idUser, self.idMaturita!r}>"

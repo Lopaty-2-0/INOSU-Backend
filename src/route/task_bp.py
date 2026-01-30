@@ -9,6 +9,9 @@ from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.models.Version_Team import Version_Team
 from src.models.Maturita_Task import Maturita_Task
+from src.models.Maturita import Maturita
+from src.models.Evaluator import Evaluator
+from src.models.Topic import Topic
 from src.utils.enums import Status, Type, Role
 import datetime
 from src.utils.paging import task_paging
@@ -16,8 +19,8 @@ from src.utils.team import make_team
 from app import db, maxINT, maxFLOAT
 from src.utils.reminder import cancel_reminder
 
-#TODO: nutné dodat u všech get, kde se získává maturita, získání topic, maturita
-#TODO: při vytváření maturit je nutné dělat i maturita_task (kontrolovat s topic, maturita a possible_user)
+#TODO: nutné dodat u všech get, kde se získává maturita, získání topic, maturita a maturita_task
+#TODO: při vytváření maturit je nutné dělat i maturita_task (kontrolovat s topic, maturita a Evaluator)
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -104,82 +107,79 @@ async def add():
 @task_bp.route("/task/add/maturita/guarantor", methods = ["POST"])
 async def add_maturita_guarantor():
     taskName = request.form.get("name", None)
-    endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     idUser = request.form.get("idUser", None)
-    deadline = request.form.get("deadline", None)
-    points = request.form.get("points", None)
+    idTopic = request.form.get("idTopic", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
-
+    maturita = Maturita.query.order_by(Maturita.id.desc()).first()
 
     if flask_login.current_user.role == Role.Student:
         return send_response(400, 61010, {"message": "This role can not make maturita with this route"}, "error")
+    if not maturita:
+        return send_response(400, 61020, {"message": "Cannot make maturita"}, "error")
+    if maturita.startDate > startDate:
+        return send_response(400, 61030, {"message": "Cannot make maturita before start"}, "error")
+    if maturita.endDate <= startDate:
+        return send_response(400, 61040, {"message": "Cannot make maturita after end"}, "error")
+    if not Evaluator.query.filter_by(idUser = flask_login.current_user.id, idMaturita = maturita.id).first():
+        return send_response(400, 61050, {"message": "This user can not be guarantor"}, "error")
     if not taskName:
-        return send_response(400, 61020, {"message": "Name not entered"}, "error")
-    if not endDate:
-        return send_response(400, 61030, {"message": "endDate  not entered"}, "error")
+        return send_response(400, 61060, {"message": "Name not entered"}, "error")
     if not idUser:
-        return send_response(400, 61040, {"message": "idUser not entered"}, "error")  
+        return send_response(400, 61070, {"message": "idUser not entered"}, "error")  
+    if not idTopic:
+        return send_response(400, 61080, {"message": "idTopic not entered"}, "error")
     
     taskName = str(taskName)
 
     try:
         idUser = int(idUser)
     except:
-        return send_response(400, 61050, {"message":"idUser not integer or is too far"}, "error")
+        return send_response(400, 61090, {"message":"idUser not integer or is too far"}, "error")
     if idUser > maxINT or idUser <= 0:
-        return send_response(400, 61060, {"message":"idUser not valid"}, "error")
+        return send_response(400, 61100, {"message":"idUser not valid"}, "error")
     
-    user = User.query.filter_by(id = idUser).first()
+    user_elaborator = User.query.filter_by(id = idUser).first()
 
-    if not user:
-        return send_response(400, 61070, {"message": "user not found"}, "error")
-    if user.role != Role.Student:
-        return send_response(400, 62080, {"message": "User with this role can not have assigned tasks"}, "error")
-    if len(taskName) > 45:
-        return send_response(400, 61090, {"message":"Name too long"}, "error")
+    if not user_elaborator:
+        return send_response(400, 61110, {"message": "user not found"}, "error")
+    if user_elaborator.role != Role.Student:
+        return send_response(400, 62120, {"message": "User with this role can not have assigned tasks"}, "error")
+    
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        idTopic = int(idTopic)
     except:
-        return send_response(400, 61100, {"message":"End date not integer or is too far"}, "error")
-    if endDate <= startDate:
-        return send_response(400, 61110, {"message":"Ending before begining"}, "error")
+        return send_response(400, 61130, {"message":"idTopic not integer or is too far"}, "error")
+    if idTopic > maxINT or idTopic <= 0:
+        return send_response(400, 61140, {"message":"idTopic not valid"}, "error")
+    
+    topic = Topic.query.filter_by(id = idTopic).first()
+
+    if not topic:
+        return send_response(400, 61150, {"message": "topic not found"}, "error")
+    if len(taskName) > 45:
+        return send_response(400, 61160, {"message":"Name too long"}, "error")
     if not task:
-        return send_response(400, 61120, {"message": "Task not entered"}, "error")
+        return send_response(400, 61170, {"message": "Task not entered"}, "error")
     if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
-        return send_response(400, 61130, {"message": "Wrong file format or too long"}, "error")
+        return send_response(400, 61180, {"message": "Wrong file format or too long"}, "error")
     
     type = Type.Maturita
     user = flask_login.current_user
 
-    if deadline:
-        try:
-            deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
-
-            if deadline < startDate:
-                return send_response(400, 61140, {"message":"Deadline before startDate"}, "error")
-            if deadline < endDate:
-                return send_response(400, 61150, {"message":"Deadline before endDate"}, "error")
-        except:
-            return send_response(400, 61160, {"message":"Deadline not integer or is too far"}, "error")
-    else:
-        deadline = None
-    if points:
-        try:
-            points = float(points)
-        except:
-            return send_response(400, 61170, {"message":"Points are not float"}, "error")
-
-        if points > maxFLOAT or points <= 0:
-            return send_response(400, 61180, {"message":"Points not valid"}, "error")
-    else:
-        points = None
-
-    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, file = task, type = type, points = points, deadline = deadline)
+    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=maturita.endDate, guarantor=user.id, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
 
     id = await make_team(idTask = idTask, status = Status.Approved, name = None, isTeam = False)
-    db.session.add(User_Team(idUser, id, idTask))
+    db.session.add(User_Team(idUser, id, idTask, guarantor = user.id))
+
+    maturita_task = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
+    variant = 65 if not maturita_task else ord(maturita_task.variant) + 1
+    
+    if variant >= 91:
+        return send_response(400, 61190, {"message":"Reached max variants for this topic"}, "error")
+
+    db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = chr(variant)))
 
     db.session.commit()
 
@@ -194,88 +194,83 @@ async def add_maturita_guarantor():
                 "email":user.email
                 }
 
-    return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
+    return send_response(201, 61201, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
 
 @flask_login.login_required
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/add/maturita/student", methods = ["POST"])
 async def add_maturita_student():
     taskName = request.form.get("name", None)
-    endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
     idUser = request.form.get("idUser", None)
-    deadline = request.form.get("deadline", None)
-    points = request.form.get("points", None)
+    idTopic = request.form.get("idTopic", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
+    maturita = Maturita.query.order_by(Maturita.id.desc()).first()
 
     if flask_login.current_user.role != Role.Student:
         return send_response(400, 62010, {"message": "This role can not make maturita with this route"}, "error")
+    if not maturita:
+        return send_response(400, 62020, {"message": "Cannot make maturita"}, "error")
+    if maturita.startDate > startDate:
+        return send_response(400, 62030, {"message": "Cannot make maturita before start"}, "error")
+    if maturita.endDate < startDate:
+        return send_response(400, 62040, {"message": "Cannot make maturita after end"}, "error")
     if not taskName:
-        return send_response(400, 62020, {"message": "Name not entered"}, "error")
-    if not endDate:
-        return send_response(400, 62030, {"message": "endDate  not entered"}, "error")
+        return send_response(400, 62050, {"message": "Name not entered"}, "error")
     if not idUser:
-        return send_response(400, 62040, {"message": "idUser not entered"}, "error")  
+        return send_response(400, 62070, {"message": "idUser not entered"}, "error")  
     
     taskName = str(taskName)
 
     try:
         idUser = int(idUser)
     except:
-        return send_response(400, 62050, {"message":"idUser not integer or is too far"}, "error")
+        return send_response(400, 62080, {"message":"idUser not integer or is too far"}, "error")
     if idUser > maxINT or idUser <= 0:
-        return send_response(400, 62060, {"message":"idUser not valid"}, "error")
+        return send_response(400, 62090, {"message":"idUser not valid"}, "error")
     
     user = User.query.filter_by(id = idUser).first()
 
     if not user:
-        return send_response(400, 62070, {"message": "user not found"}, "error")
+        return send_response(400, 62100, {"message": "user not found"}, "error")
     if user.role == Role.Student:
-        return send_response(400, 62080, {"message": "User with this role can not be a guarantor"}, "error")
-    if len(taskName) > 45:
-        return send_response(400, 62090, {"message":"Name too long"}, "error")
+        return send_response(400, 62110, {"message": "User with this role can not be a guarantor"}, "error")
+    if not Evaluator.query.filter_by(idUser = user.id, idMaturita = maturita.id).first():
+        return send_response(400, 62120, {"message": "This user can not be guarantor"}, "error")
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        idTopic = int(idTopic)
     except:
-        return send_response(400, 62100, {"message":"End date not integer or is too far"}, "error")
-    if endDate <= startDate:
-        return send_response(400, 62110, {"message":"Ending before begining"}, "error")
+        return send_response(400, 62130, {"message":"idTopic not integer or is too far"}, "error")
+    if idTopic > maxINT or idTopic <= 0:
+        return send_response(400, 62140, {"message":"idTopic not valid"}, "error")
+    
+    topic = Topic.query.filter_by(id = idTopic).first()
+
+    if not topic:
+        return send_response(400, 62150, {"message": "topic not found"}, "error")
+    if len(taskName) > 45:
+        return send_response(400, 62160, {"message":"Name too long"}, "error")
     if not task:
-        return send_response(400, 62120, {"message": "Task not entered"}, "error")
+        return send_response(400, 62170, {"message": "Task not entered"}, "error")
     if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
-        return send_response(400, 62130, {"message": "Wrong file format or too long"}, "error")
+        return send_response(400, 62180, {"message": "Wrong file format or too long"}, "error")
     
     type = Type.Maturita
 
-    if deadline:
-        try:
-            deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
-
-            if deadline < startDate:
-                return send_response(400, 62140, {"message":"Deadline before startDate"}, "error")
-            if deadline < endDate:
-                return send_response(400, 62150, {"message":"Deadline before endDate"}, "error")
-        except:
-            return send_response(400, 62160, {"message":"Deadline not integer or is too far"}, "error")
-    else:
-        deadline = None
-    if points:
-        try:
-            points = float(points)
-        except:
-            return send_response(400, 62170, {"message":"Points are not float"}, "error")
-
-        if points > maxFLOAT or points <= 0:
-            return send_response(400, 62180, {"message":"Points not valid"}, "error")
-    else:
-        points = None
-
-    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=idUser, file = task, type = type, points = points, deadline = deadline)
+    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=maturita.endDate,guarantor=idUser, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
 
     id = await make_team(idTask = idTask, status = Status.Pending, name = None, isTeam = False)
     db.session.add(User_Team(flask_login.current_user.id, id, idTask))
 
+    maturita_task = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
+    variant = 65 if not maturita_task else ord(maturita_task.variant) + 1
+    
+    if variant >= 91:
+        return send_response(400, 62190, {"message":"Reached max variants for this topic"}, "error")
+
+    db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = chr(variant)))
+ 
     db.session.commit()
 
     guarantor = {
@@ -289,7 +284,7 @@ async def add_maturita_student():
                 "email":user.email
                 }
 
-    return send_response(201, 62191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
+    return send_response(201, 62201, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 

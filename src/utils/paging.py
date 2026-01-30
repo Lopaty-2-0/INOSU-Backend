@@ -7,6 +7,7 @@ from src.models.Team import Team
 from src.utils.enums import Role, Type
 from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
+from src.models.Topic import Topic
 
 def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -170,3 +171,17 @@ def user_team_paging(searchQuery, amountForPaging, pageNumber, idUser, taskType)
         )
 
     return Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(Task.type == Type(taskType)).distinct().count()
+
+def topic_paging(searchQuery, amountForPaging, pageNumber):
+    words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+
+    conditions = []
+    for word in words:
+        like_pattern = f"%{word}%"
+        conditions.append(
+            or_(
+                func.lower(Topic.name).like(like_pattern)
+            )
+        )
+
+    return Topic.query.filter(and_(*conditions)).order_by(Topic.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Topic.query.filter(and_(*conditions)).count()
