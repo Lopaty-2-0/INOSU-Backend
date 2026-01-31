@@ -6,18 +6,11 @@ class Version_Team(db.Model):
     __tablename__ = "version_team"
 
     idVersion = db.Column(INTEGER(unsigned=True), primary_key=True)
-    idTeam = db.Column(INTEGER(unsigned=True), primary_key=True)
-    idTask = db.Column(INTEGER(unsigned=True), primary_key=True)
-    guarantor = db.Column(INTEGER(unsigned=True), primary_key=True, nullable = False)
+    idTeam = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.idTeam"), primary_key=True)
+    idTask = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.idTask"), primary_key=True)
+    guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.guarantor"), primary_key=True, nullable = False)
     elaboration = db.Column(db.String(255), nullable=True)
     createdAt = db.Column(db.DateTime(timezone=True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
-
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ["idTeam", "idTask", "guarantor"],
-            ["team.idTeam", "team.idTask", "team.guarantor"]
-        ),
-    )
 
     def __init__(self, idTeam, idTask, elaboration, idVersion, guarantor):
         self.idTeam = idTeam
