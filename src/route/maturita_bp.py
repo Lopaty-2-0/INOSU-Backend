@@ -120,27 +120,28 @@ def update():
 
     if not idMaturita:
         return send_response(400, 68020, {"message": "idMaturita missing"}, "error")
-    
+    if not grade and not evaluators and not startDate and not endDate and not maxPoints:
+        return send_response(400, 68030, {"message": "nothing entered to change"}, "error")
     try:
         idMaturita = int(idMaturita)
     except:
-        return send_response(400, 68030, {"message": "idMaturita not integer"}, "error")
+        return send_response(400, 68040, {"message": "idMaturita not integer"}, "error")
     
     if idMaturita > maxINT or idMaturita <= 0:
-        return send_response(400, 68040, {"message": "idMaturita not valid"}, "error")
+        return send_response(400, 68050, {"message": "idMaturita not valid"}, "error")
     
     maturita = Maturita.query.filter_by(id = idMaturita).first()
 
     if not maturita:
-        return send_response(400, 68050, {"message": "maturita not found"}, "error")
+        return send_response(400, 68060, {"message": "maturita not found"}, "error")
     
     if grade:
         grade = str(grade)
 
         if len(grade) > 9:
-                return send_response(400, 68060, {"message": "grade too long"}, "error")
+                return send_response(400, 68070, {"message": "grade too long"}, "error")
         if Maturita.query.filter_by(grade = grade).first() != maturita:
-            return send_response(400, 68070, {"message": "grade already in use"}, "error")
+            return send_response(400, 68080, {"message": "grade already in use"}, "error")
         
         maturita.grade = grade
     
@@ -148,9 +149,9 @@ def update():
         try:
             maxPoints = float(maxPoints)
         except:
-            return send_response(400, 68080, {"message":"maxPoints not float"}, "error")
+            return send_response(400, 68090, {"message":"maxPoints not float"}, "error")
         if maxPoints > maxFLOAT or maxPoints <= 0:
-            return send_response(400, 68090, {"message": "maxPoints not valid"}, "error")
+            return send_response(400, 68100, {"message": "maxPoints not valid"}, "error")
         
         maturita.maxPoints = maxPoints
         
@@ -158,19 +159,19 @@ def update():
         try:
             startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
         except:
-            return send_response(400, 68100, {"message":"startDate not integer or is too far"}, "error")
+            return send_response(400, 68110, {"message":"startDate not integer or is too far"}, "error")
         if maturita.endDate <= startDate:
-            return send_response(400, 68110, {"message":"ending before beginning"}, "error")
+            return send_response(400, 68120, {"message":"ending before beginning"}, "error")
         maturita.startDate = startDate
         
     if endDate:
         try:
             endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
         except:
-            return send_response(400, 68120, {"message":"End date not integer or is too far"}, "error")
+            return send_response(400, 68130, {"message":"End date not integer or is too far"}, "error")
        
         if endDate <= maturita.startDate:
-            return send_response(400, 68130, {"message":"Ending before beginning"}, "error")
+            return send_response(400, 68140, {"message":"Ending before beginning"}, "error")
         
         maturita.endDate = endDate
     
@@ -208,4 +209,4 @@ def update():
 
         db.session.commit()
 
-    return send_response (201, 68141, {"message": "maturita created successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}, "goodIds":goodIds, "badIds": badIds}, "success")
+    return send_response (201, 68151, {"message": "maturita created successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}, "goodIds":goodIds, "badIds": badIds}, "success")

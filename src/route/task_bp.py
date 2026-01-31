@@ -118,6 +118,7 @@ async def add_maturita_guarantor():
         return send_response(400, 61010, {"message": "This role can not make maturita with this route"}, "error")
     if not maturita:
         return send_response(400, 61020, {"message": "Cannot make maturita"}, "error")
+    print(maturita.startDate.tzinfo)
     if maturita.startDate > startDate:
         return send_response(400, 61030, {"message": "Cannot make maturita before start"}, "error")
     if maturita.endDate <= startDate:
@@ -145,7 +146,9 @@ async def add_maturita_guarantor():
     if not user_elaborator:
         return send_response(400, 61110, {"message": "user not found"}, "error")
     if user_elaborator.role != Role.Student:
-        return send_response(400, 62120, {"message": "User with this role can not have assigned tasks"}, "error")
+        return send_response(400, 61120, {"message": "User with this role can not have assigned tasks"}, "error")
+    if User_Team.query.join(Team, (User_Team.idTeam == Team.idTeam) & (User_Team.idTask == Team.idTask) & (User_Team.guarantor == Team.guarantor)).join(Task, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).join(Maturita_Task, (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor)).where(User_Team.idUser == idUser, Task.type == Type.Maturita, Maturita_Task.idMaturita == maturita.id).first():
+        return send_response(400, 61120, {"message": "This user already has maturita task"}, "error")
     
     try:
         idTopic = int(idTopic)

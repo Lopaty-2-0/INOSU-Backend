@@ -1,6 +1,6 @@
 from app import db
 from src.utils.enums import Status
-from sqlalchemy.dialects.mysql import TEXT, INTEGER, FLOAT
+from sqlalchemy.dialects.mysql import TEXT, INTEGER, FLOAT, TIMESTAMP
 
 class Team(db.Model):
     __tablename__ = "team"
@@ -12,8 +12,8 @@ class Team(db.Model):
     status = db.Column(db.Enum(Status), nullable=False)
     name = db.Column(db.String(255), nullable=True)
     isTeam = db.Column(db.Boolean, default=True, nullable=False)
-    reviewUpdatedAt = db.Column(db.DateTime(timezone = True), default=None, nullable=True)
-    teamUpdatedAt = db.Column(db.DateTime(timezone = True), default=None, nullable=True)
+    reviewUpdatedAt = db.Column(TIMESTAMP(timezone = True), default=None, nullable=True)
+    teamUpdatedAt = db.Column(TIMESTAMP(timezone = True), default=None, nullable=True)
     guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("task.guarantor"), nullable = False)
 
     def __init__(self, idTeam, idTask, name, isTeam, guarantor, status, review = None, points = None):

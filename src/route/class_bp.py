@@ -71,12 +71,12 @@ def delete():
         return send_response(403, 9010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    idClass = data.get("idClass", None)
+    idClass = data.get("id", None)
     goodIds = []
     badIds = []
 
     if not idClass:
-        return send_response(400, 9020, {"message": "IdClass is missing"}, "error")
+        return send_response(400, 9020, {"message": "Id is missing"}, "error")
     if not isinstance(idClass, list):
         idClass = [idClass]
     

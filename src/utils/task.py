@@ -5,8 +5,6 @@ from src.models.Task import Task
 from app import db
 
 async def task_save_sftp(file, id, guarantor):
-    state = True
-
     if not await sftp_stat_async(ssh, task_path):
         ssh.open_sftp().mkdir(task_path)
 
@@ -16,7 +14,7 @@ async def task_save_sftp(file, id, guarantor):
         ssh.open_sftp().mkdir(task_path + str(guarantor))
 
     if not await sftp_stat_async(ssh, file_path):
-        task_createDir(id, guarantor)
+        await task_createDir(id, guarantor)
 
     fileName = file.filename
     filePath = file_path + "/" + fileName

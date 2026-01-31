@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import db
 from src.utils.enums import Role
-from sqlalchemy.dialects.mysql import TEXT, INTEGER
+from sqlalchemy.dialects.mysql import TEXT, INTEGER, TIMESTAMP
 
 class User(db.Model, UserMixin):
     __tablename__ = "user"
@@ -12,12 +12,12 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(100), nullable=False)
     surname = db.Column(db.String(100), nullable=False)
     abbreviation = db.Column(db.String(4), unique=True, nullable=True)
-    createdAt = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    createdAt = db.Column(TIMESTAMP(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
     role = db.Column(db.Enum(Role), nullable=False)
     password = db.Column(TEXT, nullable=False)
     profilePicture = db.Column(db.String(255), server_default="default.jpg")
     email = db.Column(db.String(255), unique=True, nullable=False)
-    updatedAt = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    updatedAt = db.Column(TIMESTAMP(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
     reminders = db.Column(db.Boolean, default=True, nullable=False)
 
     @property
