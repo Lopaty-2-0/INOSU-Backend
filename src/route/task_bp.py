@@ -13,7 +13,7 @@ from src.models.Maturita import Maturita
 from src.models.Evaluator import Evaluator
 from src.models.Topic import Topic
 from src.utils.enums import Status, Type, Role
-#from src.utils.maturita_task import maturita_task_delete
+from src.utils.maturita_task import maturita_task_delete
 import datetime
 from src.utils.paging import task_paging
 from src.utils.team import make_team
@@ -170,13 +170,15 @@ async def add_maturita_guarantor():
     type = Type.Maturita
     user = flask_login.current_user
 
+    await maturita_task_delete(idUser, maturita.id)
+
     newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=maturita.endDate, guarantor=user.id, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
 
     id = await make_team(idTask = idTask, status = Status.Approved, name = None, isTeam = False, guarantor = flask_login.current_user.id)
     db.session.add(User_Team(idUser, id, idTask, guarantor = user.id))
 
     maturita_task = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
-    variant = 65 if not maturita_task else ord(maturita_task.variant) + 1
+    variant = 65 if not maturita_task or not maturita_task.variant else ord(maturita_task.variant) + 1
     
     if variant >= 91:
         return send_response(400, 61190, {"message":"Reached max variants for this topic"}, "error")
@@ -184,8 +186,6 @@ async def add_maturita_guarantor():
     db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = chr(variant)))
 
     db.session.commit()
-
-    #await maturita_task_delete(idUser, maturita.id)
 
     guarantor = {
                 "id":user.id,
@@ -269,13 +269,7 @@ async def add_maturita_student():
     id = await make_team(idTask = idTask, status = Status.Pending, name = None, isTeam = False, guarantor = idUser)
     db.session.add(User_Team(flask_login.current_user.id, id, idTask, idUser))
 
-    maturita_task = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
-    variant = 65 if not maturita_task else ord(maturita_task.variant) + 1
-    
-    if variant >= 91:
-        return send_response(400, 62190, {"message":"Reached max variants for this topic"}, "error")
-
-    db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = chr(variant)))
+    db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = None))
  
     db.session.commit()
 

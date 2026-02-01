@@ -8,7 +8,7 @@ from src.models.User_Team import User_Team
 from src.models.Version_Team import Version_Team
 from src.utils.team import team_deleteDir, make_team
 from src.utils.response import send_response
-from src.utils.enums import Status
+from src.utils.enums import Status, Type
 from src.utils.paging import team_paging
 from sqlalchemy import or_
 from src.utils.all_user_classes import all_user_classes
@@ -36,18 +36,21 @@ async def add():
     
     task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
 
+    if task.type == Type.Maturita:
+        return send_response(400, 30040, {"message": "Cannot add team to this task"}, "error")
+
     if not task:
-        return send_response(400, 30040, {"message": "Nonexistent task"}, "error")
+        return send_response(400, 30050, {"message": "Nonexistent task"}, "error")
     if name:
         name = str(name)
         if len(name) > 255:
-            return send_response(400, 30050, {"message": "Name too long"}, "error")
+            return send_response(400, 30060, {"message": "Name too long"}, "error")
         if Team.query.filter_by(idTask = idTask,  name = name, guarantor = flask_login.current_user.id).first():
-            return send_response(400, 30060, {"message": "Team with this name already exists"}, "error")
+            return send_response(400, 30070, {"message": "Team with this name already exists"}, "error")
     
     await make_team(idTask = idTask, status = Status.Approved, name = name, isTeam = True, guarantor = flask_login.current_user.id)
     
-    return send_response(201, 30071, {"message": "Team created successfuly"}, "success")
+    return send_response(201, 30081, {"message": "Team created successfuly"}, "success")
 
 @team_bp.route("/team/delete", methods=["DELETE"])
 @flask_login.login_required

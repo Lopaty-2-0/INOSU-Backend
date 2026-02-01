@@ -1,7 +1,7 @@
 from flask import request, Blueprint
 import flask_login
 import datetime
-from app import db, maxINT, scheduler
+from app import db, maxINT
 from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.models.User_Class import User_Class
@@ -41,8 +41,6 @@ async def add():
         return send_response(400, 36040, {"message": "idTask not valid"}, "error")
     if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 36050, {"message": "Nonexistent task"}, "error")
-    if Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first().type == Type.Maturita:
-        return send_response(400, 36060, {"message": "This route is not used for maturita tasks"}, "error")
 
     status = Status.Approved
 
@@ -141,9 +139,9 @@ async def add():
     db.session.commit()
 
     if not goodIds and not differentTeam:
-        return send_response(400, 36070, {"message": "Nothing created"}, "error")
+        return send_response(400, 36060, {"message": "Nothing created"}, "error")
 
-    return send_response(201, 36081, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
+    return send_response(201, 36071, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
 
 @user_team_bp.route("/user_team/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -166,35 +164,40 @@ def delete():
     
     if idTask > maxINT or idTask <= 0:
         return send_response(400, 37050, {"message": "idTask not valid"}, "error")
+    if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
+        return send_response(400, 37060, {"message": "Nonexistent task"}, "error")
 
     try:
         idUser = int(idUser)
     except:
-        return send_response(400, 37060, {"message": "idUser not integer"}, "error")
+        return send_response(400, 37070, {"message": "idUser not integer"}, "error")
     
     if idUser > maxINT or idUser <= 0:
-        return send_response(400, 37070, {"message": "idUser not valid"}, "error")
+        return send_response(400, 37080, {"message": "idUser not valid"}, "error")
+    if not User.query.filter_by(id=idUser).first():
+        return send_response(400, 37090, {"message": "Nonexistent USER"}, "error")
     
     try:
         idTeam = int(idTeam)
     except:
-        return send_response(400, 37080, {"message": "idTeam not integer"}, "error")
+        return send_response(400, 37100, {"message": "idTeam not integer"}, "error")
     
     if idTeam > maxINT or idTeam <= 0:
-        return send_response(400, 37090, {"message": "idTeam not valid"}, "error")
-
+        return send_response(400, 37110, {"message": "idTeam not valid"}, "error")
+    if not Team.query.filter_by(idTask=idTask, guarantor = flask_login.current_user.id, idTeam = idTeam).first():
+        return send_response(400, 37120, {"message": "Nonexistent team"}, "error")
     
     user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam, guarantor = flask_login.current_user.id).first()
 
     if not user_team:
-        return send_response(400, 37100, {"message": "Nonexistent user_team"}, "error")
+        return send_response(400, 37130, {"message": "Nonexistent user_team"}, "error")
 
     db.session.delete(user_team)
     db.session.commit()
 
     cancel_reminder(idUser = idUser, idTask = idTask, guarantor = flask_login.current_user.id)
 
-    return send_response(200, 37111, {"message": "user_team deleted successfuly"}, "success")
+    return send_response(200, 37141, {"message": "user_team deleted successfuly"}, "success")
 
 @user_team_bp.route("/user_team/get", methods=["GET"])
 @flask_login.login_required
@@ -325,7 +328,7 @@ async def change():
     
     if idTeam > maxINT or idTeam <= 0:
         return send_response(400, 43060, {"message": "idTeam not valid"}, "error")
-    if not Task.query.filter_by(id=idTask).first():
+    if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 43070, {"message": "Nonexistent task"}, "error")
     
     team = Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
@@ -376,7 +379,7 @@ async def change():
         await team_deleteDir(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id)
     db.session.commit()
 
-    return send_response(200, 43111, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
+    return send_response(200, 43101, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
 @user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
