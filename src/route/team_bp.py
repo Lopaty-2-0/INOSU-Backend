@@ -23,7 +23,6 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 async def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
-    guarantor = data.get("guarantor", None)
     name = data.get("name", None)
 
     if not idTask:
@@ -95,7 +94,7 @@ async def delete():
         for user in users:
             db.session.delete(user)
 
-            cancel_reminder(idUser = user.idUser, idTask = idTask)
+            cancel_reminder(idUser = user.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
              
         for version in versions:
             db.session.delete(version)

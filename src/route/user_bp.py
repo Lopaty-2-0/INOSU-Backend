@@ -216,12 +216,9 @@ async def update():
     profilePicture = request.files.get("profilePicture", None)
     
     try:
-        idClass = json.loads(raw_id_class) if raw_id_class.strip() else []
+        idClass = json.loads(raw_id_class) if raw_id_class.strip() else None
     except:
-        idClass = []
-
-    if not isinstance(idClass, list):
-        idClass = [idClass]
+        idClass = None
 
     user = flask_login.current_user
     badIds = []
@@ -301,12 +298,12 @@ async def update():
         if len(profilePicture.filename) > 255:
             return send_response(400, 2170, {"message": "Filename too long"}, "error")
         await pfp_save(pfp_path, secondUser, profilePicture)
-        
-    User_class = User_Class.query.filter_by(idUser = secondUser.id)
-    for cl in User_class:
-        db.session.delete(cl)
 
-    if idClass:
+    if isinstance(idClass, list):    
+        User_class = User_Class.query.filter_by(idUser = secondUser.id)
+        for cl in User_class:
+            db.session.delete(cl)
+    
         if secondUser.role == Role.Student:
             for id in idClass:
                 try:

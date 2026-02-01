@@ -2,7 +2,7 @@
 
 ### How to run
 ```
-python -m flask --app app run
+python -m flask --app wsgi run
 ```
 
 ### How to migrate
