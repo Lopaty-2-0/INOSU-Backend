@@ -39,8 +39,11 @@ async def add():
         return send_response(400, 36030, {"message": "idTask not integer"}, "error")
     if idTask > maxINT or idTask <= 0:
         return send_response(400, 36040, {"message": "idTask not valid"}, "error")
-    if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
+    task = Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first()
+    if not task:
         return send_response(400, 36050, {"message": "Nonexistent task"}, "error")
+    if task.type == Type.Maturita & User_Team.query.filter_by(id=idTask, guarantor = flask_login.current_user.id):
+        return send_response(400, 36060, {"message": "This maturita task already has user"}, "error")
 
     status = Status.Approved
 
@@ -52,6 +55,8 @@ async def add():
     if not idTeam:
         if idUser and not idClass:
             for idU in idUser:
+                if task.type == Type.Maturita & goodIds:
+                    break
                 try:
                     idU = int(idU)
                 except:
@@ -81,6 +86,8 @@ async def add():
 
         if idClass and not idUser:
             for idCl in idClass:
+                if task.type == Type.Maturita & goodIds:
+                    break
                 try:
                     idCl = int(idCl)
                 except:
@@ -114,6 +121,8 @@ async def add():
 
     else:
         for idU in idUser:
+            if task.type == Type.Maturita & goodIds:
+                    break
             try:
                 idU = int(idU)
             except:
@@ -139,9 +148,9 @@ async def add():
     db.session.commit()
 
     if not goodIds and not differentTeam:
-        return send_response(400, 36060, {"message": "Nothing created"}, "error")
+        return send_response(400, 36070, {"message": "Nothing created"}, "error")
 
-    return send_response(201, 36071, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
+    return send_response(201, 36081, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
 
 @user_team_bp.route("/user_team/delete", methods=["DELETE"])
 @flask_login.login_required
@@ -205,6 +214,7 @@ def get():
     idUser = request.args.get("idUser", None)
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
     
     right_user_teams = []
     if not amountForPaging:
@@ -248,8 +258,11 @@ def get():
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 39120, {"message": "Nonexistent user"}, "error")
     
-    user_teams = User_Team.query.filter_by(idUser = idUser).order_by(User_Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-    count = user_teams.count()
+    if not searchQuery:
+        user_teams = User_Team.query.filter_by(idUser = idUser).join(Task, and_(Task.guarantor == User_Team.guarantor, Task.id == User_Team.idTask)).where(Task.type == Type.Task).order_by(User_Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = user_teams.count()
+    else:
+        user_teams, count = user_team_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, idUser = idUser, taskType = Type.Task)
 
     for user_team in user_teams:
         
@@ -328,7 +341,10 @@ async def change():
     
     if idTeam > maxINT or idTeam <= 0:
         return send_response(400, 43060, {"message": "idTeam not valid"}, "error")
-    if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
+    
+    task = Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first()
+
+    if not task:
         return send_response(400, 43070, {"message": "Nonexistent task"}, "error")
     
     team = Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
@@ -349,6 +365,8 @@ async def change():
         cancel_reminder(idUser = user_team.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
 
     for id in idUser:
+        if task.type == Type.Maturita & goodIds:
+            break
         try:
             id = int(id)
         except:
@@ -384,12 +402,12 @@ async def change():
 @user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
 def count_user_tasks():
-    user_team = User_Team.query.filter_by(idUser=flask_login.current_user.id).all()
+    user_teams = User_Team.query.filter_by(idUser=flask_login.current_user.id).all()
     now = datetime.datetime.now(datetime.timezone.utc)
     count = 0
 
-    for ut in user_team:
-        task = Task.query.get(ut.idTask)
+    for user_team in user_teams:
+        task = Task.query.filter_by(id = user_team.idTask, guarantor = user_team.guarantor).first()
 
         if task.type == Type.Maturita:
             continue

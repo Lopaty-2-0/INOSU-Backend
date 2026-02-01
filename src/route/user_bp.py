@@ -36,7 +36,7 @@ addUser_extensions = {"json"}
 @check_file_size(2*1024*1024)
 def add():
     if flask_login.current_user.role != Role.Admin:
-        return send_response(400, 1010, {"message": "No permission for that"}, "error")
+        return send_response(403, 1010, {"message": "No permission for that"}, "error")
     data = request.get_json()
     
     badIds = []
@@ -334,7 +334,7 @@ async def delete():
     badIds = []
 
     if flask_login.current_user.role != Role.Admin:
-        return send_response(400, 3010, {"message": "No permission for that"}, "error")
+        return send_response(403, 3010, {"message": "No permission for that"}, "error")
     if not idUser:
         return send_response(400, 3020, {"message": "No idUser"}, "error")
     if not isinstance(idUser, list):
