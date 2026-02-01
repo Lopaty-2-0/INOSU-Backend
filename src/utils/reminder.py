@@ -41,7 +41,7 @@ def create_reminder(idUser, idTask, guarantor):
             reminder,
             trigger="date",
             run_date=Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1),
-            args=[idTask, idUser],
+            args=[idTask, idUser, guarantor],
             id=job_id,
             replace_existing=True
         )

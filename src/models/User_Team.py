@@ -9,6 +9,13 @@ class User_Team(db.Model):
     idTask = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.idTask"), primary_key=True)
     guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.guarantor"), primary_key=True)
 
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ["idTask", "guarantor", "idTeam"],
+            ["team.idTask", "team.guarantor", "team.idTeam"]
+        ),
+    )
+
     def __init__(self, idUser, idTeam, idTask, guarantor):
         self.idUser = idUser
         self.idTeam = idTeam

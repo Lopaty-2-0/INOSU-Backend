@@ -11,6 +11,13 @@ class Maturita_Task(db.Model):
     idMaturita = db.Column(INTEGER(unsigned=True), db.ForeignKey("maturita.id"), primary_key = True, nullable = True)
     variant = db.Column(db.CHAR(1), nullable = False)
 
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ["idTask", "guarantor"],
+            ["task.id", "task.guarantor"]
+        ),
+    )
+
     def __init__(self, idTopic, idTask, guarantor, objector, idMaturita, variant):
         self.idTopic = idTopic
         self.idTask = idTask

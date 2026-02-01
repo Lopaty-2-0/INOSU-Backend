@@ -1,5 +1,5 @@
 from app import db
-from sqlalchemy.dialects.mysql import INTEGER, TIMESTAMP
+from sqlalchemy.dialects.mysql import INTEGER
 import datetime
 
 class Version_Team(db.Model):
@@ -10,7 +10,14 @@ class Version_Team(db.Model):
     idTask = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.idTask"), primary_key=True)
     guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("team.guarantor"), primary_key=True, nullable = False)
     elaboration = db.Column(db.String(255), nullable=True)
-    createdAt = db.Column(TIMESTAMP(timezone=True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    createdAt = db.Column(db.DateTime(timezone=True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ["idTask", "guarantor", "idTeam"],
+            ["team.idTask", "team.guarantor", "team.idTeam"]
+        ),
+    )
 
     def __init__(self, idTeam, idTask, elaboration, idVersion, guarantor):
         self.idTeam = idTeam

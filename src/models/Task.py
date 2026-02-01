@@ -1,16 +1,16 @@
 import datetime
 from app import db
 from src.utils.enums import Type
-from sqlalchemy.dialects.mysql import INTEGER, FLOAT, TIMESTAMP
+from sqlalchemy.dialects.mysql import INTEGER, FLOAT
 
 class Task(db.Model):
     __tablename__ = "task"
 
     id = db.Column(INTEGER(unsigned=True), primary_key = True)
     name = db.Column(db.VARCHAR(45), nullable = False)
-    startDate = db.Column(TIMESTAMP(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable = False)
-    endDate = db.Column(TIMESTAMP(timezone = True), nullable = False)
-    deadline = db.Column(TIMESTAMP(timezone = True), nullable = True)
+    startDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable = False)
+    endDate = db.Column(db.DateTime(timezone = True), nullable = False)
+    deadline = db.Column(db.DateTime(timezone = True), nullable = True)
     task = db.Column(db.VARCHAR(255), nullable = False)
     guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id"), primary_key = True, nullable = False)
     type = db.Column(db.Enum(Type), nullable = False)

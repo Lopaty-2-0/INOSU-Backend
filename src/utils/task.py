@@ -55,7 +55,7 @@ async def make_task(file, name, guarantor, deadline, points, endDate, startDate,
     newTask = Task(name=name, startDate=startDate, endDate=endDate,guarantor=guarantor, task = file.filename, type = type, points = points, deadline = deadline, id = id)
     db.session.add(newTask)
 
-    if await sftp_stat_async(ssh, task_path + str(id)):
+    if await sftp_stat_async(ssh, task_path + str(guarantor) + "/" + str(id)):
         await task_delete_sftp(id, guarantor)
         
     await task_save_sftp(file, id, guarantor)
