@@ -42,7 +42,7 @@ async def add():
     task = Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first()
     if not task:
         return send_response(400, 36050, {"message": "Nonexistent task"}, "error")
-    if task.type == Type.Maturita & User_Team.query.filter_by(id=idTask, guarantor = flask_login.current_user.id):
+    if task.type == Type.Maturita & User_Team.query.filter_by(idTask=idTask, guarantor = flask_login.current_user.id):
         return send_response(400, 36060, {"message": "This maturita task already has user"}, "error")
 
     status = Status.Approved
