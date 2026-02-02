@@ -104,7 +104,7 @@ async def delete():
         
         db.session.commit()
 
-        await team_deleteDir(idTeam = id, idTask = idTask)
+        await team_deleteDir(idTeam = id, idTask = idTask, guarantor = flask_login.current_user.id)
         db.session.delete(team)
         goodIds.append(id)
 
