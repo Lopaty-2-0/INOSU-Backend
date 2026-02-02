@@ -7,11 +7,11 @@ from app import scheduler, app
 from datetime import timedelta, datetime
 
 
-def reminder(idTask, idUser):
+def reminder(idTask, idUser, guarantor):
     with app.app_context():
-        task = Task.query.filter_by(id = idTask).first()
+        task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
         user = User.query.filter_by(id = idUser).first()
-        user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask).first()
+        user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask, guarantor = guarantor).first()
 
         if not task or not user or not user_team or not user.reminders:
             return
@@ -20,28 +20,28 @@ def reminder(idTask, idUser):
         
         send_email(user.email, "Reminder", email_reminder(name = user.name + " " + user.surname, task_datetime = datetime.strptime(task.endDate, "%d.%m.%Y %H:%M:%S"), task_name = task.name), text)
     
-def cancel_reminder(idUser, idTask):
+def cancel_reminder(idUser, idTask, guarantor):
     with app.app_context():
-        job_id = f"reminder_{idUser}_{idTask}"
+        job_id = f"reminder_{idUser}_{idTask}_{guarantor}"
 
         try:
             scheduler.remove_job(job_id)
         except:
             pass
 
-def create_reminder(idUser, idTask):
-    if Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1) < datetime.now():
-        reminder(idTask = idTask, idUser = idUser)
+def create_reminder(idUser, idTask, guarantor):
+    if Task.query.filter_by(id = idTask, guarantor = guarantor).first().endDate - timedelta(days = 1) < datetime.now():
+        reminder(idTask = idTask, idUser = idUser, guarantor = guarantor)
         return
 
     with app.app_context():
-        job_id = f"reminder_{idUser}_{idTask}"
+        job_id = f"reminder_{idUser}_{idTask}_{guarantor}"
 
         scheduler.add_job(
             reminder,
             trigger="date",
             run_date=Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1),
-            args=[idTask, idUser],
+            args=[idTask, idUser, guarantor],
             id=job_id,
             replace_existing=True
         )

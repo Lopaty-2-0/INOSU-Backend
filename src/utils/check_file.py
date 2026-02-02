@@ -29,6 +29,7 @@ def check_file_access(folder_type):
             idTeam = kwargs.get("idTeam")
             idVersion = kwargs.get("idVersion")
             filename = kwargs.get("filename")
+            guarantor = kwargs.get("guarantor")
             idUser = flask_login.current_user.id
 
             if not idUser:
@@ -38,10 +39,10 @@ def check_file_access(folder_type):
                 if not await has_access_to_pfp(idUser, filename):
                     abort(403)
             elif folder_type == "tasks":
-                if not await has_access_to_tasks(idUser, idTask, idTeam, idVersion ,filename):
+                if not await has_access_to_tasks(idUser, idTask, idTeam, idVersion ,filename, guarantor):
                     abort(403)
             elif folder_type == "task":
-                if not await has_access_to_tasks(idUser, idTask, None, None, filename):
+                if not await has_access_to_tasks(idUser, idTask, None, None, filename, guarantor):
                     abort(403)
             else:
                 abort(403)
@@ -52,6 +53,9 @@ def check_file_access(folder_type):
 
 async def has_access_to_pfp(idUser, filename):
     if not idUser:
+        return False
+    
+    if not filename:
         return False
     
     if not User.query.filter_by(id = idUser).first():
@@ -65,39 +69,48 @@ async def has_access_to_pfp(idUser, filename):
 
     return True
 
-async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename):
+async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guarantor):
     if not idUser:
         return False
     
     if not idTask:
         return False
     
+    if not filename:
+        return False
+    
+    if not guarantor:
+        return False
+    
     if not User.query.filter_by(id = idUser).first():
         return False
+    
+    if not User.query.filter_by(id = guarantor).first():
+        return False
         
-    task = Task.query.filter_by(id = idTask).first()
+    task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
     
     if not task:
         return False
 
-    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser).first()
+    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser, guarantor = guarantor).first()
 
     if not user_team and task.guarantor != idUser:
         return False
     
     if not idTeam and not idVersion:
-        path = task_path + idTask + "/" + filename
+        path = task_path + guarantor + "/" + idTask + "/" + filename
     else:
-        team = Team.query.filter_by(idTask = idTask, idTeam = idTeam).first()
+        team = Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
         if not team:
             return False
         if user_team:
             if user_team.idTeam != team.idTeam:
                 return False
-        if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion).first():
+        if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion, guarantor = guarantor).first():
             return False
         
-        path = task_path + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
+        path = task_path + guarantor + "/" + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
     
     if not await sftp_stat_async(ssh, path):
         abort(404)

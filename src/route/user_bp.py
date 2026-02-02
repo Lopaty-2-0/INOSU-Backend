@@ -16,6 +16,9 @@ from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
 from src.models.Task import Task
+from src.models.Team import Team
+from src.models.Maturita_Task import Maturita_Task
+from src.models.Version_Team import Version_Team
 from src.utils.task import task_delete_sftp
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
@@ -33,7 +36,7 @@ addUser_extensions = {"json"}
 @check_file_size(2*1024*1024)
 def add():
     if flask_login.current_user.role != Role.Admin:
-        return send_response(400, 1010, {"message": "No permission for that"}, "error")
+        return send_response(403, 1010, {"message": "No permission for that"}, "error")
     data = request.get_json()
     
     badIds = []
@@ -213,12 +216,9 @@ async def update():
     profilePicture = request.files.get("profilePicture", None)
     
     try:
-        idClass = json.loads(raw_id_class) if raw_id_class.strip() else []
+        idClass = json.loads(raw_id_class) if raw_id_class.strip() else None
     except:
-        idClass = []
-
-    if not isinstance(idClass, list):
-        idClass = [idClass]
+        idClass = None
 
     user = flask_login.current_user
     badIds = []
@@ -298,12 +298,12 @@ async def update():
         if len(profilePicture.filename) > 255:
             return send_response(400, 2170, {"message": "Filename too long"}, "error")
         await pfp_save(pfp_path, secondUser, profilePicture)
-        
-    User_class = User_Class.query.filter_by(idUser = secondUser.id)
-    for cl in User_class:
-        db.session.delete(cl)
 
-    if idClass:
+    if isinstance(idClass, list):    
+        User_class = User_Class.query.filter_by(idUser = secondUser.id)
+        for cl in User_class:
+            db.session.delete(cl)
+    
         if secondUser.role == Role.Student:
             for id in idClass:
                 try:
@@ -333,8 +333,8 @@ async def delete():
     goodIds = []
     badIds = []
 
-    if not flask_login.current_user.role == Role.Admin:
-        return send_response(400, 3010, {"message": "No permission for that"}, "error")
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 3010, {"message": "No permission for that"}, "error")
     if not idUser:
         return send_response(400, 3020, {"message": "No idUser"}, "error")
     if not isinstance(idUser, list):
@@ -358,12 +358,32 @@ async def delete():
             cl = User_Class.query.filter_by(idUser = id)
             ta = User_Team.query.filter_by(idUser = id)
             tas = Task.query.filter_by(guarantor = id)
+            guarants = Maturita_Task.query.filter_by(guarantor = id)
+            objects = Maturita_Task.query.filter_by(objector = id)
 
             for t in ta:
                 db.session.delete(t)
             for c in cl:
                 db.session.delete(c)
+            for guarant in guarants:
+                db.session.delete(guarant)
+            for object in objects:
+                object.objector = None
             for task in tas:
+                teams = Team.query.filter_by(guarantor = id, idTask = task.id)
+
+                for team in teams:
+                    user_teams = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
+                    versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
+
+                    for user_team in user_teams:
+                        db.session.delete(user_team)
+                    for version in versions:
+                        db.session.delete(version)
+
+                    db.session.delete(team)
+
+                db.session.commit()
                 await delete_teams_for_task(task.id)
                 await task_delete_sftp(task.id)
                 db.session.delete(task)
@@ -371,13 +391,12 @@ async def delete():
             await pfp_delete(pfp_path, delUser)
             db.session.commit()
             db.session.delete(delUser)
+            db.session.commit()
             goodIds.append(id)
         else:
             badIds.append(id)
     if not goodIds:
         return send_response(400, 3040, {"message": "Nothing deleted"}, "error")
-
-    db.session.commit()
 
     return send_response(200, 3051, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 

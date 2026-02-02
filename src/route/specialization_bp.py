@@ -6,6 +6,7 @@ from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db, maxINT
+from src.models.User_Class import User_Class
 
 specialization_bp = Blueprint("specialization", __name__)
 
@@ -54,17 +55,16 @@ def add():
 @flask_login.login_required
 def delete():
     badIds = []
-    classIds = []
     goodIds = []
     
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 5010, {"message": "No permission for that"}, "error")
     
     data = request.get_json(force=True)
-    idSpecialization = data.get("idSpecialization", None)
+    idSpecialization = data.get("id", None)
 
     if not idSpecialization:
-        return send_response(400, 5020, {"message": "IdSpecialization is missing"}, "error")
+        return send_response(400, 5020, {"message": "Id is missing"}, "error")
     if not isinstance(idSpecialization, list):
         idSpecialization = [idSpecialization]
     
@@ -82,9 +82,16 @@ def delete():
         if not Specialization.query.filter_by(id = id).first() :
             badIds.append(id)
             continue
-        if Class.query.filter_by(idSpecialization = id).first():
-            classIds.append(id)
-            continue
+
+        classes = Class.query.filter_by(idSpecialization = id)
+
+        for specific_class in classes:
+            users = User_Class.query.filter_by(idClass = specific_class.id)
+
+            for user in users:
+                db.session.delete(user)
+            db.session.commit()
+            db.session.delete(specific_class)
         
         db.session.commit()
         db.session.delete(Specialization.query.filter_by(id = id).first())
@@ -95,7 +102,7 @@ def delete():
     if not goodIds:
         return send_response (400, 5030, {"message": "No deletion"}, "error")
     
-    return send_response (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds, "classIds":classIds}, "success")
+    return send_response (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 
 @specialization_bp.route("/specialization/get", methods = ["GET"])
 @flask_login.login_required
