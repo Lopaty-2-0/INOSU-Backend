@@ -6,15 +6,17 @@ import flask_login
 from src.utils.response import send_response
 from app import db, maxINT
 from flask import request
+from src.utils.paging import evaluator_paging
 
 evaluator_bp = Blueprint("evaluator", __name__)
 
-"""@evaluator_bp.route("/evaluator/get", methods = ["GET"])
+@evaluator_bp.route("/evaluator/get", methods = ["GET"])
 @flask_login.login_required
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    idMaturita = request.args.get("idMaturita", None)
 
     all_evaluators = []
 
@@ -47,11 +49,26 @@ def get():
     if pageNumber < 0:
         return send_response(400, 73080, {"message": "pageNumber must be bigger than 0"}, "error")
 
-    if not searchQuery:
-        evaluators = Evaluator.query.order_by(Evaluator.idMaturita.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Evaluator.query.count()
-    else:
-        evaluators, count = evaluator_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
+    try:
+        idMaturita = int(idMaturita)
+    except:
+        return send_response(400, 73090, {"message": "idMaturita not integer"}, "error")
     
+    if idMaturita < 1 or idMaturita > maxINT:
+        return send_response(400, 73100, {"message": "idMaturita not valid"}, "error")
+    
+    if not Maturita.query.filter_by(id = idMaturita).first():
+        return send_response(400, 73110, {"message": "maturita not found"}, "error")
 
-    return send_response (201, 73121, {"message": "evaluators found successfuly", "evaluators": all_evaluators}, "success")"""
+    if not searchQuery:
+        evaluators = Evaluator.query.filter_by(idMaturita = idMaturita).order_by(Evaluator.idMaturita.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Evaluator.query.filter_by(idMaturita = idMaturita).count()
+    else:
+        evaluators, count = evaluator_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, idMaturita = idMaturita)
+
+    for evaluator in evaluators:
+        user = User.query.filter_by(id = evaluator.idUser).first()
+        all_evaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
+
+
+    return send_response (201, 73121, {"message": "evaluators found successfuly", "evaluators": all_evaluators, "count":count}, "success")
