@@ -2,7 +2,7 @@ from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
 from src.utils.check_file import check_file_size
-from src.utils.task import make_task, task_delete_sftp
+from src.utils.task import make_task, task_delete_sftp, update_task
 from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
@@ -33,7 +33,6 @@ async def add():
     taskName = request.form.get("name", None)
     endDate = request.form.get("endDate", None)
     task = request.files.get("task", None)
-    guarantor = request.form.get("guarantor", None)
     deadline = request.form.get("deadline", None)
     points = request.form.get("points", None)
 
@@ -281,7 +280,7 @@ async def add_maturita_student():
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
 def get_by_id():
-    idTask = request.args.get("idTask", None)
+    idTask = request.args.get("id", None)
     guarantor = request.args.get("guarantor", None)
     
     task_data = None
@@ -385,7 +384,7 @@ def get():
 @task_bp.route("/task/delete", methods=["DELETE"])
 async def delete():
     data = request.get_json(force=True)
-    idTask = data.get("idTask", None)
+    idTask = data.get("id", None)
     goodIds = []
     badIds = []
 
@@ -583,3 +582,96 @@ def get_task():
         })
         
     return send_response(200, 55121, {"message": "Found tasks for guarantor", "tasks": all_tasks, "count": count}, "success")
+
+
+@flask_login.login_required
+@check_file_size(32*1024*1024)
+@task_bp.route("/task/update", methods=["PUT"])
+async def update():
+    idTask = request.form.get("id",None)
+    taskName = request.form.get("name", None)
+    endDate = request.form.get("endDate", None)
+    task = request.files.get("task", None)
+    deadline = request.form.get("deadline", None)
+    points = request.form.get("points", None)
+
+    if flask_login.current_user.role == Role.Student:
+        return send_response(400, 74010, {"message": "This role can not update task"}, "error")
+    if not idTask:
+        return send_response(400, 74020, {"message": "No id entered"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 74030, {"message": "Id not integer"}, "error")
+    if idTask > maxINT or idTask <=0:
+        return send_response(400, 74040, {"message": "Id not valid"}, "error")
+    
+    actual_task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
+
+    if not actual_task:
+       return send_response(403, 74050, {"message": "No task found"}, "error")
+    
+    if taskName:
+        taskName = str(taskName)
+
+        if len(taskName) > 45:
+            return send_response(400, 74060, {"message":"Name too long"}, "error")
+        actual_task.name = taskName
+
+    if task:
+        if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+            return send_response(400, 74070, {"message": "Wrong file format or too long"}, "error")
+        
+        await update_task(file = task, id = idTask, guarantor = flask_login.current_user.id, file2 = actual_task.task)
+        actual_task.task = task.filename
+        
+    
+    if actual_task.type == Type.Task:
+        if endDate:
+            try:
+                endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+            except:
+                return send_response(400, 74080, {"message":"End date not integer or is too far"}, "error")
+            if endDate <= task.startDate.replace(tzinfo = datetime.timezone.utc):
+                return send_response(400, 74090, {"message":"Ending before begining"}, "error")
+            actual_task.endDate = endDate
+
+        user = flask_login.current_user
+
+        if deadline:
+            try:
+                deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
+
+                if deadline < task.startDate.replace(tzinfo = datetime.timezone.utc):
+                    return send_response(400, 74100, {"message":"Deadline before startDate"}, "error")
+                if deadline < task.endDate.replace(tzinfo = datetime.timezone.utc):
+                    return send_response(400, 74110, {"message":"Deadline before endDate"}, "error")
+            except:
+                return send_response(400, 74120, {"message":"Deadline not integer or is too far"}, "error")
+            
+            actual_task.deadline = deadline
+        if points:
+            try:
+                points = float(points)
+            except:
+                return send_response(400, 74130, {"message":"Points are not float"}, "error")
+
+            if points > maxFLOAT or points <= 0:
+                return send_response(400, 74140, {"message":"Points not valid"}, "error")
+            
+            actual_task.points = points
+
+    db.session.commit()
+
+    guarantor = {
+                "id":user.id,
+                "name":user.name,
+                "surname": user.surname,
+                "abbreviation": user.abbreviation,
+                "createdAt": user.createdAt,
+                "role": user.role.value,
+                "profilePicture":user.profilePicture,
+                "email":user.email
+                }
+
+    return send_response(201, 74151, {"message":"Task created successfuly", "task":{"id": idTask, "name": actual_task.name, "startDate": actual_task.startDate, "endDate": actual_task.endDate, "task": actual_task.task, "guarantor": guarantor, "deadline": actual_task.deadline, "points": actual_task.points}}, "success")

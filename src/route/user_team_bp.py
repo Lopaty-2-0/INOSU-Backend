@@ -42,7 +42,7 @@ async def add():
     task = Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first()
     if not task:
         return send_response(400, 36050, {"message": "Nonexistent task"}, "error")
-    if task.type == Type.Maturita & User_Team.query.filter_by(id=idTask, guarantor = flask_login.current_user.id):
+    if task.type == Type.Maturita and User_Team.query.filter_by(idTask=idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 36060, {"message": "This maturita task already has user"}, "error")
 
     status = Status.Approved
@@ -55,7 +55,7 @@ async def add():
     if not idTeam:
         if idUser and not idClass:
             for idU in idUser:
-                if task.type == Type.Maturita & goodIds:
+                if task.type == Type.Maturita and goodIds:
                     break
                 try:
                     idU = int(idU)
@@ -86,7 +86,7 @@ async def add():
 
         if idClass and not idUser:
             for idCl in idClass:
-                if task.type == Type.Maturita & goodIds:
+                if task.type == Type.Maturita and goodIds:
                     break
                 try:
                     idCl = int(idCl)
@@ -121,7 +121,7 @@ async def add():
 
     else:
         for idU in idUser:
-            if task.type == Type.Maturita & goodIds:
+            if task.type == Type.Maturita and goodIds:
                     break
             try:
                 idU = int(idU)
@@ -365,7 +365,7 @@ async def change():
         cancel_reminder(idUser = user_team.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
 
     for id in idUser:
-        if task.type == Type.Maturita & goodIds:
+        if task.type == Type.Maturita and goodIds:
             break
         try:
             id = int(id)

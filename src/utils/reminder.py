@@ -18,7 +18,7 @@ def reminder(idTask, idUser, guarantor):
         
         text = "Upozornění uzavírky události" + task.name
         
-        send_email(user.email, "Reminder", email_reminder(name = user.name + " " + user.surname, task_datetime = datetime.strptime(task.endDate, "%d.%m.%Y %H:%M:%S"), task_name = task.name), text)
+        send_email(user.email, "Reminder", email_reminder(name = user.name + " " + user.surname, task_datetime = task.endDate.strftime("%d.%m.%Y %H:%M:%S"), task_name = task.name), text)
     
 def cancel_reminder(idUser, idTask, guarantor):
     with app.app_context():

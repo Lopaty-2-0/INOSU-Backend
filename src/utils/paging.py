@@ -9,6 +9,7 @@ from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
 from src.models.Topic import Topic
 from src.models.Maturita import Maturita
+from src.models.Evaluator import Evaluator
 
 def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -202,3 +203,20 @@ def maturita_paging(searchQuery, amountForPaging, pageNumber):
         )
 
     return Maturita.query.filter(and_(*conditions)).order_by(Maturita.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Maturita.query.filter(and_(*conditions)).count()
+
+def evaluator_paging(searchQuery, amountForPaging, pageNumber, idMaturita):
+    words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+
+    conditions = []
+    for word in words:
+        like_pattern = f"%{word}%"
+        conditions.append(
+            or_(
+                func.lower(User.name).like(like_pattern),
+                func.lower(User.surname).like(like_pattern),
+                func.lower(User.email).like(like_pattern),
+                func.lower(User.abbreviation).like(like_pattern),
+            )
+        )
+
+    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).count()

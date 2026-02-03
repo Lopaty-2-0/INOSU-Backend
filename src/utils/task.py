@@ -63,3 +63,14 @@ async def make_task(file, name, guarantor, deadline, points, endDate, startDate,
     db.session.commit()
 
     return newTask, id
+
+async def update_task(guarantor, id, file, file2):
+    if not await sftp_stat_async(ssh, task_path + str(guarantor) + "/" + str(id)):
+        return False
+    
+    if await sftp_stat_async(ssh, task_path + str(guarantor) + "/" + str(id) + "/" + file2):
+        await sftp_remove_async(ssh, task_path + str(guarantor) + "/" + str(id) + "/" + file2)
+
+    file.save("files/" + file.filename)
+    await sftp_put_async(ssh, "files/" + file.filename, task_path + str(guarantor) + "/" + str(id) + "/" + file.filename)
+    os.remove("files/" + file.filename)
