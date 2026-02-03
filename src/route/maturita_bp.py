@@ -14,6 +14,7 @@ from src.utils.paging import maturita_paging
 from flask import request
 from app import db, maxFLOAT, maxINT
 import datetime
+from src.utils.task import task_delete_sftp
 
 #TODO: přidat gety
 
@@ -103,7 +104,7 @@ def add():
 
 @maturita_bp.route("/maturita/update", methods = ["PUT"])
 @flask_login.login_required
-def update():
+async def update():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 68010, {"message": "No permission for that"}, "error")
     
@@ -120,7 +121,7 @@ def update():
 
     if not idMaturita:
         return send_response(400, 68020, {"message": "idMaturita missing"}, "error")
-    if not grade and not evaluators and not startDate and not endDate and not maxPoints:
+    if not grade and not isinstance(evaluators, list) and not startDate and not endDate and not maxPoints:
         return send_response(400, 68030, {"message": "nothing entered to change"}, "error")
     try:
         idMaturita = int(idMaturita)
@@ -177,15 +178,21 @@ def update():
     
     db.session.commit()
 
-    if evaluators:
-        evaluatoring = Evaluator.query.filter_by(idMaturita = idMaturita)
+    maturitas_tasks = Maturita_Task.query.filter_by(idMaturita = id).all()
+
+    for maturitas in maturitas_tasks:
+        task_maturita = Task.query.filter_by(id = maturitas.idTask, guarantor = maturitas.guarantor).first()
+        task_maturita.endDate = maturita.endDate
+        task_maturita.points = maturita.maxPoints
+
+    if isinstance(evaluators, list):
+        evaluatoring = Evaluator.query.filter_by(idMaturita = idMaturita).all()
+        evaluator_ids = []
 
         for evaluatored in evaluatoring:
+            evaluator_ids.append(evaluatored.idUser)
             db.session.delete(evaluatored)
         db.session.commit()
-
-        if not isinstance(evaluators, list):
-            evaluators = [evaluators]
         
         for evaluator in evaluators:
             try:
@@ -207,9 +214,33 @@ def update():
             db.session.add(Evaluator(idUser = evaluator, idMaturita = idMaturita))
             goodIds.append(evaluator)
 
-        db.session.commit()
+            if evaluator in evaluator_ids:
+                evaluator_ids.remove(evaluator)
 
-    return send_response(201, 68151, {"message": "maturita created successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}, "goodIds":goodIds, "badIds": badIds}, "success")
+        for evaluator_id in evaluator_ids:
+            maturita_tasks = Maturita_Task.query.filter_by(idMaturita = idMaturita, guarantor = evaluator_id).all()
+            
+            for maturita_task in maturita_tasks:
+
+                task = Task.query.filter_by(id = maturita_task.idTask, guarantor = evaluator_id).first()
+                team = Team.query.filter_by(idTask = maturita_task.idTask, guarantor = evaluator_id).first()
+                user_team = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluator_id).first() 
+                versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluator_id).all()
+
+                for version in versions:
+                    db.session.delete(version)
+
+                db.session.delete(user_team)
+                db.session.delete(maturita_task)
+                db.session.commit()
+                db.session.delete(team)
+                db.session.commit()
+                await task_delete_sftp(task.id, task.guarantor)
+                db.session.delete(task)
+
+    db.session.commit()
+
+    return send_response(201, 68151, {"message": "maturita updated successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}, "goodIds":goodIds, "badIds": badIds}, "success")
 
 @maturita_bp.route("/maturita/get/current", methods = ["GET"])
 @flask_login.login_required
@@ -263,7 +294,7 @@ def get_id():
 
 @maturita_bp.route("/maturita/delete", methods = ["delete"])
 @flask_login.login_required
-def delete():
+async def delete():
     data = request.get_json(force=True)
     id = data.get("id", None)
 
@@ -307,8 +338,9 @@ def delete():
         db.session.commit()
         db.session.delete(team)
         db.session.commit()
+        await task_delete_sftp(task.id, task.guarantor)
         db.session.delete(task)
-
+        
     db.session.delete(maturita)
     db.session.commit()
     
