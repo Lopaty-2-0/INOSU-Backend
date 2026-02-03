@@ -245,27 +245,18 @@ async def update():
 @maturita_bp.route("/maturita/get/current", methods = ["GET"])
 @flask_login.login_required
 def get_current():
-    all_evaluators = []
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     maturita = Maturita.query.filter((Maturita.endDate > now) & (Maturita.startDate < now)).order_by(Maturita.id.desc()).first()
 
     if not maturita:
         return send_response(400, 69010, {"message": "no maturita in current time range"}, "error")
-    
-    evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
 
-    for evaluator in evaluators:
-        user = User.query.filter_by(id = evaluator.idUser).first()
-        all_evaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
-
-    
-    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":all_evaluators}}, "success")
+    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}}, "success")
 
 @maturita_bp.route("/maturita/get/id", methods = ["GET"])
 @flask_login.login_required
 def get_id():
     id = request.args.get("id", None)
-    all_evaluators = []
 
     if not id:
         return send_response(400, 70010, {"message": "id not entered"}, "error")
@@ -283,68 +274,79 @@ def get_id():
     if not maturita:
         return send_response(400, 70040, {"message": "No maturita found"}, "error")
     
-    evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
-
-    for evaluator in evaluators:
-        user = User.query.filter_by(id = evaluator.idUser).first()
-        all_evaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
-
     
-    return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":all_evaluators}}, "success")
+    return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}}, "success")
 
 @maturita_bp.route("/maturita/delete", methods = ["delete"])
 @flask_login.login_required
 async def delete():
     data = request.get_json(force=True)
-    id = data.get("id", None)
+    idMaturita = data.get("id", None)
+    badIds = []
+    goodIds = []
 
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 71010, {"message": "No permission for that"}, "error")
 
-    if not id:
+    if not idMaturita:
         return send_response(400, 71020, {"message": "id not entered"}, "error")
     
-    try:
-        id = int(id)
-    except:
-        return send_response(400, 71030, {"message": "id not integer"}, "error")
+    if not isinstance(id, list):
+        idMaturita = [idMaturita]
     
-    if id > maxINT or id <=0:
-        return send_response(400, 71040, {"message": "id not valid"}, "error")
-
-    maturita = Maturita.query.filter_by(id = id).first()
-
-    if not maturita:
-        return send_response(400, 71050, {"message": "No maturita found"}, "error")
-    
-    maturita_tasks = Maturita_Task.query.filter_by(idMaturita = id)
-    evaluators = Evaluator.query.filter_by(idMaturita = id).all()
-
-    for evaluator in evaluators:
-        db.session.delete(evaluator)
-    db.session.commit()
-
-    for maturita_task in maturita_tasks:
-        task = Task.query.filter_by(id = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
-        team = Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
-        user_team = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).first() 
-        versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
-
-        for version in versions:
-            db.session.delete(version)
-
-        db.session.delete(user_team)
-        db.session.delete(maturita_task)
-        db.session.commit()
-        db.session.delete(team)
-        db.session.commit()
-        await task_delete_sftp(task.id, task.guarantor)
-        db.session.delete(task)
+    for id in id:
+        try:
+            id = int(id)
+        except:
+            badIds.append(id)
+            continue
         
-    db.session.delete(maturita)
-    db.session.commit()
+        if id > maxINT or id <=0:
+            badIds.append(id)
+            continue
+
+        maturita = Maturita.query.filter_by(id = id).first()
+
+        if not maturita:
+            badIds.append(id)
+            continue
     
-    return send_response(201, 71061, {"message": "maturita deleted successfuly"}, "success")
+        maturita_tasks = Maturita_Task.query.filter_by(idMaturita = id)
+        evaluators = Evaluator.query.filter_by(idMaturita = id).all()
+
+        for evaluator in evaluators:
+            db.session.delete(evaluator)
+        db.session.commit()
+
+        for maturita_task in maturita_tasks:
+            task = Task.query.filter_by(id = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
+            team = Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
+            user_team = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).first() 
+            versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
+
+            for version in versions:
+                db.session.delete(version)
+
+            if user_team:
+                db.session.delete(user_team)
+            if maturita_task:
+                db.session.delete(maturita_task)
+            db.session.commit()
+            if team:
+                db.session.delete(team)
+                db.session.commit()
+            if task:
+                await task_delete_sftp(task.id, task.guarantor)
+                db.session.delete(task)
+            
+        db.session.delete(maturita)
+        goodIds.append(id)
+        db.session.commit()
+
+    if not goodIds:
+        return send_response(400, 71030, {"message": "no deletion"}, "error")
+
+    return send_response(201, 71041, {"message": "maturita deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 
 @maturita_bp.route("/maturita/get", methods = ["GET"])
 @flask_login.login_required
@@ -354,7 +356,6 @@ def get():
     searchQuery = request.args.get("searchQuery", None)
 
     all_maturitas = []
-    all_evaluators = []
 
     if not amountForPaging:
         return send_response(400, 72010, {"message": "amountForPaging not entered"}, "error")
@@ -392,13 +393,6 @@ def get():
         maturitas, count = maturita_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
     for maturita in maturitas:
-        evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+        all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate})
 
-        for evaluator in evaluators:
-            user = User.query.filter_by(id = evaluator.idUser).first()
-            all_evaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
-
-        all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators": all_evaluators})
-        all_evaluators = []
-    
     return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":all_maturitas, "count":count}, "success")

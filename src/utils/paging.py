@@ -222,4 +222,4 @@ def evaluator_paging(searchQuery, amountForPaging, pageNumber, idMaturita):
             )
         )
 
-    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)  & Maturita.id == idMaturita).filter(*conditions).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita) & Maturita.id == idMaturita).filter(*conditions).count()
+    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)  & Maturita.id == idMaturita).filter(*conditions).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita) & Maturita.id == idMaturita).filter(*conditions).count()
