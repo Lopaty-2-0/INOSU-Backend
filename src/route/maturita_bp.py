@@ -138,7 +138,7 @@ async def update():
     
     if grade:
         grade = str(grade)
-        id = 0
+        id = maturita.id
 
         if len(grade) > 9:
                 return send_response(400, 68070, {"message": "grade too long"}, "error")
