@@ -89,12 +89,13 @@ async def delete():
                 
                 db.session.commit()
                 db.session.delete(team)
+            
+            db.session.delete(maturita_task)
 
             db.session.commit()
+            await task_delete_sftp(task.guarantor, task.id)
             db.session.delete(task)
 
-            await task_delete_sftp(task.guarantor, task.id)
-        
         db.session.commit()
         db.session.delete(Topic.query.filter_by(id = id).first())
         goodIds.append(id)
