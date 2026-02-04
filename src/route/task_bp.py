@@ -678,6 +678,7 @@ async def update():
     task = request.files.get("task", None)
     deadline = request.form.get("deadline", None)
     points = request.form.get("points", None)
+    objector = request.form.get("objector", None)
 
     if flask_login.current_user.role == Role.Student:
         return send_response(400, 74010, {"message": "This role can not update task"}, "error")
@@ -744,21 +745,30 @@ async def update():
                 return send_response(400, 74140, {"message":"Points not valid"}, "error")
             
             actual_task.points = points
+    else:
+        maturita = Maturita_Task.query.filter_by(idTask = id, guarantor = flask_login.current_user.id).first()
 
+        if objector:
+            try:
+                objector = int(objector)
+            except:
+                return send_response(400, 74150, {"message": "objector not integer"}, "error")
+            if objector > maxINT or objector <=0:
+                return send_response(400, 74160, {"message": "objector not valid"}, "error")
+            
+            actual_objector = User.query.filter_by(id = objector).first()
+            evaluator = Evaluator.query.filter_by(idUser = objector, idMaturita = maturita.idMaturita).first()
+
+            if not actual_objector:
+                return send_response(400, 74170, {"message": "objector not valid"}, "error")
+            if not evaluator:
+                return send_response(400, 74180, {"message": "objector not valid"}, "error")
+            
+            maturita.objector = objector
+            
     db.session.commit()
 
-    guarantor = {
-                "id":user.id,
-                "name":user.name,
-                "surname": user.surname,
-                "abbreviation": user.abbreviation,
-                "createdAt": user.createdAt,
-                "role": user.role.value,
-                "profilePicture":user.profilePicture,
-                "email":user.email
-                }
-
-    return send_response(201, 74151, {"message":"Task updated successfuly", "task":{"id": idTask, "name": actual_task.name, "startDate": actual_task.startDate, "endDate": actual_task.endDate, "task": actual_task.task, "guarantor": guarantor, "deadline": actual_task.deadline, "points": actual_task.points}}, "success")
+    return send_response(201, 74191, {"message":"Task updated successfuly"}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/maturita/guarantor/approved", methods=["GET"])
@@ -991,11 +1001,8 @@ def get_maturita_student_approved():
     max_points = maturita.maxPoints
         
     if team:
-        user_team = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor, idTeam = team.idTeam).first()
         idTeam = team.idTeam
 
-
-    
     user_data = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
 
 
@@ -1111,3 +1118,62 @@ def get_maturita_student_pending():
         })
         
     return send_response(200, 79091, {"message": "Found pending maturitas for guarantor", "tasks": all_tasks, "count": count}, "success")
+
+@flask_login.login_required
+@check_file_size(32*1024*1024)
+@task_bp.route("/task/update/maturita/student", methods=["PUT"])
+async def update_maturita_student():
+    idTask = request.form.get("id",None)
+    taskName = request.form.get("name", None)
+    task = request.files.get("task", None)
+    guarantor = request.form.get("guarantor", None)
+
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    maturita = Maturita.query.filter(Maturita.startDate <= now & Maturita.endDate >= now).first()
+
+    if not idTask:
+        return send_response(400, 80010, {"message": "No id entered"}, "error")
+    if not guarantor:
+        return send_response(400, 80020, {"message": "No guarantor entered"}, "error")
+    if not maturita:
+        return send_response(400, 80030, {"message": "No maturita found"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 80040, {"message": "Id not integer"}, "error")
+    if idTask > maxINT or idTask <=0:
+        return send_response(400, 80050, {"message": "Id not valid"}, "error")
+    try:
+        guarantor = int(guarantor)
+    except:
+        return send_response(400, 80060, {"message": "Id not integer"}, "error")
+    if guarantor > maxINT or guarantor <=0:
+        return send_response(400, 80070, {"message": "Id not valid"}, "error")
+    
+    user = User.query.filter_by(id = actual_task.guarantor).first()
+    
+    if not user:
+        return send_response(403, 80080, {"message": "No guarantor found"}, "error")
+    
+    actual_task = Task.query.join(Team, (Team.id == idTask) & (Team.guarantor == guarantor) & (Team.status == Status.Pending)).join(User_Team, (User_Team.idTask == idTask) & (User_Team.guarantor == guarantor) & (User_Team.idUser == flask_login.current_user.id)).join(Maturita_Task, (Maturita_Task.idTask == idTask) & (Maturita_Task.guarantor == guarantor) & (Maturita_Task.idMaturita == maturita.id)).first()
+
+    if not actual_task:
+       return send_response(403, 80090, {"message": "No task found"}, "error")
+    
+    if taskName:
+        taskName = str(taskName)
+
+        if len(taskName) > 45:
+            return send_response(400, 80100, {"message":"Name too long"}, "error")
+        actual_task.name = taskName
+
+    if task:
+        if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+            return send_response(400, 80110, {"message": "Wrong file format or too long"}, "error")
+        
+        await update_task(file = task, id = idTask, guarantor = guarantor, file2 = actual_task.task)
+        actual_task.task = task.filename
+    
+    db.session.commit()
+
+    return send_response(201, 80121, {"message":"Task updated successfuly"}, "success")
