@@ -9,6 +9,7 @@ from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
 from src.models.Topic import Topic
 from src.models.Maturita import Maturita
+from src.models.Maturita_Task import Maturita_Task
 from src.models.Evaluator import Evaluator
 
 def user_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
@@ -74,7 +75,7 @@ def class_paging(searchQuery, amountForPaging, pageNumber):
 
     return Class.query.filter(and_(*conditions)).order_by(Class.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Class.query.filter(and_(*conditions)).count()
 
-def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, status = None):
+def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, status = None, idMaturita = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
     #TODO:dodat idMaturita
 
@@ -108,8 +109,8 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
         if typeOfSpecialSearch == "endDate":
             specialConditions.append(Task.endDate == specialSearch)
     
-    if status and (typeOfSpecialSearch == "maturita" or typeOfSpecialSearch == "task"):
-        return Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor) & (Team.status == status)).filter(and_(*conditions, *specialConditions)).distinct(Task.id & Task.guarantor).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.join(Team, and_(Team.idTask == Task.id, Team.guarantor == Task.guarantor, Team.status == status)).filter(and_(*conditions, *specialConditions)).distinct(Task.id & Task.guarantor).count()
+    if status and typeOfSpecialSearch == "maturita" and idMaturita:
+        return Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor) & (Team.status == status)).join(Maturita_Task, (Maturita_Task.idMaturita == idMaturita) & (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor)).filter(and_(*conditions, *specialConditions)).distinct(Task.id & Task.guarantor).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.join(Team, and_(Team.idTask == Task.id, Team.guarantor == Task.guarantor, Team.status == status)).join(Maturita_Task, (Maturita_Task.idMaturita == idMaturita) & (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor)).filter(and_(*conditions, *specialConditions)).distinct(Task.id & Task.guarantor).count()
 
     return Task.query.filter(and_(*conditions, *specialConditions)).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.filter(and_(*conditions, *specialConditions)).count()
 
