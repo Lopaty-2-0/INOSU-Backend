@@ -303,9 +303,9 @@ def get_by_id():
     if guarantor > maxINT or guarantor <=0:
         return send_response(400, 30060, {"message": "Guarantor not valid"}, "error")
 
-    user = User.query.filter_by(id = guarantor).first()
+    guarantor_user = User.query.filter_by(id = guarantor).first()
     
-    if not user:
+    if not guarantor_user:
         return send_response(404, 30070, {"message": "Guarantor not found"}, "error")
     
     task = Task.query.filter_by(id=idTask, guarantor = guarantor).first()
@@ -313,18 +313,61 @@ def get_by_id():
     if not task:
         return send_response(404, 30080, {"message": "Task not found"}, "error")
 
-    guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email}
+    guarantor_data = {"id":guarantor_user.id, "name":guarantor_user.name, "surname": guarantor_user.surname, "abbreviation": guarantor_user.abbreviation, "createdAt": guarantor_user.createdAt, "role": guarantor_user.role.value, "profilePicture":guarantor_user.profilePicture, "email":guarantor_user.email}
 
-    task_data = {
-        "id": task.id,
-        "name": task.name,
-        "startDate": task.startDate,
-        "endDate": task.endDate,
-        "task": task.task,
-        "guarantor": guarantor,
-        "points": task.points,
-        "deadline": task.deadline
-    }
+    if task.type == Type.Task:
+        task_data = {
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "guarantor": guarantor_data,
+            "points": task.points,
+            "deadline": task.deadline
+        }
+    else:
+        user_team = None
+        objector_data = []
+        maturita_task = Maturita_Task.query.filter_by(idTask = task.id, guarantor = guarantor).first()
+        team = Team.query.filter_by(idTask = task.id, guarantor = guarantor).first()
+        if maturita_task:
+            maturita = Maturita.query.filter_by(id = maturita_task.idMaturita).first()  
+            topic = Topic.query.filter_by(id = maturita_task.idTopic).first()
+            objector = User.query.filter_by(id = maturita_task.objector).first()
+            if objector:
+                objector_data = {"id":objector.id, "name":objector.name, "surname": objector.surname, "abbreviation": objector.abbreviation, "createdAt": objector.createdAt, "role": objector.role.value, "profilePicture":objector.profilePicture, "email":objector.email, "updatedAt":objector.updatedAt}
+            topic_name = topic.name
+            max_points = maturita.maxPoints
+        else:
+            max_points = None
+            topic_name = None
+        if team:
+            user_team = User_Team.query.filter_by(idTask = task.id, guarantor = guarantor, idTeam = team.id).first()
+            idTeam = team.id
+        else:
+            idTeam = None
+        if user_team:
+            user = User.query.filter_by(id =user_team.idUser).first()
+            user_data = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
+        else:
+            user_data = []
+
+        task_data = {
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "guarantor": guarantor_data,
+            "points": task.points,
+            "deadline": task.deadline,
+            "user_data":user_data,
+            "objector":objector_data,
+            "idTeam":idTeam,
+            "topic":topic_name,
+            "maxPoints":max_points
+        }
     
     return send_response(200, 30091, {"message": "Task found", "task": task_data}, "success")
 
@@ -502,15 +545,48 @@ def get_maturita():
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "maturita")
 
     for task in tasks:
+        user_team = None
+        maturita_task = Maturita_Task.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
+        team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
+
+        if maturita_task:
+            maturita = Maturita.query.filter_by(id = maturita_task.idMaturita).first()  
+            topic = Topic.query.filter_by(id = maturita_task.idTopic).first()
+            objector = User.query.filter_by(id = maturita_task.objector).first()
+
+            if objector:
+                objector_data = {"id":objector.id, "name":objector.name, "surname": objector.surname, "abbreviation": objector.abbreviation, "createdAt": objector.createdAt, "role": objector.role.value, "profilePicture":objector.profilePicture, "email":objector.email, "updatedAt":objector.updatedAt}
+            
+            topic_name = topic.name
+            max_points = maturita.maxPoints
+        else:
+            max_points = None
+            topic_name = None
+            objector_data = []
+        if team:
+            user_team = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor, idTeam = team.id).first()
+            idTeam = team.id
+        else:
+            idTeam = None
+        if user_team:
+            user = User.query.filter_by(id =user_team.idUser).first()
+            user_data = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
+        else:
+            user_data = []
+
         all_tasks.append({
             "id": task.id,
             "name": task.name,
             "startDate": task.startDate,
             "endDate": task.endDate,
             "task": task.task,
-            "guarantor": task.guarantor,
+            "points": task.points,
             "deadline": task.deadline,
-            "points":task.points
+            "user_data":user_data,
+            "objector":objector_data,
+            "idTeam":idTeam,
+            "topic":topic_name,
+            "maxPoints":max_points
         })
         
     return send_response(200, 19121, {"message": "Found maturitas for guarantor", "tasks": all_tasks, "count": count}, "success")
@@ -632,7 +708,7 @@ async def update():
                 endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
             except:
                 return send_response(400, 74080, {"message":"End date not integer or is too far"}, "error")
-            if endDate <= task.startDate.replace(tzinfo = datetime.timezone.utc):
+            if endDate <= actual_task.startDate.replace(tzinfo = datetime.timezone.utc):
                 return send_response(400, 74090, {"message":"Ending before begining"}, "error")
             actual_task.endDate = endDate
 
@@ -642,9 +718,9 @@ async def update():
             try:
                 deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
 
-                if deadline < task.startDate.replace(tzinfo = datetime.timezone.utc):
+                if deadline < actual_task.startDate.replace(tzinfo = datetime.timezone.utc):
                     return send_response(400, 74100, {"message":"Deadline before startDate"}, "error")
-                if deadline < task.endDate.replace(tzinfo = datetime.timezone.utc):
+                if deadline < actual_task.endDate.replace(tzinfo = datetime.timezone.utc):
                     return send_response(400, 74110, {"message":"Deadline before endDate"}, "error")
             except:
                 return send_response(400, 74120, {"message":"Deadline not integer or is too far"}, "error")
@@ -674,4 +750,195 @@ async def update():
                 "email":user.email
                 }
 
-    return send_response(201, 74151, {"message":"Task created successfuly", "task":{"id": idTask, "name": actual_task.name, "startDate": actual_task.startDate, "endDate": actual_task.endDate, "task": actual_task.task, "guarantor": guarantor, "deadline": actual_task.deadline, "points": actual_task.points}}, "success")
+    return send_response(201, 74151, {"message":"Task updated successfuly", "task":{"id": idTask, "name": actual_task.name, "startDate": actual_task.startDate, "endDate": actual_task.endDate, "task": actual_task.task, "guarantor": guarantor, "deadline": actual_task.deadline, "points": actual_task.points}}, "success")
+
+@flask_login.login_required
+@task_bp.route("/task/get/maturita/approved", methods=["GET"])
+def get_maturita_approved():
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
+    all_tasks = []
+
+    if not amountForPaging:
+        return send_response(400, 75010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 75020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 75030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if amountForPaging > maxINT:
+        return send_response(400, 75040, {"message": "amountForPaging too big"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 75050, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 75060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 75070, {"message": "pageNumber too big"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 75080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not searchQuery:
+        tasks = Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).filter(Task.guarantor == flask_login.current_user.id, Task.type == Type.Maturita, Team.status == Status.Approved).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).filter(Task.guarantor == flask_login.current_user.id, Task.type == Type.Maturita, Team.status == Status.Approved).count()
+    else:
+        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = flask_login.current_user.id, typeOfSpecialSearch = "maturita", status=Status.Approved)
+
+    for task in tasks:
+        user_team = None
+        maturita_task = Maturita_Task.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
+        team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
+
+        if maturita_task:
+            maturita = Maturita.query.filter_by(id = maturita_task.idMaturita).first()  
+            topic = Topic.query.filter_by(id = maturita_task.idTopic).first()
+            objector = User.query.filter_by(id = maturita_task.objector).first()
+
+            if objector:
+                objector_data = {"id":objector.id, "name":objector.name, "surname": objector.surname, "abbreviation": objector.abbreviation, "createdAt": objector.createdAt, "role": objector.role.value, "profilePicture":objector.profilePicture, "email":objector.email, "updatedAt":objector.updatedAt}
+            
+            topic_name = topic.name
+            max_points = maturita.maxPoints
+        else:
+            max_points = None
+            topic_name = None
+            objector_data = []
+        if team:
+            user_team = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor, idTeam = team.id).first()
+            idTeam = team.id
+            review = team.review
+            reviewUpdatedAt = team.reviewUpdatedAt
+        else:
+            idTeam = None
+            review = None
+            reviewUpdatedAt = None
+        if user_team:
+            user = User.query.filter_by(id =user_team.idUser).first()
+            user_data = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
+        else:
+            user_data = []
+
+        all_tasks.append({
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "points": task.points,
+            "deadline": task.deadline,
+            "user_data":user_data,
+            "objector":objector_data,
+            "idTeam":idTeam,
+            "topic":topic_name,
+            "maxPoints":max_points,
+            "review":review,
+            "reviewUpdatedAt":reviewUpdatedAt
+        })
+        
+    return send_response(200, 75091, {"message": "Found approved maturitas for guarantor", "tasks": all_tasks, "count": count}, "success")
+
+@flask_login.login_required
+@task_bp.route("/task/get/maturita/pending", methods=["GET"])
+def get_maturita_pending():
+    amountForPaging = request.args.get("amountForPaging", None)
+    pageNumber = request.args.get("pageNumber", None)
+    searchQuery = request.args.get("searchQuery", None)
+
+    all_tasks = []
+
+    if not amountForPaging:
+        return send_response(400, 76010, {"message": "amountForPaging not entered"}, "error")
+
+    try:
+        amountForPaging = int(amountForPaging)
+    except:
+        return send_response(400, 76020, {"message": "amountForPaging not integer"}, "error")
+    
+    if amountForPaging < 1:
+        return send_response(400, 76030, {"message": "amountForPaging smaller than 1"}, "error")
+    
+    if amountForPaging > maxINT:
+        return send_response(400, 76040, {"message": "amountForPaging too big"}, "error")
+    
+    if not pageNumber:
+        return send_response(400, 76050, {"message": "pageNumber not entered"}, "error")
+    
+    try:
+        pageNumber = int(pageNumber)
+    except:
+        return send_response(400, 76060, {"message": "pageNumber not integer"}, "error")
+    if pageNumber > maxINT + 1:
+        return send_response(400, 76070, {"message": "pageNumber too big"}, "error")
+    
+    pageNumber -= 1
+
+    if pageNumber < 0:
+        return send_response(400, 76080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    if not searchQuery:
+        tasks = Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).filter(Task.guarantor == flask_login.current_user.id, Task.type == Type.Maturita, Team.status == Status.Pending).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).filter(Task.guarantor == flask_login.current_user.id, Task.type == Type.Maturita, Team.status == Status.Pending).count()
+    else:
+        tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = flask_login.current_user.id, typeOfSpecialSearch = "maturita", status=Status.Pending)
+
+    for task in tasks:
+        user_team = None
+        maturita_task = Maturita_Task.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
+        team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
+
+        if maturita_task:
+            maturita = Maturita.query.filter_by(id = maturita_task.idMaturita).first()  
+            topic = Topic.query.filter_by(id = maturita_task.idTopic).first()
+            objector = User.query.filter_by(id = maturita_task.objector).first()
+
+            if objector:
+                objector_data = {"id":objector.id, "name":objector.name, "surname": objector.surname, "abbreviation": objector.abbreviation, "createdAt": objector.createdAt, "role": objector.role.value, "profilePicture":objector.profilePicture, "email":objector.email, "updatedAt":objector.updatedAt}
+            
+            topic_name = topic.name
+            max_points = maturita.maxPoints
+        else:
+            max_points = None
+            topic_name = None
+            objector_data = []
+        if team:
+            user_team = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor, idTeam = team.id).first()
+            idTeam = team.id
+            status = team.status
+        else:
+            idTeam = None
+            status = None
+        if user_team:
+            user = User.query.filter_by(id =user_team.idUser).first()
+            user_data = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
+        else:
+            user_data = []
+
+        all_tasks.append({
+            "id": task.id,
+            "name": task.name,
+            "startDate": task.startDate,
+            "endDate": task.endDate,
+            "task": task.task,
+            "points": task.points,
+            "deadline": task.deadline,
+            "user_data":user_data,
+            "objector":objector_data,
+            "idTeam":idTeam,
+            "topic":topic_name,
+            "maxPoints":max_points,
+            "status":status
+        })
+        
+    return send_response(200, 76091, {"message": "Found pending maturitas for guarantor", "tasks": all_tasks, "count": count}, "success")

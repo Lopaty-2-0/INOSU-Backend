@@ -74,7 +74,7 @@ def class_paging(searchQuery, amountForPaging, pageNumber):
 
     return Class.query.filter(and_(*conditions)).order_by(Class.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Class.query.filter(and_(*conditions)).count()
 
-def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None):
+def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, status = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
 
     conditions = []
@@ -106,6 +106,9 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
             specialConditions.append(Task.deadline == specialSearch)
         if typeOfSpecialSearch == "endDate":
             specialConditions.append(Task.endDate == specialSearch)
+    
+    if status and (typeOfSpecialSearch == "maturita" or typeOfSpecialSearch == "task"):
+        return Task.query.join(Team, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor) & (Team.status == status)).filter(and_(*conditions, *specialConditions)).distinct(Task.id & Task.guarantor).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.join(Team, and_(Team.idTask == Task.id, Team.guarantor == Task.guarantor, Team.status == status)).filter(and_(*conditions, *specialConditions)).distinct(Task.id & Task.guarantor).count()
 
     return Task.query.filter(and_(*conditions, *specialConditions)).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Task.query.filter(and_(*conditions, *specialConditions)).count()
 
@@ -172,9 +175,9 @@ def user_team_paging(searchQuery, amountForPaging, pageNumber, idUser, taskType,
             )
         )
     if not user_teams:
-        return Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(and_(Task.type == Type(taskType), *conditions)).distinct().order_by(Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(and_(Task.type == Type(taskType), *conditions)).distinct().count()
+        return Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id & Task.type == Type(taskType)).filter( *conditions).distinct().order_by(Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Team.query.join(User_Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id & Task.type == Type(taskType)).filter(*conditions).distinct().count()
     
-    return User_Team.query.join(Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(and_(Task.type == Type(taskType), *conditions)).distinct().order_by(Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), User_Team.query.join(Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id).filter(and_(Task.type == Type(taskType), *conditions)).distinct().count()
+    return User_Team.query.join(Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id & Task.type == Type(taskType)).filter( *conditions).distinct().order_by(Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), User_Team.query.join(Team, and_(Team.idTeam == User_Team.idTeam, Team.idTask == User_Team.idTask, User_Team.idUser == idUser)).join(Task, Team.idTask == Task.id & Task.type == Type(taskType)).filter(*conditions).distinct().count()
 
 def topic_paging(searchQuery, amountForPaging, pageNumber):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
@@ -219,4 +222,4 @@ def evaluator_paging(searchQuery, amountForPaging, pageNumber, idMaturita):
             )
         )
 
-    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).count()
+    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)  & Maturita.id == idMaturita).filter(*conditions).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita) & Maturita.id == idMaturita).filter(*conditions).count()
