@@ -80,7 +80,7 @@ async def delete():
 
             for team in teams:
                 user_teams = User_Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor, idTeam = team.idTeam)
-                versions = Version_Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor, idTeam = team.idTean)
+                versions = Version_Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor, idTeam = team.idTeam)
                 
                 for user_team in user_teams:
                     db.session.delete(user_team)
