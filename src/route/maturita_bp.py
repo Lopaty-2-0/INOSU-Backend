@@ -250,8 +250,13 @@ def get_current():
 
     if not maturita:
         return send_response(400, 69010, {"message": "no maturita in current time range"}, "error")
+    
+    evaluators = []
+    actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+    for evaluator in actual_evaluators:
+        evaluators.append(evaluator.id)
 
-    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}}, "success")
+    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
 
 @maturita_bp.route("/maturita/get/id", methods = ["GET"])
 @flask_login.login_required
@@ -274,8 +279,12 @@ def get_id():
     if not maturita:
         return send_response(400, 70040, {"message": "No maturita found"}, "error")
     
+    evaluators = []
+    actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+    for evaluator in actual_evaluators:
+        evaluators.append(evaluator.id)
     
-    return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}}, "success")
+    return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
 
 @maturita_bp.route("/maturita/delete", methods = ["delete"])
 @flask_login.login_required
@@ -393,6 +402,10 @@ def get():
         maturitas, count = maturita_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
     for maturita in maturitas:
-        all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate})
+        evaluators = []
+        actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+        for evaluator in actual_evaluators:
+            evaluators.append(evaluator.id)
+        all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
 
     return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":all_maturitas, "count":count}, "success")

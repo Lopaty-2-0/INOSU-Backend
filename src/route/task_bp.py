@@ -500,6 +500,8 @@ def get_maturita():
 
     all_tasks = []
 
+    now = datetime.datetime.now(tz = datetime.timezone.utc)
+
     if not amountForPaging:
         return send_response(400, 19010, {"message": "amountForPaging not entered"}, "error")
 
@@ -539,8 +541,14 @@ def get_maturita():
         return send_response(400, 19110, {"message": "IdUser not valid"}, "error")
 
     if not searchQuery:
-        tasks = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Task.query.filter_by(guarantor = idUser, type = Type.Maturita).count()
+        maturita = Maturita.query.filter(Maturita.endDate >= now, now >= Maturita.startDate).first()
+
+        if not maturita:
+            tasks = []
+            count = 0
+        else:
+            tasks = Task.query.join(Maturita_Task, (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor) & (Maturita_Task.idMaturita == maturita.id)).filter_by(guarantor = idUser, type = Type.Maturita).order_by(Task.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = Task.query.join(Maturita_Task, (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor) & (Maturita_Task.idMaturita == maturita.id)).filter_by(guarantor = idUser, type = Type.Maturita).count()
     else:
         tasks, count = task_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idUser, typeOfSpecialSearch = "maturita")
 

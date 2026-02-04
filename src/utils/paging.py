@@ -76,6 +76,7 @@ def class_paging(searchQuery, amountForPaging, pageNumber):
 
 def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, status = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+    #TODO:dodat idMaturita
 
     conditions = []
     specialConditions = []
