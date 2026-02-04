@@ -254,7 +254,7 @@ def get_current():
     evaluators = []
     actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
     for evaluator in actual_evaluators:
-        evaluators.append(evaluator.id)
+        evaluators.append(evaluator.idUser)
 
     return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
 
@@ -282,7 +282,7 @@ def get_id():
     evaluators = []
     actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
     for evaluator in actual_evaluators:
-        evaluators.append(evaluator.id)
+        evaluators.append(evaluator.idUser)
     
     return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
 
@@ -405,7 +405,7 @@ def get():
         evaluators = []
         actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
         for evaluator in actual_evaluators:
-            evaluators.append(evaluator.id)
+            evaluators.append(evaluator.idUser)
         all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
 
     return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":all_maturitas, "count":count}, "success")
