@@ -165,7 +165,7 @@ async def update():
             startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
         except:
             return send_response(400, 68110, {"message":"startDate not integer or is too far"}, "error")
-        if maturita.endDate.replace(tzinfo = datetime.timezone.utc) <= startDate:
+        if maturita.endDate.replace(tzinfo = datetime.timezone.utc) <= startDate and not endDate:
             return send_response(400, 68120, {"message":"ending before beginning"}, "error")
         maturita.startDate = startDate
         
