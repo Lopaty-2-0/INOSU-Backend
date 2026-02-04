@@ -225,3 +225,21 @@ def evaluator_paging(searchQuery, amountForPaging, pageNumber, idMaturita):
         )
 
     return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)  & Maturita.id == idMaturita).filter(*conditions).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita) & Maturita.id == idMaturita).filter(*conditions).count()
+
+def maturita_task_paging(searchQuery, amountForPaging, pageNumber, idUser, idMaturita, status):
+    words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
+
+    conditions = []
+    for word in words:
+        like_pattern = f"%{word}%"
+        conditions.append(
+            or_(
+                func.lower(Task.name).like(like_pattern),
+                func.lower(Task.points).like(like_pattern),
+                func.lower(Task.endDate).like(like_pattern),
+                func.lower(Task.deadline).like(like_pattern),
+                func.lower(Task.startDate).like(like_pattern)
+            )
+        )
+
+    return Maturita_Task.query.join(Task, (Task.id == Maturita_Task.idTask) & (Task.guarantor == Maturita_Task.guarantor)).join(Team, (Team.idTask == Maturita_Task.idTask) & (Team.guarantor == Maturita_Task.guarantor) & (Team.status == status)).join(User_Team, (User_Team.idTask == Maturita_Task.idTask) & (User_Team.guarantor == Maturita_Task.guarantor) & (User_Team.idUser == idUser)).filter(and_(*conditions, Maturita_Task.idMaturita == idMaturita)).order_by(Maturita_Task.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Maturita_Task.query.join(Task, (Task.id == Maturita_Task.idTask) & (Task.guarantor == Maturita_Task.guarantor)).join(Team, (Team.idTask == Maturita_Task.idTask) & (Team.guarantor == Maturita_Task.guarantor) & (Team.status == status)).join(User_Team, (User_Team.idTask == Maturita_Task.idTask) & (User_Team.guarantor == Maturita_Task.guarantor) & (User_Team.idUser == idUser)).filter(and_(*conditions, Maturita_Task.idMaturita == idMaturita)).count()

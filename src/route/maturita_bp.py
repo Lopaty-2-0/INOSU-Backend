@@ -136,11 +136,9 @@ async def update():
     if not maturita:
         return send_response(400, 68060, {"message": "maturita not found"}, "error")
     
-    id = maturita.id
-    
     if grade:
         grade = str(grade)
-        
+        id = maturita.id
 
         if len(grade) > 9:
                 return send_response(400, 68070, {"message": "grade too long"}, "error")
@@ -184,7 +182,7 @@ async def update():
     
     db.session.commit()
 
-    maturitas_tasks = Maturita_Task.query.filter_by(idMaturita = id).all()
+    maturitas_tasks = Maturita_Task.query.filter_by(idMaturita = idMaturita).all()
 
     for maturitas in maturitas_tasks:
         task_maturita = Task.query.filter_by(id = maturitas.idTask, guarantor = maturitas.guarantor).first()
@@ -415,3 +413,4 @@ def get():
         all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
 
     return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":all_maturitas, "count":count}, "success")
+
