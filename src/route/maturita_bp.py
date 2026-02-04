@@ -136,9 +136,11 @@ async def update():
     if not maturita:
         return send_response(400, 68060, {"message": "maturita not found"}, "error")
     
+    id = maturita.id
+    
     if grade:
         grade = str(grade)
-        id = maturita.id
+        
 
         if len(grade) > 9:
                 return send_response(400, 68070, {"message": "grade too long"}, "error")
