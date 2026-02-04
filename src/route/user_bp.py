@@ -323,7 +323,7 @@ async def update():
 
     db.session.commit()
 
-    return send_response(200, 2181, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role.value, "profilePicture": secondUser.profilePicture, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt, "reminders":secondUser.reminders}, "badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(200, 2181, {"message": "User changed successfuly", "badIds":badIds, "goodIds":goodIds}, "success")
     
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required

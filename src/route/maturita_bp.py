@@ -244,7 +244,7 @@ async def update():
 
     db.session.commit()
 
-    return send_response(201, 68151, {"message": "maturita updated successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate}, "goodIds":goodIds, "badIds": badIds}, "success")
+    return send_response(201, 68151, {"message": "maturita updated successfuly", "goodIds":goodIds, "badIds": badIds}, "success")
 
 @maturita_bp.route("/maturita/get/current", methods = ["GET"])
 @flask_login.login_required
