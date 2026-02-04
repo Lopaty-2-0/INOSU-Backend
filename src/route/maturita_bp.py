@@ -291,10 +291,10 @@ async def delete():
     if not idMaturita:
         return send_response(400, 71020, {"message": "id not entered"}, "error")
     
-    if not isinstance(id, list):
+    if not isinstance(idMaturita, list):
         idMaturita = [idMaturita]
     
-    for id in id:
+    for id in idMaturita:
         try:
             id = int(id)
         except:
