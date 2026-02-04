@@ -141,7 +141,7 @@ async def update():
 
         if len(grade) > 9:
                 return send_response(400, 68070, {"message": "grade too long"}, "error")
-        if Maturita.query.filter(Maturita.grade == grade).first() != maturita:
+        if Maturita.query.filter(Maturita.grade == grade).first().id != maturita.id:
             return send_response(400, 68080, {"message": "grade already in use"}, "error")
         
         maturita.grade = grade
