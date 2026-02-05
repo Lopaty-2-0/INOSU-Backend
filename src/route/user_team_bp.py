@@ -55,7 +55,7 @@ async def add():
     if not idTeam:
         if idUser and not idClass:
             for idU in idUser:
-                if task.type == Type.Maturita and goodIds:
+                if task.type == Type.Maturita and User_Team.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first():
                     break
                 try:
                     idU = int(idU)
@@ -86,7 +86,7 @@ async def add():
 
         if idClass and not idUser:
             for idCl in idClass:
-                if task.type == Type.Maturita and goodIds:
+                if task.type == Type.Maturita and User_Team.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first():
                     break
                 try:
                     idCl = int(idCl)
@@ -121,7 +121,7 @@ async def add():
 
     else:
         for idU in idUser:
-            if task.type == Type.Maturita and goodIds:
+            if task.type == Type.Maturita and User_Team.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first():
                     break
             try:
                 idU = int(idU)
