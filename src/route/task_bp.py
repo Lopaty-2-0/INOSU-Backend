@@ -829,6 +829,7 @@ def get_maturita_guarantor_approved():
         topicName = None
         idTeam = None
         userData = []
+        points = None
         maturitaTask = Maturita_Task.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
         team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
 
@@ -846,6 +847,7 @@ def get_maturita_guarantor_approved():
         if team:
             userTeam = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor, idTeam = team.idTeam).first()
             idTeam = team.idTeam
+            points = team.points
 
         if userTeam:
             user = User.query.filter_by(id =userTeam.idUser).first()
@@ -858,7 +860,7 @@ def get_maturita_guarantor_approved():
             "startDate": task.startDate,
             "endDate": task.endDate,
             "task": task.task,
-            "points": task.points,
+            "points": points,
             "deadline": task.deadline,
             "userData":userData,
             "objector":objectorData,
@@ -928,6 +930,7 @@ def get_maturita_guarantor_pending():
         topicName = None
         idTeam = None
         userData = []
+        points = None
         maturitaTask = Maturita_Task.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
         team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
 
@@ -945,6 +948,7 @@ def get_maturita_guarantor_pending():
         if team:
             userTeam = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor, idTeam = team.idTeam).first()
             idTeam = team.idTeam
+            points = team.points
 
         if userTeam:
             user = User.query.filter_by(id =userTeam.idUser).first()
@@ -957,7 +961,7 @@ def get_maturita_guarantor_pending():
             "startDate": task.startDate,
             "endDate": task.endDate,
             "task": task.task,
-            "points": task.points,
+            "points": points,
             "deadline": task.deadline,
             "userData":userData,
             "objector":objectorData,
@@ -987,6 +991,7 @@ def get_maturita_student_approved():
     topicName = None
     idTeam = None
     userData = []
+    points = None
     task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
     team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
     maturita = Maturita.query.filter_by(id = maturitaTask.idMaturita).first()  
@@ -1002,6 +1007,7 @@ def get_maturita_student_approved():
         
     if team:
         idTeam = team.idTeam
+        points = team.points
 
     userData = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
 
@@ -1012,7 +1018,7 @@ def get_maturita_student_approved():
         "startDate": task.startDate,
         "endDate": task.endDate,
         "task": task.task,
-        "points": task.points,
+        "points": points,
         "deadline": task.deadline,
         "guarantor":userData,
         "objector":objectorData,
@@ -1080,6 +1086,7 @@ def get_maturita_student_pending():
         maxPoints = None
         topicName = None
         idTeam = None
+        points = None
         guarantor = []
         task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
         team = Team.query.filter_by(idTask = task.id, guarantor = task.guarantor).first()
@@ -1097,6 +1104,7 @@ def get_maturita_student_pending():
         
         if team:
             idTeam = team.idTeam
+            points = team.points
 
         user = User.query.filter_by(id = maturitaTask.guarantor).first()
         guarantor = {"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt}
@@ -1108,7 +1116,7 @@ def get_maturita_student_pending():
             "startDate": task.startDate,
             "endDate": task.endDate,
             "task": task.task,
-            "points": task.points,
+            "points": points,
             "deadline": task.deadline,
             "guarantor":guarantor,
             "objector":objectorData,
