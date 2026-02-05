@@ -12,7 +12,7 @@ from src.utils.enums import Role
 from src.utils.response import send_response
 from src.utils.paging import maturita_paging
 from flask import request
-from app import db, maxFLOAT, max_INT
+from app import db, max_FLOAT, max_INT
 import datetime
 from src.utils.task import task_delete_sftp
 
@@ -56,7 +56,7 @@ def add():
         maxPoints = float(maxPoints)
     except:
         return send_response(400, 67080, {"message":"maxPoints not float"}, "error")
-    if maxPoints > maxFLOAT or maxPoints <= 0:
+    if maxPoints > max_FLOAT or maxPoints <= 0:
         return send_response(400, 67090, {"message": "maxPoints not valid"}, "error")  
     try:
         endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
@@ -155,7 +155,7 @@ async def update():
             maxPoints = float(maxPoints)
         except:
             return send_response(400, 68090, {"message":"maxPoints not float"}, "error")
-        if maxPoints > maxFLOAT or maxPoints <= 0:
+        if maxPoints > max_FLOAT or maxPoints <= 0:
             return send_response(400, 68100, {"message": "maxPoints not valid"}, "error")
         
         maturita.maxPoints = maxPoints
