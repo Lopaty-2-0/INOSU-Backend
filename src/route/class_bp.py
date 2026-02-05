@@ -6,7 +6,7 @@ from src.utils.paging import class_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
-from app import db, maxINT
+from app import db, max_INT
 
 class_bp = Blueprint("class", __name__)
 
@@ -38,7 +38,7 @@ def add():
         grade = int(grade)
     except:
         return send_response(400, 8060, {"message": "Grade not integer"}, "error")
-    if grade > maxINT or grade <= 0:
+    if grade > max_INT or grade <= 0:
         return send_response(400, 8070, {"message": "Grade not valid"}, "error")
     if len(group) > 1:
         return send_response(400, 8080, {"message": "Group too long"}, "error")
@@ -46,7 +46,7 @@ def add():
         idSpecialization = int(idSpecialization)
     except:
         return send_response(400, 8090, {"message": "idSpecialization not integer"}, "error")
-    if idSpecialization > maxINT or idSpecialization <= 0:
+    if idSpecialization > max_INT or idSpecialization <= 0:
         return send_response(400, 8100, {"message": "idSpecialization not valid"}, "error")
     if not Specialization.query.filter_by(id = idSpecialization).first():
         return send_response(400, 8110, {"message": "Wrong idSpecialization"}, "error")
@@ -81,7 +81,7 @@ def delete():
         idClass = [idClass]
     
     for id in idClass:
-        if not Class.query.filter_by(id = id).first() or id > maxINT or id <= 0:
+        if not Class.query.filter_by(id = id).first() or id > max_INT or id <= 0:
             badIds.append(id)
             continue
 
@@ -108,17 +108,17 @@ def get_by_id():
         id = int(id)
     except:
         return send_response(400, 22020, {"message": "Id not integer"}, "error")
-    if id > maxINT or id <=0:
+    if id > max_INT or id <=0:
         return send_response(400, 22030, {"message": "Id not valid"}, "error")
         
-    all_class = Class.query.filter_by(id = id).first()
+    allClass = Class.query.filter_by(id = id).first()
     
-    if not all_class:
+    if not allClass:
         return send_response(404, 22040, {"message": "Class not found"}, "error")
     
-    specialization = Specialization.query.filter_by(id=all_class.idSpecialization).first()
+    specialization = Specialization.query.filter_by(id=allClass.idSpecialization).first()
 
-    return send_response(200, 22051, {"message": "Class found", "class": {"id": all_class.id, "grade": all_class.grade, "group": all_class.group, "name":all_class.name, "specialization": specialization.abbreviation}}, "success")
+    return send_response(200, 22051, {"message": "Class found", "class": {"id": allClass.id, "grade": allClass.grade, "group": allClass.group, "name":allClass.name, "specialization": specialization.abbreviation}}, "success")
 
 @flask_login.login_required
 @class_bp.route("/class/get", methods=["GET"])
@@ -137,7 +137,7 @@ def get():
     
     if amountForPaging < 1:
         return send_response(400, 23030, {"message": "amountForPaging smaller than 1"}, "error")
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 23040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -147,7 +147,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 23060, {"message": "pageNumber not integer"}, "error")
-    if amountForPaging > maxINT + 1:
+    if amountForPaging > max_INT + 1:
         return send_response(400, 23070, {"message": "amountForPaging too big"}, "error")
     
     pageNumber -= 1
@@ -161,11 +161,11 @@ def get():
     else:
         classes, count = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
-    all_class = []
+    allClass = []
 
     for cl in classes:
         specialization = Specialization.query.filter_by(id=cl.idSpecialization).first()
-        all_class.append({
+        allClass.append({
                         "id": cl.id,
                         "grade": cl.grade,
                         "group": cl.group,
@@ -174,7 +174,7 @@ def get():
                         })
         
     
-    return send_response(200, 23091, {"message": "Classes found", "classes": all_class, "count":count}, "success")
+    return send_response(200, 23091, {"message": "Classes found", "classes": allClass, "count":count}, "success")
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required

@@ -10,7 +10,7 @@ from src.utils.response import send_response
 from src.utils.enums import Role
 from src.utils.task import task_delete_sftp
 from flask import request, Blueprint
-from app import db, maxINT
+from app import db, max_INT
 
 
 topic_bp = Blueprint("topic", __name__)
@@ -64,7 +64,7 @@ async def delete():
             badIds.append(id)
             continue
 
-        if id > maxINT or id <= 0:
+        if id > max_INT or id <= 0:
             badIds.append(id)
             continue
 
@@ -72,25 +72,25 @@ async def delete():
             badIds.append(id)
             continue
 
-        maturita_tasks = Maturita_Task.query.filter_by(idTopic = id)
+        maturitaTasks = Maturita_Task.query.filter_by(idTopic = id)
 
-        for maturita_task in maturita_tasks:
-            task = Task.query.filter_by(id = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
-            teams = Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor)
+        for maturitaTask in maturitaTasks:
+            task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
+            teams = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor)
 
             for team in teams:
-                user_teams = User_Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor, idTeam = team.idTeam)
-                versions = Version_Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor, idTeam = team.idTeam)
+                userTeams = User_Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor, idTeam = team.idTeam)
+                versions = Version_Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor, idTeam = team.idTeam)
                 
-                for user_team in user_teams:
-                    db.session.delete(user_team)
+                for userTeam in userTeams:
+                    db.session.delete(userTeam)
                 for version in versions:
                     db.session.delete(version)
                 
                 db.session.commit()
                 db.session.delete(team)
             
-            db.session.delete(maturita_task)
+            db.session.delete(maturitaTask)
 
             db.session.commit()
             await task_delete_sftp(task.guarantor, task.id)
@@ -127,7 +127,7 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 65030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 65040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -137,7 +137,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 65060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 65070, {"message": "amountForPaging too big"}, "error")
     
     pageNumber -= 1
@@ -167,7 +167,7 @@ def get_by_id():
         id = int(id)
     except:
         return send_response(400, 66020, {"message": "Id not integer"}, "error")
-    if id > maxINT or id <=0:
+    if id > max_INT or id <=0:
         return send_response(400, 66030, {"message": "Id not valid"}, "error")
 
     topic = Topic.query.filter_by(id=id).first()

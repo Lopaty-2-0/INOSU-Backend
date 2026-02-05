@@ -13,15 +13,15 @@ check_file_bp = Blueprint("check_file_bp", __name__)
 
 ip = os.getenv("HMAC_IP")
 hmac_secret = os.getenv("HMAC_SECRET")
-expires_in = 600
+expiresIn = 600
 
 @check_file_bp.route("/file/pfp/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("profilePictures")
 def check_pfp(filename):
     message = pfp_path + filename
-    expiry_timestamp = int(time.time()) + expires_in
-    payload = f"{message}:{expiry_timestamp}"
+    expiryTimestamp = int(time.time()) + expiresIn
+    payload = f"{message}:{expiryTimestamp}"
 
     sig = hmac.new(
         hmac_secret.encode(),
@@ -29,12 +29,12 @@ def check_pfp(filename):
         hashlib.sha256
     ).digest()
 
-    sig_hex = sig.hex()
-    token_str = f"{payload}:{sig_hex}"
-    token = base64.urlsafe_b64encode(token_str.encode()).decode().rstrip("=")
+    sigHex = sig.hex()
+    tokenStr = f"{payload}:{sigHex}"
+    token = base64.urlsafe_b64encode(tokenStr.encode()).decode().rstrip("=")
 
-    redirect_url = f"{ip}{pfp_path}{quote(filename)}?token={quote(token)}"
-    return redirect(redirect_url)
+    redirectUrl = f"{ip}{pfp_path}{quote(filename)}?token={quote(token)}"
+    return redirect(redirectUrl)
 
 
 @check_file_bp.route("/file/tasks/<string:guarantor>/<string:idTask>/<string:idTeam>/<string:idVersion>/<string:filename>", methods = ["GET"])
@@ -43,8 +43,8 @@ def check_pfp(filename):
 def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
     message = task_path + guarantor + "/" + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
 
-    expiry_timestamp = int(time.time()) + expires_in
-    payload = f"{message}:{expiry_timestamp}"
+    expiryTimestamp = int(time.time()) + expiresIn
+    payload = f"{message}:{expiryTimestamp}"
 
     sig = hmac.new(
         hmac_secret.encode(),
@@ -52,12 +52,12 @@ def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
         hashlib.sha256
     ).digest()
 
-    sig_hex = sig.hex()
-    token_str = f"{payload}:{sig_hex}"
-    token = base64.urlsafe_b64encode(token_str.encode()).decode().rstrip("=")
+    sigHex = sig.hex()
+    tokenStr = f"{payload}:{sigHex}"
+    token = base64.urlsafe_b64encode(tokenStr.encode()).decode().rstrip("=")
 
-    redirect_url = f"{ip}{task_path}{guarantor}/{idTask}/{idTeam}/{idVersion}/{quote(filename)}?token={quote(token)}"
-    return redirect(redirect_url)
+    redirectUrl = f"{ip}{task_path}{guarantor}/{idTask}/{idTeam}/{idVersion}/{quote(filename)}?token={quote(token)}"
+    return redirect(redirectUrl)
 
 @check_file_bp.route("/file/task/<string:guarantor>/<string:idTask>/<string:filename>", methods = ["GET"])
 @flask_login.login_required
@@ -65,8 +65,8 @@ def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
 def check_task(filename, idTask, guarantor):
     message = task_path + guarantor + "/" + idTask + "/" + filename
 
-    expiry_timestamp = int(time.time()) + expires_in
-    payload = f"{message}:{expiry_timestamp}"
+    expiryTimestamp = int(time.time()) + expiresIn
+    payload = f"{message}:{expiryTimestamp}"
 
     sig = hmac.new(
         hmac_secret.encode(),
@@ -74,9 +74,9 @@ def check_task(filename, idTask, guarantor):
         hashlib.sha256
     ).digest()
 
-    sig_hex = sig.hex()
-    token_str = f"{payload}:{sig_hex}"
-    token = base64.urlsafe_b64encode(token_str.encode()).decode().rstrip("=")
+    sigHex = sig.hex()
+    tokenStr = f"{payload}:{sigHex}"
+    token = base64.urlsafe_b64encode(tokenStr.encode()).decode().rstrip("=")
 
-    redirect_url = f"{ip}{task_path}{guarantor}/{idTask}/{quote(filename)}?token={quote(token)}"
-    return redirect(redirect_url)
+    redirectUrl = f"{ip}{task_path}{guarantor}/{idTask}/{quote(filename)}?token={quote(token)}"
+    return redirect(redirectUrl)

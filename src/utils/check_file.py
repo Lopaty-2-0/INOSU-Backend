@@ -10,12 +10,12 @@ from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.models.Version_Team import Version_Team
 
-def check_file_size(max_length):
+def check_file_size(maxLength):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             fileSize = request.content_length
-            if fileSize != None and fileSize > max_length:
+            if fileSize != None and fileSize > maxLength:
                 return send_response(413, "F15010", {"message": "File exceeded max size"}, "error")
             return f(*args, **kwargs)
         return wrapper
@@ -93,9 +93,9 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guara
     if not task:
         return False
 
-    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser, guarantor = guarantor).first()
+    userTeam = User_Team.query.filter_by(idTask = idTask, idUser = idUser, guarantor = guarantor).first()
 
-    if not user_team and task.guarantor != idUser:
+    if not userTeam and task.guarantor != idUser:
         return False
     
     if not idTeam and not idVersion:
@@ -104,8 +104,8 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guara
         team = Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
         if not team:
             return False
-        if user_team:
-            if user_team.idTeam != team.idTeam:
+        if userTeam:
+            if userTeam.idTeam != team.idTeam:
                 return False
         if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, idVersion = idVersion, guarantor = guarantor).first():
             return False

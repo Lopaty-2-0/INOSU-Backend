@@ -12,7 +12,7 @@ from src.utils.enums import Role
 from src.utils.response import send_response
 from src.utils.paging import maturita_paging
 from flask import request
-from app import db, maxFLOAT, maxINT
+from app import db, maxFLOAT, max_INT
 import datetime
 from src.utils.task import task_delete_sftp
 
@@ -84,7 +84,7 @@ def add():
                 badIds.append(evaluator)
                 continue
 
-            if evaluator > maxINT or evaluator <= 0:
+            if evaluator > max_INT or evaluator <= 0:
                 badIds.append(evaluator)
                 continue
 
@@ -128,7 +128,7 @@ async def update():
     except:
         return send_response(400, 68040, {"message": "idMaturita not integer"}, "error")
     
-    if idMaturita > maxINT or idMaturita <= 0:
+    if idMaturita > max_INT or idMaturita <= 0:
         return send_response(400, 68050, {"message": "idMaturita not valid"}, "error")
     
     maturita = Maturita.query.filter_by(id = idMaturita).first()
@@ -182,19 +182,19 @@ async def update():
     
     db.session.commit()
 
-    maturitas_tasks = Maturita_Task.query.filter_by(idMaturita = idMaturita).all()
+    maturitasTasks = Maturita_Task.query.filter_by(idMaturita = idMaturita).all()
 
-    for maturitas in maturitas_tasks:
-        task_maturita = Task.query.filter_by(id = maturitas.idTask, guarantor = maturitas.guarantor).first()
-        task_maturita.endDate = maturita.endDate
-        task_maturita.points = maturita.maxPoints
+    for maturitas in maturitasTasks:
+        taskMaturita = Task.query.filter_by(id = maturitas.idTask, guarantor = maturitas.guarantor).first()
+        taskMaturita.endDate = maturita.endDate
+        taskMaturita.points = maturita.maxPoints
 
     if isinstance(evaluators, list):
         evaluatoring = Evaluator.query.filter_by(idMaturita = idMaturita).all()
-        evaluator_ids = []
+        evaluatorIds = []
 
         for evaluatored in evaluatoring:
-            evaluator_ids.append(evaluatored.idUser)
+            evaluatorIds.append(evaluatored.idUser)
             db.session.delete(evaluatored)
         db.session.commit()
         
@@ -205,7 +205,7 @@ async def update():
                 badIds.append(evaluator)
                 continue
 
-            if evaluator > maxINT or evaluator <= 0:
+            if evaluator > max_INT or evaluator <= 0:
                 badIds.append(evaluator)
                 continue
 
@@ -218,24 +218,24 @@ async def update():
             db.session.add(Evaluator(idUser = evaluator, idMaturita = idMaturita))
             goodIds.append(evaluator)
 
-            if evaluator in evaluator_ids:
-                evaluator_ids.remove(evaluator)
+            if evaluator in evaluatorIds:
+                evaluatorIds.remove(evaluator)
 
-        for evaluator_id in evaluator_ids:
-            maturita_tasks = Maturita_Task.query.filter_by(idMaturita = idMaturita, guarantor = evaluator_id).all()
+        for evaluatorId in evaluatorIds:
+            maturitaTasks = Maturita_Task.query.filter_by(idMaturita = idMaturita, guarantor = evaluatorId).all()
             
-            for maturita_task in maturita_tasks:
+            for maturitaTask in maturitaTasks:
 
-                task = Task.query.filter_by(id = maturita_task.idTask, guarantor = evaluator_id).first()
-                team = Team.query.filter_by(idTask = maturita_task.idTask, guarantor = evaluator_id).first()
-                user_team = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluator_id).first() 
-                versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluator_id).all()
+                task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = evaluatorId).first()
+                team = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = evaluatorId).first()
+                userTeam = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluatorId).first() 
+                versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluatorId).all()
 
                 for version in versions:
                     db.session.delete(version)
 
-                db.session.delete(user_team)
-                db.session.delete(maturita_task)
+                db.session.delete(userTeam)
+                db.session.delete(maturitaTask)
                 db.session.commit()
                 db.session.delete(team)
                 db.session.commit()
@@ -256,8 +256,8 @@ def get_current():
         return send_response(400, 69010, {"message": "no maturita in current time range"}, "error")
     
     evaluators = []
-    actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
-    for evaluator in actual_evaluators:
+    actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+    for evaluator in actualEvaluators:
         evaluators.append(evaluator.idUser)
 
     return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
@@ -275,7 +275,7 @@ def get_id():
     except:
         return send_response(400, 70020, {"message": "id not integer"}, "error")
     
-    if id > maxINT or id <=0:
+    if id > max_INT or id <=0:
         return send_response(400, 70030, {"message": "id not valid"}, "error")
 
     maturita = Maturita.query.filter_by(id = id).first()
@@ -284,8 +284,8 @@ def get_id():
         return send_response(400, 70040, {"message": "No maturita found"}, "error")
     
     evaluators = []
-    actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
-    for evaluator in actual_evaluators:
+    actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+    for evaluator in actualEvaluators:
         evaluators.append(evaluator.idUser)
     
     return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
@@ -314,7 +314,7 @@ async def delete():
             badIds.append(id)
             continue
         
-        if id > maxINT or id <=0:
+        if id > max_INT or id <=0:
             badIds.append(id)
             continue
 
@@ -324,26 +324,26 @@ async def delete():
             badIds.append(id)
             continue
     
-        maturita_tasks = Maturita_Task.query.filter_by(idMaturita = id)
+        maturitaTasks = Maturita_Task.query.filter_by(idMaturita = id)
         evaluators = Evaluator.query.filter_by(idMaturita = id).all()
 
         for evaluator in evaluators:
             db.session.delete(evaluator)
         db.session.commit()
 
-        for maturita_task in maturita_tasks:
-            task = Task.query.filter_by(id = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
-            team = Team.query.filter_by(idTask = maturita_task.idTask, guarantor = maturita_task.guarantor).first()
-            user_team = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).first() 
+        for maturitaTask in maturitaTasks:
+            task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
+            team = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
+            userTeam = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).first() 
             versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
 
             for version in versions:
                 db.session.delete(version)
 
-            if user_team:
-                db.session.delete(user_team)
-            if maturita_task:
-                db.session.delete(maturita_task)
+            if userTeam:
+                db.session.delete(userTeam)
+            if maturitaTask:
+                db.session.delete(maturitaTask)
             db.session.commit()
             if team:
                 db.session.delete(team)
@@ -368,7 +368,7 @@ def get():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
 
-    all_maturitas = []
+    allMaturitas = []
 
     if not amountForPaging:
         return send_response(400, 72010, {"message": "amountForPaging not entered"}, "error")
@@ -381,7 +381,7 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 72030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 72040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -391,7 +391,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 72060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 72070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -407,10 +407,10 @@ def get():
 
     for maturita in maturitas:
         evaluators = []
-        actual_evaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
-        for evaluator in actual_evaluators:
+        actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+        for evaluator in actualEvaluators:
             evaluators.append(evaluator.idUser)
-        all_maturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
+        allMaturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
 
-    return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":all_maturitas, "count":count}, "success")
+    return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":allMaturitas, "count":count}, "success")
 

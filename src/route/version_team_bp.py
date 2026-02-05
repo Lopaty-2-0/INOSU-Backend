@@ -7,7 +7,7 @@ from src.utils.response import send_response
 from src.utils.enums import Status
 from src.utils.version import make_version, version_delete
 import flask_login
-from app import db, maxINT
+from app import db, max_INT
 from src.utils.check_file import check_file_size
 import datetime
 from src.models.User import User
@@ -33,19 +33,19 @@ async def add():
         idTeam = int(idTeam)
     except:
         return send_response(400, 38030, {"message": "idTeam not integer"}, "error")
-    if idTeam > maxINT or idTeam <=0:
+    if idTeam > max_INT or idTeam <=0:
         return send_response(400, 38040, {"message": "idTeam not valid"}, "error")
     try:
         idTask = int(idTask)
     except:
         return send_response(400, 38050, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 38060, {"message": "idTask not valid"}, "error")
     try:
         guarantor = int(guarantor)
     except:
         return send_response(400, 38070, {"message": "guarantor not integer"}, "error")
-    if guarantor > maxINT or guarantor <=0:
+    if guarantor > max_INT or guarantor <=0:
         return send_response(400, 38080, {"message": "guarantor not valid"}, "error")
     
     user = User.query.filter_by(id = guarantor).first()
@@ -103,25 +103,25 @@ async def change():
         idTeam = int(idTeam)
     except:
         return send_response(400, 49040, {"message": "idTeam not integer"}, "error")
-    if idTeam > maxINT or idTeam <=0:
+    if idTeam > max_INT or idTeam <=0:
         return send_response(400, 49050, {"message": "idTeam not valid"}, "error")
     try:
         idTask = int(idTask)
     except:
         return send_response(400, 49060, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 49070, {"message": "idTask not valid"}, "error")
     try:
         idVersion = int(idVersion)
     except:
         return send_response(400, 49080, {"message": "idVersion not integer"}, "error")
-    if idVersion > maxINT or idVersion <=0:
+    if idVersion > max_INT or idVersion <=0:
         return send_response(400, 49090, {"message": "idVersion not valid"}, "error")
     try:
         guarantor = int(guarantor)
     except:
         return send_response(400, 49100, {"message": "guarantor not integer"}, "error")
-    if guarantor > maxINT or guarantor <=0:
+    if guarantor > max_INT or guarantor <=0:
         return send_response(400, 49110, {"message": "guarantor not valid"}, "error")
 
     team = Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
@@ -169,7 +169,7 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 59030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 59040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -179,7 +179,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 59060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 59070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -193,7 +193,7 @@ def get():
         idTask = int(idTask)
     except:
         return send_response(400, 59100, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 59110, {"message": "idTask not valid"}, "error")
     
     if not guarantor:
@@ -202,7 +202,7 @@ def get():
         guarantor = int(guarantor)
     except:
         return send_response(400, 59130, {"message": "guarantor not integer"}, "error")
-    if guarantor > maxINT or guarantor <=0:
+    if guarantor > max_INT or guarantor <=0:
         return send_response(400, 59140, {"message": "guarantor not valid"}, "error")
     
     if not User.query.filter_by(id = guarantor).first():
@@ -217,17 +217,17 @@ def get():
         idTeam = int(idTeam)
     except:
         return send_response(400, 59180, {"message": "idTeam not integer"}, "error")
-    if idTeam > maxINT or idTeam <=0:
+    if idTeam > max_INT or idTeam <=0:
         return send_response(400, 59190, {"message": "idTeam not valid"}, "error")
 
     
     if not Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = guarantor).first():
         return send_response(400, 59200, {"message": "Nonexistent team"}, "error")
     
-    versions_team = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam, Version_Team.guarantor == guarantor).order_by(Version_Team.idVersion.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    versionsTeam = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam, Version_Team.guarantor == guarantor).order_by(Version_Team.idVersion.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam, Version_Team.guarantor == guarantor).count()
 
-    for version in versions_team:
+    for version in versionsTeam:
         versions.append({"idVersion":version.idVersion, "elaboration":version.elaboration, "createdAt":version.createdAt})
 
     return send_response(200, 59211, {"message": "All versions for this team", "versions":versions, "count": count}, "success")

@@ -4,7 +4,7 @@ from src.models.Evaluator import Evaluator
 from src.models.User import User
 import flask_login
 from src.utils.response import send_response
-from app import db, maxINT
+from app import db, max_INT
 from flask import request
 from src.utils.paging import evaluator_paging
 import datetime
@@ -19,7 +19,7 @@ def get():
     searchQuery = request.args.get("searchQuery", None)
     idMaturita = request.args.get("idMaturita", None)
 
-    all_evaluators = []
+    allEvaluators = []
 
     if not amountForPaging:
         return send_response(400, 73010, {"message": "amountForPaging not entered"}, "error")
@@ -32,7 +32,7 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 73030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 73040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -42,7 +42,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 73060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 73070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -55,7 +55,7 @@ def get():
     except:
         return send_response(400, 73090, {"message": "idMaturita not integer"}, "error")
     
-    if idMaturita < 1 or idMaturita > maxINT:
+    if idMaturita < 1 or idMaturita > max_INT:
         return send_response(400, 73100, {"message": "idMaturita not valid"}, "error")
     
     if not Maturita.query.filter_by(id = idMaturita).first():
@@ -69,9 +69,9 @@ def get():
 
     for evaluator in evaluators:
         user = User.query.filter_by(id = evaluator.idUser).first()
-        all_evaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
+        allEvaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
 
-    return send_response (201, 73121, {"message": "evaluators found successfuly", "evaluators": all_evaluators, "count":count}, "success")
+    return send_response (201, 73121, {"message": "evaluators found successfuly", "evaluators": allEvaluators, "count":count}, "success")
 
 @evaluator_bp.route("/evaluator/get/current", methods = ["GET"])
 @flask_login.login_required
@@ -82,7 +82,7 @@ def get_current():
 
     now = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    all_evaluators = []
+    allEvaluators = []
 
     if not amountForPaging:
         return send_response(400, 77010, {"message": "amountForPaging not entered"}, "error")
@@ -95,7 +95,7 @@ def get_current():
     if amountForPaging < 1:
         return send_response(400, 77030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 77040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -105,7 +105,7 @@ def get_current():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 77060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 77070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -126,7 +126,7 @@ def get_current():
 
     for evaluator in evaluators:
         user = User.query.filter_by(id = evaluator.idUser).first()
-        all_evaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
+        allEvaluators.append({"id":user.id, "name":user.name, "surname": user.surname, "abbreviation": user.abbreviation, "createdAt": user.createdAt, "role": user.role.value, "profilePicture":user.profilePicture, "email":user.email, "updatedAt":user.updatedAt})
 
 
-    return send_response (201, 77101, {"message": "evaluators found successfuly", "evaluators": all_evaluators, "count":count}, "success")
+    return send_response (201, 77101, {"message": "evaluators found successfuly", "evaluators": allEvaluators, "count":count}, "success")

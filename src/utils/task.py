@@ -8,19 +8,19 @@ async def task_save_sftp(file, id, guarantor):
     if not await sftp_stat_async(ssh, task_path):
         ssh.open_sftp().mkdir(task_path)
 
-    file_path = task_path + str(guarantor) + "/" + str(id)
+    filePath = task_path + str(guarantor) + "/" + str(id)
     
     if not await sftp_stat_async(ssh, task_path + str(guarantor)):
         ssh.open_sftp().mkdir(task_path + str(guarantor))
 
-    if not await sftp_stat_async(ssh, file_path):
+    if not await sftp_stat_async(ssh, filePath):
         await task_createDir(id, guarantor)
 
     fileName = file.filename
-    filePath = file_path + "/" + fileName
+    filePath = filePath + "/" + fileName
 
     if await sftp_stat_async(ssh, filePath):
-        await sftp_remove_async(ssh, file_path)
+        await sftp_remove_async(ssh, filePath)
         
     file.save("files/" + fileName)
     await sftp_put_async(ssh, "files/" + fileName, filePath)
@@ -30,22 +30,22 @@ async def task_save_sftp(file, id, guarantor):
     return fileName
 
 async def task_createDir(id, guarantor):
-    file_path = task_path + str(guarantor) + "/" + str(id)
-    if await sftp_stat_async(ssh, file_path):
+    filePath = task_path + str(guarantor) + "/" + str(id)
+    if await sftp_stat_async(ssh, filePath):
         return False
     if not await sftp_stat_async(ssh, task_path):
-        await sftp_createDir_async(ssh, file_path)
+        await sftp_createDir_async(ssh, filePath)
     if not await sftp_stat_async(ssh, task_path + str(guarantor)):
         await sftp_createDir_async(ssh, task_path + str(guarantor))
-    await sftp_createDir_async(ssh, file_path)
+    await sftp_createDir_async(ssh, filePath)
     
     return True
 
 async def task_delete_sftp(id, guarantor):
-    file_path = task_path + str(guarantor) + "/" + str(id)
-    if not await sftp_stat_async(ssh, file_path):
+    filePath = task_path + str(guarantor) + "/" + str(id)
+    if not await sftp_stat_async(ssh, filePath):
         return False
-    await sftp_removeDir_async(ssh, file_path)
+    await sftp_removeDir_async(ssh, filePath)
     return True
 
 async def make_task(file, name, guarantor, deadline, points, endDate, startDate, type):

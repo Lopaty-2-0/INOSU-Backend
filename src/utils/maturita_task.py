@@ -8,14 +8,14 @@ from app import db
 from src.utils.task import task_delete_sftp
 
 async def maturita_task_delete(idUser, idMaturita):
-    user_teams = User_Team.query.join(Team, (User_Team.idTeam == Team.idTeam) & (User_Team.idTask == Team.idTask) & (User_Team.guarantor == Team.guarantor)).join(Task, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).join(Maturita_Task, (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor)).filter(User_Team.idUser == idUser, Task.type == Type.Maturita, Team.status != Status.Approved, Maturita_Task.idMaturita == idMaturita).all()
+    userTeams = User_Team.query.join(Team, (User_Team.idTeam == Team.idTeam) & (User_Team.idTask == Team.idTask) & (User_Team.guarantor == Team.guarantor)).join(Task, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).join(Maturita_Task, (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor)).filter(User_Team.idUser == idUser, Task.type == Type.Maturita, Team.status != Status.Approved, Maturita_Task.idMaturita == idMaturita).all()
 
-    for user_team in user_teams:
-        team = Team.query.filter_by(idTask = user_team.idTask, idTeam = user_team.idTeam, guarantor = user_team.guarantor).first()
-        other_users = User_Team.query.filter_by(idTask = user_team.idTask, idTeam = user_team.idTeam, guarantor = user_team.guarantor).all()
-        versions = Version_Team.query.filter_by(idTask = user_team.idTask, idTeam = user_team.idTeam, guarantor = user_team.guarantor).all()
-        task = Task.query.filter_by(id = user_team.idTask, guarantor = user_team.guarantor).first()
-        maturita = Maturita_Task.query.filter_by(idTask = user_team.idTask, guarantor = user_team.guarantor, idMaturita = idMaturita).first()
+    for userTeam in userTeams:
+        team = Team.query.filter_by(idTask = userTeam.idTask, idTeam = userTeam.idTeam, guarantor = userTeam.guarantor).first()
+        other_users = userTeam.query.filter_by(idTask = userTeam.idTask, idTeam = userTeam.idTeam, guarantor = userTeam.guarantor).all()
+        versions = Version_Team.query.filter_by(idTask = userTeam.idTask, idTeam = userTeam.idTeam, guarantor = userTeam.guarantor).all()
+        task = Task.query.filter_by(id = userTeam.idTask, guarantor = userTeam.guarantor).first()
+        maturita = Maturita_Task.query.filter_by(idTask = userTeam.idTask, guarantor = userTeam.guarantor, idMaturita = idMaturita).first()
 
         for user in other_users:
             db.session.delete(user)
@@ -30,4 +30,4 @@ async def maturita_task_delete(idUser, idMaturita):
         db.session.delete(task)
         db.session.commit()
 
-        await task_delete_sftp(user_team.idTask, user_team.guarantor)
+        await task_delete_sftp(userTeam.idTask, userTeam.guarantor)

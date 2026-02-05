@@ -11,9 +11,9 @@ async def make_team(idTask, status, name, isTeam, guarantor):
     else:
         id = Team.query.filter_by(idTask=idTask, guarantor = guarantor).order_by(Team.idTeam.desc()).first().idTeam + 1
     
-    new_team = Team(idTeam = id, idTask = idTask, review = None, status = status, name = name, points = None, isTeam = isTeam, guarantor = guarantor)
+    newTeam = Team(idTeam = id, idTask = idTask, review = None, status = status, name = name, points = None, isTeam = isTeam, guarantor = guarantor)
     await team_createDir(id, idTask, guarantor)
-    db.session.add(new_team)
+    db.session.add(newTeam)
     db.session.commit()
 
     return id
@@ -38,22 +38,22 @@ async def delete_teams_for_task(idTask, guarantor):
     db.session.commit()
 
 async def team_deleteDir(idTeam, idTask, guarantor):
-    file_path = task_path  + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam)
-    if not await sftp_stat_async(ssh, file_path):
+    filePath = task_path  + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam)
+    if not await sftp_stat_async(ssh, filePath):
         return False
     
-    await sftp_removeDir_async(ssh, file_path)
+    await sftp_removeDir_async(ssh, filePath)
 
     return True
 
 async def team_createDir(idTeam, idTask, guarantor):
-    file_path = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam)
+    filePath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam)
 
-    if await sftp_stat_async(ssh, file_path):
+    if await sftp_stat_async(ssh, filePath):
             return False
     
     try:
-        await sftp_createDir_async(ssh, file_path)
+        await sftp_createDir_async(ssh, filePath)
     except:
         await task_createDir(id = idTask, guarantor = guarantor)
         await team_createDir(idTeam, idTask, guarantor)

@@ -25,8 +25,8 @@ secret_key = os.getenv("SECRET_KEY")
 task_path = os.getenv("TASK_PATH")
 pfp_path = os.getenv("PFP_PATH")
 url = os.getenv("URL")
-maxINT = 4294967295
-maxFLOAT = 3.40e+38
+max_INT = 4294967295
+max_FLOAT = 3.40e+38
 
 try:
     app = Flask(__name__)
@@ -65,8 +65,8 @@ try:
     login_manager.login_view = ""
 
     @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
+    def load_user(userId):
+        return User.query.get(int(userId))
     
     @jwt.expired_token_loader
     def expired_token(expiredToken, nn):
@@ -100,8 +100,8 @@ try:
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)
 
-except OperationalError as db_error:
-    if db_error.orig.args[0] == 1049:
+except OperationalError as dbError:
+    if dbError.orig.args[0] == 1049:
         try:
             create_db(gHost=host, gUser=user, gPasswd=psw, gDatabase=database)
             print("Creating database")

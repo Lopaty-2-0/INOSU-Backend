@@ -5,7 +5,7 @@ from src.utils.paging import specialization_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
-from app import db, maxINT
+from app import db, max_INT
 from src.models.User_Class import User_Class
 
 specialization_bp = Blueprint("specialization", __name__)
@@ -34,7 +34,7 @@ def add():
         lengthOfStudy = int(lengthOfStudy)
     except:
         return send_response(400, 4050, {"message": "lengthOfStudy not integer"}, "error")
-    if lengthOfStudy > maxINT or lengthOfStudy <= 0:
+    if lengthOfStudy > max_INT or lengthOfStudy <= 0:
         return send_response(400, 4060, {"message": "lengthOfStudy not valid"}, "error")
     if len(abbreviation) > 1:
         return send_response(400, 4070, {"message": "abbreviation too long"}, "error")
@@ -75,7 +75,7 @@ def delete():
             badIds.append(id)
             continue
 
-        if id > maxINT or id <= 0:
+        if id > max_INT or id <= 0:
             badIds.append(id)
             continue
 
@@ -85,13 +85,13 @@ def delete():
 
         classes = Class.query.filter_by(idSpecialization = id)
 
-        for specific_class in classes:
-            users = User_Class.query.filter_by(idClass = specific_class.id)
+        for specificClass in classes:
+            users = User_Class.query.filter_by(idClass = specificClass.id)
 
             for user in users:
                 db.session.delete(user)
             db.session.commit()
-            db.session.delete(specific_class)
+            db.session.delete(specificClass)
         
         db.session.commit()
         db.session.delete(Specialization.query.filter_by(id = id).first())
@@ -124,7 +124,7 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 29030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 29040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -134,7 +134,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 29060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 29070, {"message": "amountForPaging too big"}, "error")
     
     pageNumber -= 1
@@ -164,7 +164,7 @@ def get_by_id():
         id = int(id)
     except:
         return send_response(400, 54020, {"message": "Id not integer"}, "error")
-    if id > maxINT or id <=0:
+    if id > max_INT or id <=0:
         return send_response(400, 54030, {"message": "Id not valid"}, "error")
 
     specialization = Specialization.query.filter_by(id=id).first()

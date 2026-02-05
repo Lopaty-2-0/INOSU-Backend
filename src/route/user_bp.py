@@ -10,7 +10,7 @@ from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db, pfp_path, url, maxINT
+from app import db, pfp_path, url, max_INT
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
@@ -109,13 +109,13 @@ def add():
                     badIds.append(id)
                     continue
 
-                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
+                if id > max_INT or id <= 0 or not Class.query.filter_by(id=id).first():
                     badIds.append(id)
                     continue
 
-                newUser_Class = User_Class(idUser, id)
+                newUserClass = User_Class(idUser, id)
                 goodIds.append(id)
-                db.session.add(newUser_Class)
+                db.session.add(newUserClass)
             db.session.commit()
 
     return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}, "goodIds": goodIds, "badIds":badIds}, "success")
@@ -186,13 +186,13 @@ def add_file():
                     except:
                         badIds.append(id)
                         continue
-                    if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first():
+                    if id > max_INT or id <= 0 or not Class.query.filter_by(id=id).first():
                         badIds.append(id)
                         continue
 
-                    newUser_Class = User_Class(newUser.id, id)
+                    newUserClass = User_Class(newUser.id, id)
                     goodIds.append(id)
-                    db.session.add(newUser_Class)
+                    db.session.add(newUserClass)
             db.session.commit()
     
     if allUsers <= badUsers:
@@ -212,11 +212,11 @@ async def update():
     email = request.form.get("email", None)
     idUser = request.form.get("idUser", None)
     reminders = request.form.get("reminders", None)
-    raw_id_class = request.form.get("idClass", "")
+    rawIdClass = request.form.get("idClass", "")
     profilePicture = request.files.get("profilePicture", None)
     
     try:
-        idClass = json.loads(raw_id_class) if raw_id_class.strip() else None
+        idClass = json.loads(rawIdClass) if rawIdClass.strip() else None
     except:
         idClass = None
 
@@ -253,7 +253,7 @@ async def update():
     except:
             return send_response(400, 2060, {"message": "IdUser not integer"}, "error")
     
-    if idUser > maxINT or idUser <= 0:
+    if idUser > max_INT or idUser <= 0:
         return send_response(400, 2070, {"message": "IdUser not valid"}, "error")
 
     secondUser = User.query.filter_by(id = idUser).first()
@@ -300,8 +300,8 @@ async def update():
         await pfp_save(pfp_path, secondUser, profilePicture)
 
     if isinstance(idClass, list):    
-        User_class = User_Class.query.filter_by(idUser = secondUser.id)
-        for cl in User_class:
+        UserClass = User_Class.query.filter_by(idUser = secondUser.id)
+        for cl in UserClass:
             db.session.delete(cl)
     
         if secondUser.role == Role.Student:
@@ -311,13 +311,13 @@ async def update():
                 except:
                     badIds.append(id)
                     continue
-                if id > maxINT or id <= 0 or not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first():
+                if id > max_INT or id <= 0 or not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = secondUser.id, idClass = id).first():
                     badIds.append(id)
                     continue
 
-                newUser_Class = User_Class(secondUser.id, id)
+                newUserClass = User_Class(secondUser.id, id)
                 goodIds.append(id)
-                db.session.add(newUser_Class)
+                db.session.add(newUserClass)
 
     secondUser.updatedAt = datetime.datetime.now(datetime.timezone.utc)
 
@@ -346,7 +346,7 @@ async def delete():
             badIds.append(id)
             continue
 
-        if id > maxINT or id <= 0:
+        if id > max_INT or id <= 0:
             badIds.append(id)
             continue
         if flask_login.current_user.id == id:
@@ -373,11 +373,11 @@ async def delete():
                 teams = Team.query.filter_by(guarantor = id, idTask = task.id)
 
                 for team in teams:
-                    user_teams = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
+                    userTeams = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
                     versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
 
-                    for user_team in user_teams:
-                        db.session.delete(user_team)
+                    for userTeam in userTeams:
+                        db.session.delete(userTeam)
                     for version in versions:
                         db.session.delete(version)
 
@@ -459,9 +459,9 @@ def password_verify():
     if not token:
         return send_response(400, 13010, {"message": "Token is missing"}, "error")
     
-    decoded_token = flask_jwt_extended.decode_token(token)
+    decodedToken = flask_jwt_extended.decode_token(token)
 
-    return send_response(200, 13021, {"message": "Verified successfuly", "email":decoded_token["email"]}, "success")
+    return send_response(200, 13021, {"message": "Verified successfuly", "email":decodedToken["email"]}, "success")
 
 @user_bp.route("/user/password/reset", methods = ["POST"])
 def password_new():
@@ -506,7 +506,7 @@ def get_by_id():
     except:
         return send_response(400, 18020, {"message": "Id not integer"}, "error")
     
-    if id > maxINT or id <= 0:
+    if id > max_INT or id <= 0:
         return send_response(400, 18030, {"message": "Id not valid"}, "error")
 
     user = User.query.filter_by(id = id).first()
@@ -537,7 +537,7 @@ def get_by_role():
     if amountForPaging < 1:
         return send_response(400, 20030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 20040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -547,7 +547,7 @@ def get_by_role():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 20060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 20070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -629,7 +629,7 @@ def get_no_class():
     if amountForPaging < 1:
         return send_response(400, 51030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 51040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -639,7 +639,7 @@ def get_no_class():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 51060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 51070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -701,7 +701,7 @@ def get_user_page():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     
-    right_users = []
+    rightUsers = []
 
     if not amountForPaging:
         return send_response(400, 52010, {"message": "amountForPaging not entered"}, "error")
@@ -714,7 +714,7 @@ def get_user_page():
     if amountForPaging < 1:
         return send_response(400, 52030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 52040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -724,7 +724,7 @@ def get_user_page():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 52060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 52070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -739,7 +739,7 @@ def get_user_page():
         users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
     for user in users:
-        right_users.append({
+        rightUsers.append({
                             "id": user.id,
                             "name": user.name,
                             "surname": user.surname,
@@ -752,4 +752,4 @@ def get_user_page():
                             "updatedAt":user.updatedAt,
                             "reminders":user.reminders
                         })
-    return send_response(200, 52091, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 52091, {"message": "Users found", "users":rightUsers, "count":count}, "success")

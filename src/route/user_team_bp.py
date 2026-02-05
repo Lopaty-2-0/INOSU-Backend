@@ -1,7 +1,7 @@
 from flask import request, Blueprint
 import flask_login
 import datetime
-from app import db, maxINT
+from app import db, max_INT
 from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.models.User_Class import User_Class
@@ -37,7 +37,7 @@ async def add():
         idTask = int(idTask)
     except:
         return send_response(400, 36030, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <= 0:
+    if idTask > max_INT or idTask <= 0:
         return send_response(400, 36040, {"message": "idTask not valid"}, "error")
     task = Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first()
     if not task:
@@ -62,7 +62,7 @@ async def add():
                 except:
                     badIds.append(idU)
                     continue
-                if idU > maxINT or idU <= 0:
+                if idU > max_INT or idU <= 0:
                     badIds.append(idU)
                     continue
 
@@ -93,7 +93,7 @@ async def add():
                 except:
                     badIds.append(idCl)
                     continue
-                if idCl > maxINT or idCl <= 0:
+                if idCl > max_INT or idCl <= 0:
                     badIds.append(idCl)
                     continue
 
@@ -128,7 +128,7 @@ async def add():
             except:
                 badIds.append(idU)
                 continue
-            if idU > maxINT or idU <= 0:
+            if idU > max_INT or idU <= 0:
                 badIds.append(idU)
                 continue
             if not User.query.filter_by(id=idU).first() or not Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first():
@@ -171,7 +171,7 @@ def delete():
     except:
         return send_response(400, 37040, {"message": "idTask not integer"}, "error")
     
-    if idTask > maxINT or idTask <= 0:
+    if idTask > max_INT or idTask <= 0:
         return send_response(400, 37050, {"message": "idTask not valid"}, "error")
     if not Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 37060, {"message": "Nonexistent task"}, "error")
@@ -181,7 +181,7 @@ def delete():
     except:
         return send_response(400, 37070, {"message": "idUser not integer"}, "error")
     
-    if idUser > maxINT or idUser <= 0:
+    if idUser > max_INT or idUser <= 0:
         return send_response(400, 37080, {"message": "idUser not valid"}, "error")
     if not User.query.filter_by(id=idUser).first():
         return send_response(400, 37090, {"message": "Nonexistent USER"}, "error")
@@ -191,17 +191,17 @@ def delete():
     except:
         return send_response(400, 37100, {"message": "idTeam not integer"}, "error")
     
-    if idTeam > maxINT or idTeam <= 0:
+    if idTeam > max_INT or idTeam <= 0:
         return send_response(400, 37110, {"message": "idTeam not valid"}, "error")
     if not Team.query.filter_by(idTask=idTask, guarantor = flask_login.current_user.id, idTeam = idTeam).first():
         return send_response(400, 37120, {"message": "Nonexistent team"}, "error")
     
-    user_team = User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam, guarantor = flask_login.current_user.id).first()
+    userTeam = User_Team.query.filter_by(idTask = idTask, idUser = idUser, idTeam = idTeam, guarantor = flask_login.current_user.id).first()
 
-    if not user_team:
+    if not userTeam:
         return send_response(400, 37130, {"message": "Nonexistent user_team"}, "error")
 
-    db.session.delete(user_team)
+    db.session.delete(userTeam)
     db.session.commit()
 
     cancel_reminder(idUser = idUser, idTask = idTask, guarantor = flask_login.current_user.id)
@@ -216,7 +216,7 @@ def get():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     
-    right_user_teams = []
+    rightUserTeams = []
     if not amountForPaging:
         return send_response(400, 39010, {"message": "amountForPaging not entered"}, "error")
 
@@ -228,7 +228,7 @@ def get():
     if amountForPaging < 1:
         return send_response(400, 39030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 39040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -238,7 +238,7 @@ def get():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 39060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 39070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -253,23 +253,23 @@ def get():
     except:
         return send_response(400, 39100, {"message": "idUser not integer"}, "error")
     
-    if idUser > maxINT or idUser <= 0:
+    if idUser > max_INT or idUser <= 0:
         return send_response(400, 39110, {"message": "idUser not valid"}, "error")
     if not User.query.filter_by(id = idUser).first():
         return send_response(400, 39120, {"message": "Nonexistent user"}, "error")
     
     if not searchQuery:
-        user_teams = User_Team.query.filter_by(idUser = idUser).join(Task, and_(Task.guarantor == User_Team.guarantor, Task.id == User_Team.idTask)).where(Task.type == Type.Task).order_by(User_Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = user_teams.count()
+        userTeams = User_Team.query.filter_by(idUser = idUser).join(Task, and_(Task.guarantor == User_Team.guarantor, Task.id == User_Team.idTask)).where(Task.type == Type.Task).order_by(User_Team.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = userTeams.count()
     else:
-        user_teams, count = user_team_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, idUser = idUser, taskType = Type.Task)
+        userTeams, count = user_team_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, idUser = idUser, taskType = Type.Task)
 
-    for user_team in user_teams:
+    for userTeam in userTeams:
         
-        task = Task.query.filter_by(id = user_team.idTask, guarantor = user_team.guarantor).first()
+        task = Task.query.filter_by(id = userTeam.idTask, guarantor = userTeam.guarantor).first()
         user = User.query.filter_by(id = task.guarantor).first()
-        team = Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask, guarantor = user_team.guarantor).first()
-        version = Version_Team.query.filter_by(idTeam = user_team.idTeam, idTask = user_team.idTask, guarantor = user_team.guarantor).order_by(Version_Team.idVersion.desc()).first()
+        team = Team.query.filter_by(idTeam = userTeam.idTeam, idTask = userTeam.idTask, guarantor = userTeam.guarantor).first()
+        version = Version_Team.query.filter_by(idTeam = userTeam.idTeam, idTask = userTeam.idTask, guarantor = userTeam.guarantor).order_by(Version_Team.idVersion.desc()).first()
 
         if not version:
             elaboration = None
@@ -289,8 +289,8 @@ def get():
                     "email":user.email, 
                     "updatedAt":user.updatedAt
                     }
-        right_user_teams.append({
-                                "idTask":user_team.idTask, 
+        rightUserTeams.append({
+                                "idTask":userTeam.idTask, 
                                 "name":task.name, 
                                 "startDate":task.startDate, 
                                 "endDate":task.endDate, 
@@ -298,7 +298,7 @@ def get():
                                 "guarantor":guarantor,
                                 "points":task.points,
                                 "team":{
-                                        "idTeam":user_team.idTeam, 
+                                        "idTeam":userTeam.idTeam, 
                                         "status":team.status.value, 
                                         "elaboration":elaboration,
                                         "createdAt":createdAt, 
@@ -308,7 +308,7 @@ def get():
                                         }
                                 })
         
-    return send_response(200, 39131, {"message": "User_teams found", "user_teams":right_user_teams, "count":count}, "success")
+    return send_response(200, 39131, {"message": "User_teams found", "user_teams":rightUserTeams, "count":count}, "success")
 
 
 @user_team_bp.route("/user_team/change", methods=["PUT"])
@@ -331,7 +331,7 @@ async def change():
     except:
         return send_response(400, 43030, {"message": "idTask not integer"}, "error")
     
-    if idTask > maxINT or idTask <= 0:
+    if idTask > max_INT or idTask <= 0:
         return send_response(400, 43040, {"message": "idTask not valid"}, "error")
 
     try:
@@ -339,7 +339,7 @@ async def change():
     except:
         return send_response(400, 43050, {"message": "idTeam not integer"}, "error")
     
-    if idTeam > maxINT or idTeam <= 0:
+    if idTeam > max_INT or idTeam <= 0:
         return send_response(400, 43060, {"message": "idTeam not valid"}, "error")
     
     task = Task.query.filter_by(id=idTask, guarantor = flask_login.current_user.id).first()
@@ -372,7 +372,7 @@ async def change():
         except:
             badIds.append(id)
             continue
-        if id > maxINT or id <= 0 or not User.query.filter_by(id = id).first():
+        if id > max_INT or id <= 0 or not User.query.filter_by(id = id).first():
             badIds.append(id)
             continue
         if User_Team.query.filter_by(idUser = id, idTask = idTask, guarantor = flask_login.current_user.id).first():
@@ -402,21 +402,21 @@ async def change():
 @user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
 def count_user_tasks():
-    user_teams = User_Team.query.filter_by(idUser=flask_login.current_user.id).all()
+    userTeams = User_Team.query.filter_by(idUser=flask_login.current_user.id).all()
     now = datetime.datetime.now(datetime.timezone.utc)
     count = 0
 
-    for user_team in user_teams:
-        task = Task.query.filter_by(id = user_team.idTask, guarantor = user_team.guarantor).first()
+    for userTeam in userTeams:
+        task = Task.query.filter_by(id = userTeam.idTask, guarantor = userTeam.guarantor).first()
 
         if task.type == Type.Maturita:
             continue
 
-        end_time = task.deadline if task.deadline else task.endDate
-        if not end_time:
+        endTime = task.deadline if task.deadline else task.endDate
+        if not endTime:
             continue
 
-        if now > end_time.replace(tzinfo=datetime.timezone.utc):
+        if now > endTime.replace(tzinfo=datetime.timezone.utc):
             continue
         
         count += 1
@@ -430,7 +430,7 @@ def get_by_type():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     taskType = request.args.get("taskType", None)
-    return_tasks = []
+    returnTasks = []
 
     if not amountForPaging:
         return send_response(400, 60010, {"message": "amountForPaging not entered"}, "error")
@@ -443,7 +443,7 @@ def get_by_type():
     if amountForPaging < 1:
         return send_response(400, 60030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 60040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -453,7 +453,7 @@ def get_by_type():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 60060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 60070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -485,7 +485,7 @@ def get_by_type():
             elaboration = version.elaboration
             createdAt = version.createdAt
 
-        return_team = {
+        returnTeam = {
                         "idTeam":team.idTeam,
                         "points":team.points,
                         "review":team.review,
@@ -509,6 +509,6 @@ def get_by_type():
                     "email":user.email
                     }
 
-        return_tasks.append({"idTask":task.id, "name":task.name, "startDate":task.startDate, "endDate":task.endDate, "deadline":task.deadline, "task":task.task, "guarantor":guarantor, "type":task.type.value, "points":task.points, "team":return_team})
+        returnTasks.append({"idTask":task.id, "name":task.name, "startDate":task.startDate, "endDate":task.endDate, "deadline":task.deadline, "task":task.task, "guarantor":guarantor, "type":task.type.value, "points":task.points, "team":returnTeam})
     
-    return send_response(200, 60111, {"message": "All task for current user in this type", "tasks":return_tasks, "count":count}, "success")
+    return send_response(200, 60111, {"message": "All task for current user in this type", "tasks":returnTasks, "count":count}, "success")

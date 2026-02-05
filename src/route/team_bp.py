@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db, maxFLOAT, maxINT
+from app import db, max_FLOAT, max_INT
 from src.models.Team import Team
 from src.models.User import User
 from src.models.Task import Task
@@ -31,7 +31,7 @@ async def add():
         idTask = int(idTask)
     except:
         return send_response(400, 30020, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 30030, {"message": "idTask not valid"}, "error")
     
     task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
@@ -69,7 +69,7 @@ async def delete():
         idTask = int(idTask)
     except:
         return send_response(400, 31030, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 31040, {"message": "idTask not valid"}, "error")
     if not Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first():
         return send_response(400, 31050, {"message": "Nonexistent task"}, "error")
@@ -82,7 +82,7 @@ async def delete():
         except:
             badIds.append(id)
             continue
-        if id > maxINT or id <=0:
+        if id > max_INT or id <=0:
             badIds.append(id)
             continue
 
@@ -131,13 +131,13 @@ async def update():
         idTask = int(idTask)
     except:
         return send_response(400, 32030, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 32040, {"message": "idTask not valid"}, "error")
     try:
         idTeam = int(idTeam)
     except:
         return send_response(400, 32050, {"message": "idTeam not integer"}, "error")
-    if idTeam > maxINT or idTeam <=0:
+    if idTeam > max_INT or idTeam <=0:
         return send_response(400, 32060, {"message": "idTeam not valid"}, "error")
     
     task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
@@ -159,7 +159,7 @@ async def update():
             points = float(points)
         except:
             return send_response(400, 32100, {"message": "Points are not integer or float"}, "error")
-        if points > maxFLOAT or points < 0:
+        if points > max_FLOAT or points < 0:
             return send_response(400, 32110, {"message": "Points not valid"}, "error")
         if points > task.points:
             return send_response(400, 32120, {"message": "Can not give more points tha task has"}, "error")
@@ -200,7 +200,7 @@ def get_users_task():
     if amountForPaging < 1:
         return send_response(400, 41030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 41040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -210,7 +210,7 @@ def get_users_task():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 41060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 41070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -224,7 +224,7 @@ def get_users_task():
         idTask = int(idTask)
     except:
         return send_response(400, 41100, {"message": "idTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 41110, {"message": "idTask not valid"}, "error")
 
     if not Task.query.filter_by(id = idTask).first():
@@ -281,7 +281,7 @@ def get_teams_task():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-    right_teams = []
+    rightTeams = []
 
 
     if not amountForPaging:
@@ -295,7 +295,7 @@ def get_teams_task():
     if amountForPaging < 1:
         return send_response(400, 56030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 56040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -305,7 +305,7 @@ def get_teams_task():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 56060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 56070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -319,7 +319,7 @@ def get_teams_task():
         idTask = int(idTask)
     except:
         return send_response(400, 56100, {"message": "IdTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 56110, {"message": "IdTask not valid"}, "error")
 
     if not Task.query.filter_by(id = idTask).first():
@@ -342,7 +342,7 @@ def get_teams_task():
             elaboration = version.elaboration
             createdAt = version.createdAt
         
-        right_teams.append({
+        rightTeams.append({
                     "idTeam":team.idTeam,
                     "count": counts,
                     "name":team.name,
@@ -356,7 +356,7 @@ def get_teams_task():
                     "reviewUpdatedAt":team.reviewUpdatedAt
                     })
 
-    return send_response(200, 56131, {"message": "All teams for this task", "teams":right_teams, "count": count}, "success")
+    return send_response(200, 56131, {"message": "All teams for this task", "teams":rightTeams, "count": count}, "success")
 
 @team_bp.route("/team/get/teams/status/guarantor", methods=["GET"])
 @flask_login.login_required
@@ -365,7 +365,7 @@ def get_teams_with_status_and_guarantor():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-    right_teams = []
+    rightTeams = []
 
     if not amountForPaging:
         return send_response(400, 40010, {"message": "amountForPaging not entered"}, "error")
@@ -378,7 +378,7 @@ def get_teams_with_status_and_guarantor():
     if amountForPaging < 1:
         return send_response(400, 40030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 40040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -388,7 +388,7 @@ def get_teams_with_status_and_guarantor():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 40060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 40070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -416,7 +416,7 @@ def get_teams_with_status_and_guarantor():
             elaboration = version.elaboration
             createdAt = version.createdAt
 
-        right_teams.append({
+        rightTeams.append({
                     "status":team.status.value,
                     "review":team.review, 
                     "idTeam":team.idTeam,
@@ -430,7 +430,7 @@ def get_teams_with_status_and_guarantor():
                     "elaboration": elaboration
                     })
     
-    return send_response(200, 40101, {"message": "All guarantor tasks with these statuses for current user", "teams":right_teams, "count": count}, "success")
+    return send_response(200, 40101, {"message": "All guarantor tasks with these statuses for current user", "teams":rightTeams, "count": count}, "success")
 
 @team_bp.route("/team/get/users/status/guarantor", methods=["GET"])
 @flask_login.login_required
@@ -453,7 +453,7 @@ def get_users_with_status_and_guarantor():
     if amountForPaging < 1:
         return send_response(400, 57030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 57040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -463,7 +463,7 @@ def get_users_with_status_and_guarantor():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 57060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 57070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -521,7 +521,7 @@ def get_teams_with_status_and_idTask():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-    right_teams = []
+    rightTeams = []
 
     if not amountForPaging:
         return send_response(400, 44010, {"message": "amountForPaging not entered"}, "error")
@@ -534,7 +534,7 @@ def get_teams_with_status_and_idTask():
     if amountForPaging < 1:
         return send_response(400, 44030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 44040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -544,7 +544,7 @@ def get_teams_with_status_and_idTask():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 44060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 44070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -572,7 +572,7 @@ def get_teams_with_status_and_idTask():
             elaboration = version.elaboration
             createdAt = version.createdAt
 
-        right_teams.append({
+        rightTeams.append({
                     "status":team.status.value,
                     "review":team.review, 
                     "idTeam":team.idTeam,
@@ -586,7 +586,7 @@ def get_teams_with_status_and_idTask():
                     "elaboration": elaboration
                     })
                 
-    return send_response(200, 44101, {"message": "All teams for this task and statuses", "teams": right_teams, "count":count}, "success")
+    return send_response(200, 44101, {"message": "All teams for this task and statuses", "teams": rightTeams, "count":count}, "success")
 
 @team_bp.route("/team/get/users/status/idTask", methods=["GET"])
 @flask_login.login_required
@@ -609,7 +609,7 @@ def get_users_with_status_and_idTask():
     if amountForPaging < 1:
         return send_response(400, 58030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 58040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -619,7 +619,7 @@ def get_users_with_status_and_idTask():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 58060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 58070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -632,7 +632,7 @@ def get_users_with_status_and_idTask():
         idTask = int(idTask)
     except:
         return send_response(400, 58100, {"message": "IdTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 58110, {"message": "IdTask not valid"}, "error")
     
     if status not in [stat.value for stat in Status]:
@@ -684,7 +684,7 @@ def get_by_status_elaboration():
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     users = []
-    right_teams = []
+    rightTeams = []
     pairs = []
     
     if not amountForPaging:
@@ -698,7 +698,7 @@ def get_by_status_elaboration():
     if amountForPaging < 1:
         return send_response(400, 53030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 53040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -708,7 +708,7 @@ def get_by_status_elaboration():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 53060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 53070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -719,15 +719,15 @@ def get_by_status_elaboration():
     if status not in [stat.value for stat in Status]:
         return send_response(400, 53090, {"message": "Status not our type"}, "error")
     
-    user_teams = User_Team.query.filter_by(idUser = flask_login.current_user.id)
+    userTeams = User_Team.query.filter_by(idUser = flask_login.current_user.id)
 
-    for user_team in user_teams:
-        pairs.append((user_team.idTeam, user_team.idTask, user_team.guarantor))
+    for userTeam in userTeams:
+        pairs.append((userTeam.idTeam, userTeam.idTask, userTeam.guarantor))
 
     if pairs:
         conditions = [
-            (Team.idTeam == team_id) & (Team.idTask == task_id) & (Team.guarantor == guarantor)
-            for team_id, task_id, guarantor in pairs
+            (Team.idTeam == teamId) & (Team.idTask == taskId) & (Team.guarantor == guarantor)
+            for teamId, taskId, guarantor in pairs
             ]
         
         if not searchQuery:
@@ -770,7 +770,7 @@ def get_by_status_elaboration():
                         "elaboration": elaboration
                         })
         else:
-            right_teams.append({
+            rightTeams.append({
                         "status":team.status.value,
                         "review":team.review, 
                         "idTeam":team.idTeam,
@@ -784,7 +784,7 @@ def get_by_status_elaboration():
                         "elaboration": elaboration
                         })
                 
-    return send_response(200, 53101, {"message": "All tasks with these statuses for current user", "users":users, "teams":right_teams, "count":count}, "success")
+    return send_response(200, 53101, {"message": "All tasks with these statuses for current user", "users":users, "teams":rightTeams, "count":count}, "success")
 
 @team_bp.route("/team/get/info")
 @flask_login.login_required
@@ -800,7 +800,7 @@ def get_team_info():
         idTeam = int(idTeam)
     except:
         return send_response(400, 45020, {"message": "IdTask not integer"}, "error")
-    if idTeam > maxINT or idTeam <=0:
+    if idTeam > max_INT or idTeam <=0:
         return send_response(400, 45030, {"message": "IdTask not valid"}, "error")
     
     if not guarantor:
@@ -809,7 +809,7 @@ def get_team_info():
         guarantor = int(guarantor)
     except:
         return send_response(400, 45050, {"message": "guarantor not integer"}, "error")
-    if guarantor > maxINT or guarantor <=0:
+    if guarantor > max_INT or guarantor <=0:
         return send_response(400, 45060, {"message": "guarantor not valid"}, "error")
     
     user = User.query.filter_by(id = guarantor).first()
@@ -823,7 +823,7 @@ def get_team_info():
         idTask = int(idTask)
     except:
         return send_response(400, 45090, {"message": "IdTask not integer"}, "error")
-    if idTask > maxINT or idTask <=0:
+    if idTask > max_INT or idTask <=0:
         return send_response(400, 45100, {"message": "IdTask not valid"}, "error")
     
     task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
@@ -836,11 +836,11 @@ def get_team_info():
     if not team:
         return send_response(400, 45120, {"message": "Nonexistent team"}, "error")
 
-    user_teams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).order_by(User_Team.idUser.desc())
+    userTeams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).order_by(User_Team.idUser.desc())
 
-    for user in user_teams:
+    for user in userTeams:
         users.append(user.idUser)
     
-    team_info = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value, "isTeam": team.isTeam, "reviewUpdatedAt":team.reviewUpdatedAt, "teamUpdatedAt":team.teamUpdatedAt}
+    teamInfo = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value, "isTeam": team.isTeam, "reviewUpdatedAt":team.reviewUpdatedAt, "teamUpdatedAt":team.teamUpdatedAt}
     
-    return send_response(200, 45091, {"message": "Team info found", "users":users, "team":team_info}, "success")
+    return send_response(200, 45091, {"message": "Team info found", "users":users, "team":teamInfo}, "success")

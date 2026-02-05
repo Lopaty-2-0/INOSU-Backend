@@ -11,9 +11,9 @@ def reminder(idTask, idUser, guarantor):
     with app.app_context():
         task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
         user = User.query.filter_by(id = idUser).first()
-        user_team = User_Team.query.filter_by(idUser = idUser, idTask = idTask, guarantor = guarantor).first()
+        userTeam = User_Team.query.filter_by(idUser = idUser, idTask = idTask, guarantor = guarantor).first()
 
-        if not task or not user or not user_team or not user.reminders:
+        if not task or not user or not userTeam or not user.reminders:
             return
         
         text = "Upozornění uzavírky události" + task.name
@@ -22,10 +22,10 @@ def reminder(idTask, idUser, guarantor):
     
 def cancel_reminder(idUser, idTask, guarantor):
     with app.app_context():
-        job_id = f"reminder_{idUser}_{idTask}_{guarantor}"
+        jobId = f"reminder_{idUser}_{idTask}_{guarantor}"
 
         try:
-            scheduler.remove_job(job_id)
+            scheduler.remove_job(jobId)
         except:
             pass
 
@@ -35,13 +35,13 @@ def create_reminder(idUser, idTask, guarantor):
         return
 
     with app.app_context():
-        job_id = f"reminder_{idUser}_{idTask}_{guarantor}"
+        jobId = f"reminder_{idUser}_{idTask}_{guarantor}"
 
         scheduler.add_job(
             reminder,
             trigger="date",
             run_date=Task.query.filter_by(id = idTask).first().endDate - timedelta(days = 1),
             args=[idTask, idUser, guarantor],
-            id=job_id,
+            id=jobId,
             replace_existing=True
         )
