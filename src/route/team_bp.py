@@ -156,12 +156,13 @@ async def update():
             return send_response(400, 32090, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             user = User_Team.query.filter_by(idTeam = team.idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
-            if user:
+            team.status = Status(status)
+            if user and status == Status.Approved:
                 now = datetime.datetime.now(tz=datetime.timezone.utc)
                 maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
                 if maturita:
                     await maturita_task_delete(user.idUser, maturita.id)
-            team.status = Status(status)
+            
     if points or points == 0:
         try:
             points = float(points)
