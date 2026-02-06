@@ -157,9 +157,12 @@ async def update():
         elif status != Status.Pending.value:
             user = User_Team.query.filter_by(idTeam = team.idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
             team.status = Status(status)
+            db.session.commit()
+            
             if user and status == Status.Approved:
                 now = datetime.datetime.now(tz=datetime.timezone.utc)
                 maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
+
                 if maturita:
                     await maturita_task_delete(user.idUser, maturita.id)
             
