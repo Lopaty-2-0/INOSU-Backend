@@ -159,7 +159,7 @@ async def update():
             team.status = Status(status)
             db.session.commit()
             
-            if user and status == Status.Approved:
+            if user and status == Status.Approved.value:
                 now = datetime.datetime.now(tz=datetime.timezone.utc)
                 maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
 
