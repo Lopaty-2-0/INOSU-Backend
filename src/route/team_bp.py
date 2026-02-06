@@ -13,6 +13,8 @@ from src.utils.paging import team_paging
 from sqlalchemy import or_
 from src.utils.all_user_classes import all_user_classes
 from src.utils.reminder import cancel_reminder
+from src.utils.maturita_task import maturita_task_delete
+from src.models.Maturita import Maturita
 import datetime
 
 team_bp = Blueprint("team", __name__)
@@ -149,10 +151,16 @@ async def update():
 
     if not team:
         return send_response(400, 32080, {"message": "Nonexistent team"}, "error")
-    if status:
+    if status and Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).type == Type.Maturita:
         if status not in [s.value for s in Status]:
             return send_response(400, 32090, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
+            user = User_Team.query.filter_by(idTeam = team.idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
+            if user:
+                now = datetime.datetime.now(tz=datetime.timezone.utc)
+                maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now)
+                if maturita:
+                    await maturita_task_delete(user.idUser, maturita.id)
             team.status = Status(status)
     if points or points == 0:
         try:
