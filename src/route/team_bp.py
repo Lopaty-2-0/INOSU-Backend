@@ -151,7 +151,7 @@ async def update():
 
     if not team:
         return send_response(400, 32080, {"message": "Nonexistent team"}, "error")
-    if status and Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).type == Type.Maturita:
+    if status and Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first().type == Type.Maturita:
         if status not in [s.value for s in Status]:
             return send_response(400, 32090, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
