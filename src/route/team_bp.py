@@ -158,7 +158,7 @@ async def update():
             user = User_Team.query.filter_by(idTeam = team.idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
             if user:
                 now = datetime.datetime.now(tz=datetime.timezone.utc)
-                maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now)
+                maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
                 if maturita:
                     await maturita_task_delete(user.idUser, maturita.id)
             team.status = Status(status)
