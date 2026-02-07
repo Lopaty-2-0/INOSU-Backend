@@ -224,7 +224,7 @@ def evaluator_paging(searchQuery, amountForPaging, pageNumber, idMaturita):
             )
         )
 
-    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita)  & Maturita.id == idMaturita).filter(*conditions).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).join(Maturita, (Maturita.id == Evaluator.idMaturita) & Maturita.id == idMaturita).filter(*conditions).count()
+    return Evaluator.query.join(User, (User.id == Evaluator.idUser)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).count()
 
 def maturita_task_paging(searchQuery, amountForPaging, pageNumber, idUser, idMaturita, status):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
