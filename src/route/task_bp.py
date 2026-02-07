@@ -721,8 +721,6 @@ async def update():
                 return send_response(400, 74090, {"message":"Ending before begining"}, "error")
             actualTask.endDate = endDate
 
-        user = flask_login.current_user
-
         if deadline:
             try:
                 deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
@@ -746,7 +744,7 @@ async def update():
             
             actualTask.points = points
     else:
-        maturita = Maturita_Task.query.filter_by(idTask = id, guarantor = flask_login.current_user.id).first()
+        maturita = Maturita_Task.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first()
 
         if objector:
             try:
