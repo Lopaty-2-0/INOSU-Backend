@@ -234,11 +234,7 @@ def maturita_task_paging(searchQuery, amountForPaging, pageNumber, idUser, idMat
         like_pattern = f"%{word}%"
         conditions.append(
             or_(
-                func.lower(Task.name).like(like_pattern),
-                func.lower(Task.points).like(like_pattern),
-                func.lower(Task.endDate).like(like_pattern),
-                func.lower(Task.deadline).like(like_pattern),
-                func.lower(Task.startDate).like(like_pattern)
+                func.lower(Task.name).like(like_pattern)
             )
         )
 
