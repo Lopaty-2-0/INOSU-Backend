@@ -47,7 +47,7 @@ async def add():
     
     taskName = str(taskName)
 
-    if len(taskName) > 45:
+    if len(taskName) > 255:
         return send_response(400, 26040, {"message":"Name too long"}, "error")
     try:
         endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
@@ -155,7 +155,7 @@ async def add_maturita_guarantor():
 
     if not topic:
         return send_response(400, 61140, {"message": "topic not found"}, "error")
-    if len(taskName) > 45:
+    if len(taskName) > 255:
         return send_response(400, 61150, {"message":"Name too long"}, "error")
     if not task:
         return send_response(400, 61160, {"message": "Task not entered"}, "error")
@@ -246,7 +246,7 @@ async def add_maturita_student():
 
     if not topic:
         return send_response(400, 62130, {"message": "topic not found"}, "error")
-    if len(taskName) > 45:
+    if len(taskName) > 255:
         return send_response(400, 62140, {"message":"Name too long"}, "error")
     if not task:
         return send_response(400, 62150, {"message": "Task not entered"}, "error")
@@ -699,7 +699,7 @@ async def update():
     if taskName:
         taskName = str(taskName)
 
-        if len(taskName) > 45:
+        if len(taskName) > 255:
             return send_response(400, 74060, {"message":"Name too long"}, "error")
         actualTask.name = taskName
 
@@ -1169,7 +1169,7 @@ async def update_maturita_student():
     if taskName:
         taskName = str(taskName)
 
-        if len(taskName) > 45:
+        if len(taskName) > 255:
             return send_response(400, 80100, {"message":"Name too long"}, "error")
         actualTask.name = taskName
 

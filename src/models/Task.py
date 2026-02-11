@@ -7,7 +7,7 @@ class Task(db.Model):
     __tablename__ = "task"
 
     id = db.Column(INTEGER(unsigned=True), primary_key = True)
-    name = db.Column(db.VARCHAR(45), nullable = False)
+    name = db.Column(db.VARCHAR(255), nullable = False)
     startDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable = False)
     endDate = db.Column(db.DateTime(timezone = True), nullable = False)
     deadline = db.Column(db.DateTime(timezone = True), nullable = True)
