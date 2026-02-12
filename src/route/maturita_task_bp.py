@@ -105,7 +105,7 @@ def get_table():
                 "id":topic.id,
                 "name":topic.name,
             },
-            "variant":maturitaTask.variant,
+            "variant":taskMaturita.variant,
             "task":task.name,
             "guarantor":guarantorData,
             "objector":objectorData
