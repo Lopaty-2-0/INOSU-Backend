@@ -15,6 +15,7 @@ from src.utils.all_user_classes import all_user_classes
 from src.utils.reminder import cancel_reminder
 from src.utils.maturita_task import maturita_task_delete
 from src.models.Maturita import Maturita
+from src.models.Maturita_Task import Maturita_Task
 import datetime
 
 team_bp = Blueprint("team", __name__)
@@ -157,41 +158,53 @@ async def update():
             return send_response(400, 32090, {"message": "Status not our type"}, "error")
         elif status != Status.Pending.value:
             user = User_Team.query.filter_by(idTeam = team.idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
-            team.status = Status(status)
-            db.session.commit()
-            
-            if user and status == Status.Approved.value:
-                now = datetime.datetime.now(tz=datetime.timezone.utc)
-                maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
+            if user:
+                if status == Status.Approved.value:
+                    now = datetime.datetime.now(tz=datetime.timezone.utc)
+                    maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
+                    idTopic = Maturita_Task.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first().idTopic
 
-                if maturita:
-                    await maturita_task_delete(user.idUser, maturita.id)
+                    maturitaTask = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
+                    variant = 65 if not maturitaTask or not maturitaTask.variant else ord(maturitaTask.variant) + 1
+                    
+                    if variant >= 91:
+                        return send_response(400, 32100, {"message":"Reached max variants for this topic"}, "error")
+                    
+                    team.status = Status(status)
+                    db.session.commit()
+
+                    if maturita:
+                        await maturita_task_delete(user.idUser, maturita.id)
+                else:
+                    team.status = Status(status)
+                    db.session.commit()
+
             
     if points or points == 0:
         try:
             points = float(points)
         except:
-            return send_response(400, 32100, {"message": "Points are not integer or float"}, "error")
+            return send_response(400, 32110, {"message": "Points are not integer or float"}, "error")
         if points > max_FLOAT or points < 0:
-            return send_response(400, 32110, {"message": "Points not valid"}, "error")
+            return send_response(400, 32120, {"message": "Points not valid"}, "error")
         if points > task.points:
-            return send_response(400, 32120, {"message": "Can not give more points tha task has"}, "error")
+            return send_response(400, 32130, {"message": "Can not give more points tha task has"}, "error")
         team.points = points
     if isinstance(review, str):
         review = str(review)
         if len(review) > 65535:
-            return send_response(400, 32130, {"message": "Review too long"}, "error")
+            return send_response(400, 32140, {"message": "Review too long"}, "error")
         team.review = review
         team.reviewUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
     if isinstance(name, str):
         if len(name) > 255:
-            return send_response(400, 32140, {"message": "Name too long"}, "error")
+            return send_response(400, 32150, {"message": "Name too long"}, "error")
         team.name = name
         team.teamUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
 
     db.session.commit()
 
-    return send_response(200, 32151, {"message": "team updated"}, "success")
+    return send_response(200, 32161, {"message": "team updated"}, "success")
 
 @flask_login.login_required
 @team_bp.route("/team/get/users", methods=["GET"])

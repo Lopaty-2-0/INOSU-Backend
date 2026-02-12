@@ -761,12 +761,14 @@ async def update():
                 return send_response(400, 74170, {"message": "objector not valid"}, "error")
             if not evaluator:
                 return send_response(400, 74180, {"message": "objector not valid"}, "error")
+            if flask_login.current_user.id == actualObjector.id:
+                return send_response(400, 74190, {"message": "cannot object  this task"}, "error")
             
             maturita.objector = objector
             
     db.session.commit()
 
-    return send_response(201, 74191, {"message":"Task updated successfuly"}, "success")
+    return send_response(201, 74201, {"message":"Task updated successfuly"}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/maturita/guarantor/approved", methods=["GET"])
