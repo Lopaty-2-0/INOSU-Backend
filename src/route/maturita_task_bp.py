@@ -62,22 +62,44 @@ def get_table():
 
     for taskMaturita in maturitaTask:
         task = Task.query.filter_by(id = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
-        guarantorAbbreviation = User.query.filter_by(id = taskMaturita.guarantor).first().abbreviation
+        guarantor = User.query.filter_by(id = taskMaturita.guarantor).first()
         userTeam = User_Team.query.filter_by(idTask = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
         student = User.query.filter_by(id = userTeam.idUser).first()
         objector = User.query.filter_by(id = taskMaturita.guarantor).first()
         topic = Topic.query.filter_by(id = taskMaturita.idTopic).first()
 
         if not objector:
-            objectorAbbreviation = None
+            objectorData = {}
         else:
-            objectorAbbreviation = objector.abbreviation
+            objectorData = {
+                "id":objector.id,
+                "name":objector.name,
+                "surname": objector.surname,
+                "abbreviation": objector.abbreviation,
+                "createdAt": objector.createdAt,
+                "role": objector.role.value,
+                "profilePicture":objector.profilePicture,
+                "email":objector.email
+                }
+
+        guarantorData = {
+            "id":guarantor.id,
+            "name":guarantor.name,
+            "surname": guarantor.surname,
+            "abbreviation": guarantor.abbreviation,
+            "createdAt": guarantor.createdAt,
+            "role": guarantor.role.value,
+            "profilePicture":guarantor.profilePicture,
+            "email":guarantor.email
+            }
 
         allTasks.append({
             "user":{
                 "id":student.id,
                 "surname":student.surname,
                 "name":student.name,
+                "profilePicture":student.profilePicture,
+                "email":student.email
             },
             "topic":{
                 "id":topic.id,
@@ -85,8 +107,8 @@ def get_table():
             },
             "variant":maturitaTask.variant,
             "task":task.name,
-            "guarantor":guarantorAbbreviation,
-            "objector":objectorAbbreviation
+            "guarantor":guarantorData,
+            "objector":objectorData
         })
 
-    return send_response(200, 83101, {"message":"All tasks for current maturita", "taks":allTasks, "count":count}, "success")
+    return send_response(200, 83101, {"message":"All tasks for current maturita", "tasks":allTasks, "count":count}, "success")
