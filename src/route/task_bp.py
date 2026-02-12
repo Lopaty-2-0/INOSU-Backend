@@ -1135,7 +1135,7 @@ async def update_maturita_student():
     guarantor = request.form.get("guarantor", None)
 
     now = datetime.datetime.now(tz=datetime.timezone.utc)
-    maturita = Maturita.query.filter(Maturita.startDate <= now & Maturita.endDate >= now).first()
+    maturita = Maturita.query.filter(Maturita.startDate <= now and Maturita.endDate >= now).first()
 
     if not idTask:
         return send_response(400, 80010, {"message": "No id entered"}, "error")

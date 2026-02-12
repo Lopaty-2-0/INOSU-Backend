@@ -84,7 +84,9 @@ def get_table():
                 "name":topic.name,
             },
             "variant":maturitaTask.variant,
-            "task":task.name,
+            "task":{
+                task.name
+            },
             "guarantor":guarantorAbbreviation,
             "objector":objectorAbbreviation
         })

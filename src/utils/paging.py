@@ -85,11 +85,7 @@ def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, 
         like_pattern = f"%{word}%"
         conditions.append(
             or_(
-                func.lower(Task.name).like(like_pattern),
-                func.lower(Task.points).like(like_pattern),
-                func.lower(Task.endDate).like(like_pattern),
-                func.lower(Task.deadline).like(like_pattern),
-                func.lower(Task.startDate).like(like_pattern)
+                func.lower(Task.name).like(like_pattern)
             )
         )
 
