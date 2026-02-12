@@ -1156,7 +1156,7 @@ async def update_maturita_student():
     if guarantor > max_INT or guarantor <=0:
         return send_response(400, 80070, {"message": "Id not valid"}, "error")
     
-    user = User.query.filter_by(id = actualTask.guarantor).first()
+    user = User.query.filter_by(id = guarantor).first()
     
     if not user:
         return send_response(403, 80080, {"message": "No guarantor found"}, "error")
