@@ -65,7 +65,7 @@ def get_table():
         guarantor = User.query.filter_by(id = taskMaturita.guarantor).first()
         userTeam = User_Team.query.filter_by(idTask = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
         student = User.query.filter_by(id = userTeam.idUser).first()
-        objector = User.query.filter_by(id = taskMaturita.guarantor).first()
+        objector = User.query.filter_by(id = taskMaturita.objector).first()
         topic = Topic.query.filter_by(id = taskMaturita.idTopic).first()
 
         if not objector:
