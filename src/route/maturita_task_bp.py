@@ -96,8 +96,11 @@ def get_table():
         allTasks.append({
             "user":{
                 "id":student.id,
-                "surname":student.surname,
                 "name":student.name,
+                "surname": student.surname,
+                "abbreviation": student.abbreviation,
+                "createdAt": student.createdAt,
+                "role": student.role.value,
                 "profilePicture":student.profilePicture,
                 "email":student.email
             },
