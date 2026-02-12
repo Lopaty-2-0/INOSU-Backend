@@ -4,7 +4,7 @@ from src.models.Specialization import Specialization
 from src.models.Class import Class
 from src.models.Task import Task
 from src.models.Team import Team
-from src.utils.enums import Role, Type
+from src.utils.enums import Role, Type, Status
 from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
 from src.models.Topic import Topic
@@ -77,7 +77,6 @@ def class_paging(searchQuery, amountForPaging, pageNumber):
 
 def task_paging(searchQuery, amountForPaging, pageNumber, specialSearch = None, typeOfSpecialSearch = None, status = None, idMaturita = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
-    #TODO:dodat idMaturita
 
     conditions = []
     specialConditions = []
@@ -222,7 +221,7 @@ def evaluator_paging(searchQuery, amountForPaging, pageNumber, idMaturita):
 
     return Evaluator.query.join(User, (User.id == Evaluator.idUser)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging),Evaluator.query.join(User, (User.id == Evaluator.idUser)).filter(and_(*conditions, Evaluator.idMaturita == idMaturita)).count()
 
-def maturita_task_paging(searchQuery, amountForPaging, pageNumber, idUser, idMaturita, status):
+def maturita_task_paging(searchQuery, amountForPaging, pageNumber, idUser, idMaturita, status = None):
     words = [w.strip().lower() for w in searchQuery.split() if w.strip()]
 
     conditions = []
@@ -233,5 +232,8 @@ def maturita_task_paging(searchQuery, amountForPaging, pageNumber, idUser, idMat
                 func.lower(Task.name).like(like_pattern)
             )
         )
+
+    if not status:
+        return Maturita_Task.query.join(Task, (Task.id == Maturita_Task.idTask) & (Task.guarantor == Maturita_Task.guarantor)).join(Team, (Team.idTask == Maturita_Task.idTask) & (Team.guarantor == Maturita_Task.guarantor) & (Team.status != Status.Approved)).join(User_Team, (User_Team.idTask == Maturita_Task.idTask) & (User_Team.guarantor == Maturita_Task.guarantor) & (User_Team.idUser == idUser)).filter(and_(*conditions, Maturita_Task.idMaturita == idMaturita)).order_by(Maturita_Task.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Maturita_Task.query.join(Task, (Task.id == Maturita_Task.idTask) & (Task.guarantor == Maturita_Task.guarantor)).join(Team, (Team.idTask == Maturita_Task.idTask) & (Team.guarantor == Maturita_Task.guarantor) & (Team.status != Status.Approved)).join(User_Team, (User_Team.idTask == Maturita_Task.idTask) & (User_Team.guarantor == Maturita_Task.guarantor) & (User_Team.idUser == idUser)).filter(and_(*conditions, Maturita_Task.idMaturita == idMaturita)).count()
 
     return Maturita_Task.query.join(Task, (Task.id == Maturita_Task.idTask) & (Task.guarantor == Maturita_Task.guarantor)).join(Team, (Team.idTask == Maturita_Task.idTask) & (Team.guarantor == Maturita_Task.guarantor) & (Team.status == status)).join(User_Team, (User_Team.idTask == Maturita_Task.idTask) & (User_Team.guarantor == Maturita_Task.guarantor) & (User_Team.idUser == idUser)).filter(and_(*conditions, Maturita_Task.idMaturita == idMaturita)).order_by(Maturita_Task.idTask.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging), Maturita_Task.query.join(Task, (Task.id == Maturita_Task.idTask) & (Task.guarantor == Maturita_Task.guarantor)).join(Team, (Team.idTask == Maturita_Task.idTask) & (Team.guarantor == Maturita_Task.guarantor) & (Team.status == status)).join(User_Team, (User_Team.idTask == Maturita_Task.idTask) & (User_Team.guarantor == Maturita_Task.guarantor) & (User_Team.idUser == idUser)).filter(and_(*conditions, Maturita_Task.idMaturita == idMaturita)).count()

@@ -20,7 +20,7 @@ import datetime
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
-#TODO: použít tyto hovna: 40XXX, 57XXX, 44XXX, 58XXX, 53XXX
+#TODO: použít tyto hovna: 57XXX, 44XXX, 58XXX, 53XXX
 @team_bp.route("/team/add", methods=["POST"])
 @flask_login.login_required
 async def add():
