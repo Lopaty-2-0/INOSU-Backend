@@ -170,6 +170,7 @@ async def update():
                     if variant >= 91:
                         return send_response(400, 32100, {"message":"Reached max variants for this topic"}, "error")
                     
+                    maturitaTask.variant = chr(variant)
                     team.status = Status(status)
                     db.session.commit()
 
