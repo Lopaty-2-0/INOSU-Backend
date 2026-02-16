@@ -25,6 +25,7 @@ secret_key = os.getenv("SECRET_KEY")
 task_path = os.getenv("TASK_PATH")
 pfp_path = os.getenv("PFP_PATH")
 url = os.getenv("URL")
+hmac_ip = os.getenv("HMAC_IP")
 max_INT = 4294967295
 max_FLOAT = 3.40e+38
 

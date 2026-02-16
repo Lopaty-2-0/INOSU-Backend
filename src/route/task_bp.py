@@ -2,7 +2,7 @@ from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
 from src.utils.check_file import check_file_size
-from src.utils.task import make_task, task_delete_sftp, update_task
+from src.utils.task import make_task, task_delete_sftp, update_task, complete_upload
 from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
@@ -27,14 +27,37 @@ task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @flask_login.login_required
-@check_file_size(32*1024*1024)
+@task_bp.route("/task/complete_upload", methods = ["POST"])
+def complete_upload():
+    data = request.get_json(force=True)
+    task = data.get("task", None)
+    id = data.get("id", None)
+    guarantor = data.get("guarantor", None)
+
+    if not task:
+        return send_response(400, 57010, {"message": "Task not entered"}, "error")
+    if not guarantor:
+        return send_response(400, 57020, {"message": "Guarantor not entered"}, "error")
+    if not id:
+        return send_response(400, 57030, {"message": "Id not entered"}, "error")
+
+    
+    status = complete_upload(task = task, guarantor = guarantor, id = id)
+
+    if not status:
+        return send_response(400, 57040, {"message": "Upload not completed"}, "error")
+    
+    return send_response(200, 57051, {"message": "Upload completed"}, "success")
+
+@flask_login.login_required
 @task_bp.route("/task/add", methods = ["POST"])
-async def add():
-    taskName = request.form.get("name", None)
-    endDate = request.form.get("endDate", None)
-    task = request.files.get("task", None)
-    deadline = request.form.get("deadline", None)
-    points = request.form.get("points", None)
+def add():
+    data = request.get_json(force=True)
+    taskName = data.get("name", None)
+    endDate = data.get("endDate", None)
+    task = data.get("task", None)
+    deadline = data.get("deadline", None)
+    points = data.get("points", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
 
@@ -57,7 +80,7 @@ async def add():
         return send_response(400, 26060, {"message":"Ending before begining"}, "error")
     if not task:
         return send_response(400, 26070, {"message": "Task not entered"}, "error")
-    if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+    if not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 26080, {"message": "Wrong file format or too long"}, "error")
 
     type = Type.Task
@@ -86,7 +109,7 @@ async def add():
     else:
         points = None
 
-    newTask, id = await make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, file = task, type = type, points = points, deadline = deadline)
+    newTask, id, token, uploadUrl = make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, file = task, type = type, points = points, deadline = deadline)
 
     guarantor = {
                 "id":user.id,
@@ -99,8 +122,7 @@ async def add():
                 "email":user.email
                 }
 
-    return send_response(201, 26141, {"message":"Task created successfuly", "task":{"id": id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
-
+    return send_response(201, 26141, {"message":"Task created successfuly", "task":{"id": id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "token":token, "uploadUrl": uploadUrl}, "success")
 
 @flask_login.login_required
 @check_file_size(32*1024*1024)
