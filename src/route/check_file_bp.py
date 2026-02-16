@@ -20,12 +20,13 @@ def check_pfp(filename):
     if filename.startswith(".."):
         return send_response(400, 44010, {"message": "Invalid path"}, "error")
     
-    message = "/downloads/" + pfp_path + filename
-    message = "/".join([quote(part, safe="") for part in message.split("/")])
+    message = f"/downloads/{pfp_path}{filename}"
     token = generate_hmac_token(message)
+    encoded_path = quote(message, safe="/")
 
-    redirectUrl = f"{hmac_ip}{message}?token={quote(token)}"
-    return send_response(200, 44021, {"message": "Download url generated", "redirectUrl":redirectUrl}, "success")
+    redirectUrl = f"{hmac_ip}{encoded_path}?token={token}"
+
+    return send_response(200,44021, {"message": "Download url generated","redirectUrl": redirectUrl}, "success")
 
 
 @check_file_bp.route("/file/tasks/<string:guarantor>/<string:idTask>/<string:idTeam>/<string:idVersion>/<string:filename>", methods = ["GET"])
@@ -36,24 +37,27 @@ def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
     if filename.startswith(".."):
         return send_response(400, 53010, {"message": "Invalid path"}, "error")
     
-    message = "/downloads/" + task_path + guarantor + "/" + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
-    message = "/".join([quote(part, safe="") for part in message.split("/")])
+    message = f"/downloads/{task_path}{guarantor}/{idTask}/{idTeam}/{idVersion}/{filename}"
     token = generate_hmac_token(message)
+    encoded_path = quote(message, safe="/")
 
-    redirectUrl = f"{hmac_ip}{message}?token={quote(token)}"
-    return send_response(200, 53021, {"message": "Download url generated", "redirectUrl":redirectUrl}, "success")
+    redirectUrl = f"{hmac_ip}{encoded_path}?token={token}"
+
+    return send_response(200,53021, {"message": "Download url generated","redirectUrl": redirectUrl}, "success")
 
 @check_file_bp.route("/file/task/<string:guarantor>/<string:idTask>/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("task")
 def check_task(filename, idTask, guarantor):
     filename = os.path.normpath(filename).replace("\\", "/")
+
     if filename.startswith(".."):
         return send_response(400, 58010, {"message": "Invalid path"}, "error")
-    
-    message = "/downloads/" + task_path + guarantor + "/" + idTask + "/" + filename
-    message = "/".join([quote(part, safe="") for part in message.split("/")])
-    token = generate_hmac_token(message)
 
-    redirectUrl = f"{hmac_ip}{message}?token={quote(token)}"
-    return send_response(200, 58021, {"message": "Download url generated", "redirectUrl":redirectUrl}, "success")
+    message = f"/downloads/{task_path}{guarantor}/{idTask}/{filename}"
+    token = generate_hmac_token(message)
+    encoded_path = quote(message, safe="/")
+
+    redirectUrl = f"{hmac_ip}{encoded_path}?token={token}"
+
+    return send_response(200,58021, {"message": "Download url generated","redirectUrl": redirectUrl}, "success")
