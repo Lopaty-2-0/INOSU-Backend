@@ -11,7 +11,7 @@ def make_version(idTask, idTeam, file, guarantor):
         id = Version_Team.query.filter_by(idTask=idTask, idTeam = idTeam, guarantor = guarantor).order_by(Version_Team.idVersion.desc()).first().idVersion + 1
 
     
-    newVersion = Version_Team(idVersion = id, idTask = idTask, elaboration = file.filename, idTeam = idTeam, guarantor = guarantor)
+    newVersion = Version_Team(idVersion = id, idTask = idTask, elaboration = file, idTeam = idTeam, guarantor = guarantor)
     
     db.session.add(newVersion)
     db.session.commit()
