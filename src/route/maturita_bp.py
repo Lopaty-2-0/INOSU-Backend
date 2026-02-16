@@ -14,7 +14,8 @@ from src.utils.paging import maturita_paging
 from flask import request
 from app import db, max_FLOAT, max_INT
 import datetime
-from src.utils.task import task_delete_sftp
+from src.utils.task import delete_upload_task
+from src.utils.version import delete_upload_version
 
 #TODO: přidat gety
 
@@ -104,7 +105,7 @@ def add():
 
 @maturita_bp.route("/maturita/update", methods = ["PUT"])
 @flask_login.login_required
-async def update():
+def update():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 68010, {"message": "No permission for that"}, "error")
     
@@ -232,6 +233,8 @@ async def update():
                 versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluatorId).all()
 
                 for version in versions:
+                    if version.elaboration:
+                        delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
                     db.session.delete(version)
 
                 db.session.delete(userTeam)
@@ -239,7 +242,7 @@ async def update():
                 db.session.commit()
                 db.session.delete(team)
                 db.session.commit()
-                await task_delete_sftp(task.id, task.guarantor)
+                delete_upload_task(task.task, task.guarantor, task.id)
                 db.session.delete(task)
 
     db.session.commit()
@@ -292,7 +295,7 @@ def get_id():
 
 @maturita_bp.route("/maturita/delete", methods = ["delete"])
 @flask_login.login_required
-async def delete():
+def delete():
     data = request.get_json(force=True)
     idMaturita = data.get("id", None)
     badIds = []
@@ -338,6 +341,8 @@ async def delete():
             versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
 
             for version in versions:
+                if version.elaboration:
+                    delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
                 db.session.delete(version)
 
             if userTeam:
@@ -349,7 +354,7 @@ async def delete():
                 db.session.delete(team)
                 db.session.commit()
             if task:
-                await task_delete_sftp(task.id, task.guarantor)
+                delete_upload_task(task.task, task.guarantor, task.id)
                 db.session.delete(task)
             
         db.session.delete(maturita)

@@ -1,38 +1,33 @@
-import os
 import random
 import datetime
-import asyncio
-from src.utils.sftp_utils import sftp_remove_async, sftp_put_async, sftp_stat_async, sftp_createDir_async
-from app import ssh
+import shlex
+from app import pfp_path, hmac_ip, ssh
+from src.utils.token import generate_hmac_token
 
-async def pfp_save(filePath, user, file):
-    state = True
+def pfp_save(file):
+    if len(file.rsplit('.', 1)) < 2:
+        return False
 
-    if not await sftp_stat_async(ssh, filePath):
-        await sftp_createDir_async(ssh, filePath)
+    fileName = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + chr(random.randint(65, 90)) + "." + file.rsplit('.', 1)[1].lower()
+    
 
-    while state:
-        fileName = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + chr(random.randint(65, 90)) + "." + file.filename.rsplit('.', 1)[1].lower()
-        filePath = filePath + fileName
+    message = f"/uploads/{pfp_path}/{fileName}"
+    token = generate_hmac_token(message)
 
-        if not await sftp_stat_async(ssh, filePath):
-            
-            file.save("files/" + fileName)
-            await sftp_put_async(ssh, "files/" + fileName, filePath + fileName)
-            os.remove("files/" + fileName)
-            state = False
+    return fileName, token, hmac_ip + message 
 
-        if not user.profilePicture == "default.jpg":
-            try:
-                await sftp_remove_async(ssh, filePath + user.profilePicture)  
-            except:
-                user.profilePicture = "default.jpg"
-                
-        user.profilePicture = fileName
+def pfp_delete(pfp):
+    relPath = pfp_path + pfp
 
-async def pfp_delete(filePath, user):
-    if not user.profilePicture == "default.jpg":
-        try:
-            await sftp_remove_async(ssh, filePath + user.profilePicture)  
-        except:
-            return
+    safePath = shlex.quote(relPath)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/remove_final.sh {safePath}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
+        return False
+
+    return True

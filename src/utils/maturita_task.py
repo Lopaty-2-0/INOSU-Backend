@@ -5,9 +5,11 @@ from src.models.Task import Task
 from src.utils.enums import Type, Status
 from src.models.Version_Team import Version_Team
 from app import db
-from src.utils.task import task_delete_sftp
+from src.utils.version import delete_upload_version
+from src.utils.task import delete_upload_task
 
-async def maturita_task_delete(idUser, idMaturita):
+
+def maturita_task_delete(idUser, idMaturita):
     userTeams = User_Team.query.join(Team, (User_Team.idTeam == Team.idTeam) & (User_Team.idTask == Team.idTask) & (User_Team.guarantor == Team.guarantor)).join(Task, (Team.idTask == Task.id) & (Team.guarantor == Task.guarantor)).join(Maturita_Task, (Maturita_Task.idTask == Task.id) & (Maturita_Task.guarantor == Task.guarantor)).filter(User_Team.idUser == idUser, Task.type == Type.Maturita, Team.status != Status.Approved, Maturita_Task.idMaturita == idMaturita).all()
 
     for userTeam in userTeams:
@@ -16,11 +18,13 @@ async def maturita_task_delete(idUser, idMaturita):
         versions = Version_Team.query.filter_by(idTask = userTeam.idTask, idTeam = userTeam.idTeam, guarantor = userTeam.guarantor).all()
         task = Task.query.filter_by(id = userTeam.idTask, guarantor = userTeam.guarantor).first()
         maturita = Maturita_Task.query.filter_by(idTask = userTeam.idTask, guarantor = userTeam.guarantor, idMaturita = idMaturita).first()
-
+        taskFile = task.task
         for user in other_users:
             db.session.delete(user)
 
         for version in versions:
+            if version.elaboration:
+                delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
             db.session.delete(version)
 
         db.session.commit()
@@ -30,4 +34,4 @@ async def maturita_task_delete(idUser, idMaturita):
         db.session.delete(task)
         db.session.commit()
 
-        await task_delete_sftp(userTeam.idTask, userTeam.guarantor)
+        delete_upload_task(id = userTeam.idTask, guarantor = userTeam.guarantor, task = taskFile)

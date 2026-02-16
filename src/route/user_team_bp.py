@@ -8,18 +8,19 @@ from src.models.User_Class import User_Class
 from src.models.User import User
 from src.models.Team import Team
 from src.utils.enums import Status, Type
-from src.utils.team import make_team, team_deleteDir
+from src.utils.team import make_team
 from src.utils.response import send_response
 from src.models.Version_Team import Version_Team
 from src.utils.reminder import create_reminder, cancel_reminder
 from src.utils.paging import user_team_paging
 from sqlalchemy import and_
+from src.utils.version import delete_upload_version
 
 user_team_bp = Blueprint("user_team", __name__)
 
 @user_team_bp.route("/user_team/add", methods=["POST"])
 @flask_login.login_required
-async def add():
+def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
@@ -74,7 +75,7 @@ async def add():
                     differentTeam.append(idU)
                     continue
 
-                idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False, guarantor = flask_login.current_user.id)
+                idT = make_team(idTask = idTask, status = status, name = None, isTeam = False, guarantor = flask_login.current_user.id)
 
                 newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT, guarantor = flask_login.current_user.id)
                 db.session.add(newUser_Team)
@@ -109,7 +110,7 @@ async def add():
                         differentTeam.append(idU)
                         continue
 
-                    idT = await make_team(idTask = idTask, status = status, name = None, isTeam = False, guarantor = flask_login.current_user.id)
+                    idT = make_team(idTask = idTask, status = status, name = None, isTeam = False, guarantor = flask_login.current_user.id)
 
                     newUser_Team = User_Team(idUser = idU, idTask = idTask, idTeam = idT, guarantor = flask_login.current_user.id)
                     db.session.add(newUser_Team)
@@ -313,7 +314,7 @@ def get():
 
 @user_team_bp.route("/user_team/change", methods=["PUT"])
 @flask_login.login_required
-async def change():
+def change():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idUser = data.get("idUser", None)
@@ -389,12 +390,13 @@ async def change():
         versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = flask_login.current_user.id)
 
         for version in versions:
+            if version.elaboration:
+                delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
             db.session.delete(version)
         
         db.session.commit()
         db.session.delete(team)
 
-        await team_deleteDir(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id)
     db.session.commit()
 
     return send_response(200, 43101, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")

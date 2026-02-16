@@ -8,7 +8,8 @@ from src.models.Topic import Topic
 from src.utils.paging import topic_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
-from src.utils.task import task_delete_sftp
+from src.utils.task import delete_upload_task
+from src.utils.version import delete_upload_version
 from flask import request, Blueprint
 from app import db, max_INT
 
@@ -42,7 +43,7 @@ def add():
 
 @topic_bp.route("/topic/delete", methods = ["DELETE"])
 @flask_login.login_required
-async def delete():
+def delete():
     badIds = []
     goodIds = []
     
@@ -85,6 +86,8 @@ async def delete():
                 for userTeam in userTeams:
                     db.session.delete(userTeam)
                 for version in versions:
+                    if version.elaboration:
+                        delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
                     db.session.delete(version)
                 
                 db.session.commit()
@@ -93,7 +96,7 @@ async def delete():
             db.session.delete(maturitaTask)
 
             db.session.commit()
-            await task_delete_sftp(task.guarantor, task.id)
+            delete_upload_task(task.task, task.guarantor, task.id)
             db.session.delete(task)
 
         db.session.commit()

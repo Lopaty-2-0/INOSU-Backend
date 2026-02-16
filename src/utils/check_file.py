@@ -3,7 +3,6 @@ from functools import wraps
 from app import task_path, pfp_path, ssh
 from flask import request, session, abort
 from src.utils.response import send_response
-from src.utils.sftp_utils import sftp_stat_async
 from src.models.Task import Task
 from src.models.User import User
 from src.models.User_Team import User_Team
@@ -14,9 +13,19 @@ def check_file_size(maxLength):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            fileSize = request.content_length
-            if fileSize != None and fileSize > maxLength:
-                return send_response(413, "F15010", {"message": "File exceeded max size"}, "error")
+
+            if not request.is_json:
+                return send_response(400, "F15010", {"message": "JSON required"}, "error")
+
+            data = request.get_json(silent=True) or {}
+            declared_size = data.get("size")
+
+            if declared_size is None:
+                return send_response(400, "F15020", {"message": "Missing size"}, "error")
+
+            if declared_size > maxLength:
+                return send_response(413, "F15030", {"message": "File exceeded max size"}, "error")
+
             return f(*args, **kwargs)
         return wrapper
     return decorator
@@ -24,7 +33,7 @@ def check_file_size(maxLength):
 def check_file_access(folder_type):
     def decorator(func):
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             idTask = kwargs.get("idTask")
             idTeam = kwargs.get("idTeam")
             idVersion = kwargs.get("idVersion")
@@ -36,13 +45,13 @@ def check_file_access(folder_type):
                 abort(403)
 
             if folder_type == "profilePictures":
-                if not await has_access_to_pfp(idUser, filename):
+                if not has_access_to_pfp(idUser, filename):
                     abort(403)
             elif folder_type == "tasks":
-                if not await has_access_to_tasks(idUser, idTask, idTeam, idVersion ,filename, guarantor):
+                if not has_access_to_tasks(idUser, idTask, idTeam, idVersion ,filename, guarantor):
                     abort(403)
             elif folder_type == "task":
-                if not await has_access_to_tasks(idUser, idTask, None, None, filename, guarantor):
+                if not has_access_to_tasks(idUser, idTask, None, None, filename, guarantor):
                     abort(403)
             else:
                 abort(403)
@@ -51,7 +60,7 @@ def check_file_access(folder_type):
         return wrapper
     return decorator
 
-async def has_access_to_pfp(idUser, filename):
+def has_access_to_pfp(idUser, filename):
     if not idUser:
         return False
     
@@ -63,13 +72,10 @@ async def has_access_to_pfp(idUser, filename):
     
     if flask_login.current_user.id != idUser and session.get("id") != idUser:
         return False
-    
-    if not await sftp_stat_async(ssh, pfp_path + filename):
-        abort(404)
 
     return True
 
-async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guarantor):
+def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guarantor):
     if not idUser:
         return False
     
@@ -111,8 +117,5 @@ async def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guara
             return False
         
         path = task_path + guarantor + "/" + idTask + "/" + idTeam + "/" + idVersion + "/" + filename
-    
-    if not await sftp_stat_async(ssh, path):
-        abort(404)
 
     return True

@@ -65,7 +65,7 @@ def add():
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
-async def delete():
+def delete():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)

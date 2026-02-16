@@ -5,7 +5,7 @@ from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.utils.response import send_response
 from src.utils.enums import Status
-from src.utils.version import make_version, version_delete
+from src.utils.version import make_version, delete_upload_version, complete_upload_version
 import flask_login
 from app import db, max_INT
 from src.utils.check_file import check_file_size
@@ -19,11 +19,12 @@ elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
 @version_team_bp.route("/version_team/add", methods = ["POST"])
 @check_file_size(2 * 1024 * 1024)
 @flask_login.login_required
-async def add():
-    elaboration = request.files.get("elaboration", None)
-    idTask = request.form.get("idTask", None)
-    idTeam = request.form.get("idTeam", None)
-    guarantor = request.form.get("guarantor", None)
+def add():
+    data = request.get_json(force=True)
+    elaboration = data.get("elaboration", None)
+    idTask = data.get("idTask", None)
+    idTeam = data.get("idTeam", None)
+    guarantor = data.get("guarantor", None)
 
     if not idTeam:
         return send_response(400, 38010, {"message": "idTeam not entered"}, "error")
@@ -68,25 +69,22 @@ async def add():
         return send_response(400, 38130, {"message": "User doesnt have rights"}, "error")
     if not elaboration:
         return send_response(400, 38140, {"message": "Elaboration not entered"}, "error")
-    if not elaboration.filename.rsplit(".", 1)[1].lower() in elaboration_extensions:
+    if len(elaboration.rsplit(".", 1)) < 2 or not elaboration.rsplit(".", 1)[1].lower() in elaboration_extensions:
         return send_response(400, 38150, {"message": "Wrong file format"}, "error")
-    if len(elaboration.filename) > 255:
+    if len(elaboration) > 255:
         return send_response(400, 38160, {"message": "File name too long"}, "error")
     if task.deadline:
         deadline = task.deadline.replace(tzinfo=datetime.timezone.utc)
         if deadline< datetime.datetime.now(datetime.timezone.utc):
             return send_response(400, 38170, {"message": "Cannot update version after deadline"}, "error")
     
-    status = await make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
-
-    if not status:
-        return send_response(400, 38180, {"message": "File already exists"}, "error")
+    token, redirectUrl = make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
     
-    return send_response(200, 38191, {"message": "Version_team created"}, "success")
+    return send_response(200, 38181, {"message": "Version_team created", "token":token, "redirectUrl":redirectUrl}, "success")
 
 @version_team_bp.route("/version_team/change", methods = ["PUT"])
 @flask_login.login_required
-async def change():
+def change():
     data = request.get_json(force = True)
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
@@ -141,7 +139,7 @@ async def change():
             return send_response(400, 49150, {"message": "Cannot update version after deadline"}, "error")
     
     if version.elaboration:
-        await version_delete(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration, guarantor = guarantor)
+        delete_upload_version(idTeam = idTeam, idTask = idTask, idVersion = idVersion, fileName = version.elaboration, guarantor = guarantor)
 
         version.elaboration = None
     db.session.commit()

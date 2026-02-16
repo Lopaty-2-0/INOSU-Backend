@@ -1,8 +1,8 @@
 from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
+from src.utils.task import make_task, complete_upload_task, delete_upload_task, upload_task
 from src.utils.check_file import check_file_size
-from src.utils.task import make_task, task_delete_sftp, update_task, complete_upload
 from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
@@ -16,38 +16,16 @@ from src.utils.enums import Status, Type, Role
 from src.utils.maturita_task import maturita_task_delete
 import datetime
 from src.utils.paging import task_paging, maturita_task_paging
-from src.utils.team import make_team
+from src.utils.team import make_team, delete_teams_for_task
+from src.utils.version import delete_upload_version
 from app import db, max_INT, max_FLOAT
 from src.utils.reminder import cancel_reminder
 
 #TODO: nutné dodat u všech get, kde se získává maturita, získání topic, maturita a maturita_task
 #TODO: při vytváření maturit je nutné dělat i maturita_task (kontrolovat s topic, maturita a Evaluator) + při vytváření od garanta udělat funkci na smazání všechn návrhů studenta
-
+#TODO: využít tyto hovna: 57xxx, 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
-
-@flask_login.login_required
-@task_bp.route("/task/complete_upload", methods = ["POST"])
-def task_complete_upload():
-    data = request.get_json(force=True)
-    task = data.get("task", None)
-    id = data.get("id", None)
-    guarantor = data.get("guarantor", None)
-
-    if not task:
-        return send_response(400, 57010, {"message": "Task not entered"}, "error")
-    if not guarantor:
-        return send_response(400, 57020, {"message": "Guarantor not entered"}, "error")
-    if not id:
-        return send_response(400, 57030, {"message": "Id not entered"}, "error")
-
-    
-    status = complete_upload(task = task, guarantor = guarantor, id = id)
-
-    if not status:
-        return send_response(400, 57040, {"message": "Upload not completed"}, "error")
-    
-    return send_response(200, 57051, {"message": "Upload completed"}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/add", methods = ["POST"])
@@ -80,7 +58,7 @@ def add():
         return send_response(400, 26060, {"message":"Ending before begining"}, "error")
     if not task:
         return send_response(400, 26070, {"message": "Task not entered"}, "error")
-    if not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
+    if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 26080, {"message": "Wrong file format or too long"}, "error")
 
     type = Type.Task
@@ -127,11 +105,12 @@ def add():
 @flask_login.login_required
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/add/maturita/guarantor", methods = ["POST"])
-async def add_maturita_guarantor():
-    taskName = request.form.get("name", None)
-    task = request.files.get("task", None)
-    idUser = request.form.get("idUser", None)
-    idTopic = request.form.get("idTopic", None)
+def add_maturita_guarantor():
+    data = request.get_json(force=True)
+    taskName = data.get("name", None)
+    task = data.get("task", None)
+    idUser = data.get("idUser", None)
+    idTopic = data.get("idTopic", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
     maturita = Maturita.query.filter((Maturita.endDate > startDate) & (Maturita.startDate < startDate)).order_by(Maturita.id.desc()).first()
@@ -181,17 +160,17 @@ async def add_maturita_guarantor():
         return send_response(400, 61150, {"message":"Name too long"}, "error")
     if not task:
         return send_response(400, 61160, {"message": "Task not entered"}, "error")
-    if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+    if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 61170, {"message": "Wrong file format or too long"}, "error")
     
     type = Type.Maturita
     user = flask_login.current_user
 
-    await maturita_task_delete(idUser, maturita.id)
+    maturita_task_delete(idUser, maturita.id)
 
-    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=maturita.endDate, guarantor=user.id, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
+    newTask, idTask, token, uploadUrl = make_task(name=taskName, startDate=startDate, endDate=maturita.endDate, guarantor=user.id, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
 
-    id = await make_team(idTask = idTask, status = Status.Approved, name = None, isTeam = False, guarantor = flask_login.current_user.id)
+    id = make_team(idTask = idTask, status = Status.Approved, name = None, isTeam = False, guarantor = flask_login.current_user.id)
     db.session.add(User_Team(idUser, id, idTask, guarantor = user.id))
 
     maturitaTask = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
@@ -215,16 +194,17 @@ async def add_maturita_guarantor():
                 "email":user.email
                 }
 
-    return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
+    return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "token":token, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/add/maturita/student", methods = ["POST"])
-async def add_maturita_student():
-    taskName = request.form.get("name", None)
-    task = request.files.get("task", None)
-    idUser = request.form.get("idUser", None)
-    idTopic = request.form.get("idTopic", None)
+def add_maturita_student():
+    data = request.get_json(force=True)
+    taskName = data.get("name", None)
+    task = data.get("task", None)
+    idUser = data.get("idUser", None)
+    idTopic = data.get("idTopic", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
     maturita = Maturita.query.filter((Maturita.endDate > startDate) & (Maturita.startDate < startDate)).order_by(Maturita.id.desc()).first()
@@ -272,14 +252,14 @@ async def add_maturita_student():
         return send_response(400, 62140, {"message":"Name too long"}, "error")
     if not task:
         return send_response(400, 62150, {"message": "Task not entered"}, "error")
-    if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+    if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 62160, {"message": "Wrong file format or too long"}, "error")
     
     type = Type.Maturita
 
-    newTask, idTask = await make_task(name=taskName, startDate=startDate, endDate=maturita.endDate,guarantor=idUser, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
+    newTask, idTask, token, uploadUrl = make_task(name=taskName, startDate=startDate, endDate=maturita.endDate,guarantor=idUser, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
 
-    id = await make_team(idTask = idTask, status = Status.Pending, name = None, isTeam = False, guarantor = idUser)
+    id = make_team(idTask = idTask, status = Status.Pending, name = None, isTeam = False, guarantor = idUser)
     db.session.add(User_Team(flask_login.current_user.id, id, idTask, idUser))
 
     db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = None))
@@ -297,7 +277,7 @@ async def add_maturita_student():
                 "email":user.email
                 }
 
-    return send_response(201, 62171, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}}, "success")
+    return send_response(201, 62171, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "token":token, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
@@ -447,7 +427,7 @@ def get():
 
 @flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
-async def delete():
+def delete():
     data = request.get_json(force=True)
     idTask = data.get("id", None)
     goodIds = []
@@ -485,27 +465,10 @@ async def delete():
             if maturita:
                 db.session.delete(maturita)
 
-        teams = Team.query.filter_by(idTask=taskId, guarantor = flask_login.current_user.id).all()
-        userTeam = User_Team.query.filter_by(idTask=taskId, guarantor = flask_login.current_user.id).all()
+        delete_teams_for_task(idTask = taskId, guarantor = flask_login.current_user.id)
 
-        for user in userTeam:
-            db.session.delete(user)
-
-            cancel_reminder(idUser = user.idUser, idTask = taskId, guarantor = flask_login.current_user.id)
-        
-
-        for team in teams:
-            versions = Version_Team.query.filter_by(idTask = taskId, idTeam = team.idTeam, guarantor = flask_login.current_user.id).all()
-
-            for ver in versions:
-                db.session.delete(ver)
-            db.session.commit()
-
-            db.session.delete(team)
-        
-        db.session.commit()
+        delete_upload_task(id = taskId, guarantor = flask_login.current_user.id, task = task.task)
         db.session.delete(task)
-        await task_delete_sftp(taskId, flask_login.current_user.id)
         goodIds.append(taskId)
 
     db.session.commit()
@@ -693,14 +656,17 @@ def get_task():
 @flask_login.login_required
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/update", methods=["PUT"])
-async def update():
-    idTask = request.form.get("id",None)
-    taskName = request.form.get("name", None)
-    endDate = request.form.get("endDate", None)
-    task = request.files.get("task", None)
-    deadline = request.form.get("deadline", None)
-    points = request.form.get("points", None)
-    objector = request.form.get("objector", None)
+def update():
+    data = request.get_json(force=True)
+    idTask = data.get("id",None)
+    taskName = data.get("name", None)
+    endDate = data.get("endDate", None)
+    task = data.get("task", None)
+    deadline = data.get("deadline", None)
+    points = data.get("points", None)
+    objector = data.get("objector", None)
+    token = None
+    uploadUrl = None
 
     if flask_login.current_user.role == Role.Student:
         return send_response(400, 74010, {"message": "This role can not update task"}, "error")
@@ -726,11 +692,11 @@ async def update():
         actualTask.name = taskName
 
     if task:
-        if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+        if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 74070, {"message": "Wrong file format or too long"}, "error")
         
-        await update_task(file = task, id = idTask, guarantor = flask_login.current_user.id, file2 = actualTask.task)
-        actualTask.task = task.filename
+        token, uploadUrl = upload_task(task, flask_login.current_user.id, idTask)
+        actualTask.task = task
         
     
     if actualTask.type == Type.Task:
@@ -790,7 +756,7 @@ async def update():
             
     db.session.commit()
 
-    return send_response(201, 74201, {"message":"Task updated successfuly"}, "success")
+    return send_response(201, 74201, {"message":"Task updated successfuly", "token":token, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/maturita/guarantor/approved", methods=["GET"])
@@ -1152,11 +1118,14 @@ def get_maturita_student_pending():
 @flask_login.login_required
 @check_file_size(32*1024*1024)
 @task_bp.route("/task/update/maturita/student", methods=["PUT"])
-async def update_maturita_student():
-    idTask = request.form.get("id",None)
-    taskName = request.form.get("name", None)
-    task = request.files.get("task", None)
-    guarantor = request.form.get("guarantor", None)
+def update_maturita_student():
+    data = request.get_json(force=True)
+    idTask = data.get("id",None)
+    taskName = data.get("name", None)
+    task = data.get("task", None)
+    guarantor = data.get("guarantor", None)
+    token = None
+    uploadUrl = None
 
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
@@ -1198,20 +1167,21 @@ async def update_maturita_student():
         actualTask.name = taskName
 
     if task:
-        if not task.filename.rsplit(".", 1)[1].lower() in task_extensions or len(task.filename) > 255:
+        if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 80110, {"message": "Wrong file format or too long"}, "error")
         
-        await update_task(file = task, id = idTask, guarantor = guarantor, file2 = actualTask.task)
-        actualTask.task = task.filename
+        token, uploadUrl = upload_task(task, flask_login.current_user.id, idTask)
+        
+        actualTask.task = task
     
     db.session.commit()
 
-    return send_response(201, 80121, {"message":"Task updated successfuly"}, "success")
+    return send_response(201, 80121, {"message":"Task updated successfuly", "token":token, "uploadUrl":uploadUrl}, "success")
 
 
 @flask_login.login_required
 @task_bp.route("/task/delete/student", methods=["DELETE"])
-async def delete_student():
+def delete_student():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     guarantor = data.get("guarantor", None)
@@ -1281,8 +1251,8 @@ async def delete_student():
         db.session.delete(team)
         
         db.session.commit()
+        delete_upload_task(task.task, task.guarantor, task.id)
         db.session.delete(task)
-        await task_delete_sftp(taskId, guarantorId)
         goodIds.append(taskId)
 
     db.session.commit()

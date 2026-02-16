@@ -6,7 +6,7 @@ from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
 from src.models.Version_Team import Version_Team
-from src.utils.team import team_deleteDir, make_team
+from src.utils.team import make_team
 from src.utils.response import send_response
 from src.utils.enums import Status, Type
 from src.utils.paging import team_paging
@@ -16,6 +16,7 @@ from src.utils.reminder import cancel_reminder
 from src.utils.maturita_task import maturita_task_delete
 from src.models.Maturita import Maturita
 from src.models.Maturita_Task import Maturita_Task
+from src.utils.version import delete_upload_version
 import datetime
 
 team_bp = Blueprint("team", __name__)
@@ -24,7 +25,7 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @team_bp.route("/team/add", methods=["POST"])
 @flask_login.login_required
-async def add():
+def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     name = data.get("name", None)
@@ -52,13 +53,13 @@ async def add():
         if Team.query.filter_by(idTask = idTask,  name = name, guarantor = flask_login.current_user.id).first():
             return send_response(400, 30070, {"message": "Team with this name already exists"}, "error")
     
-    await make_team(idTask = idTask, status = Status.Approved, name = name, isTeam = True, guarantor = flask_login.current_user.id)
+    make_team(idTask = idTask, status = Status.Approved, name = name, isTeam = True, guarantor = flask_login.current_user.id)
     
     return send_response(201, 30081, {"message": "Team created successfuly"}, "success")
 
 @team_bp.route("/team/delete", methods=["DELETE"])
 @flask_login.login_required
-async def delete():
+def delete():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
@@ -104,11 +105,11 @@ async def delete():
             cancel_reminder(idUser = user.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
              
         for version in versions:
+            if version.elaboration:
+                delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
             db.session.delete(version)
         
         db.session.commit()
-
-        await team_deleteDir(idTeam = id, idTask = idTask, guarantor = flask_login.current_user.id)
         db.session.delete(team)
         goodIds.append(id)
 
@@ -118,7 +119,7 @@ async def delete():
 
 @team_bp.route("/team/update", methods=["PUT"])
 @flask_login.login_required
-async def update():
+def update():
     data = request.get_json(force = True)
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
@@ -162,20 +163,20 @@ async def update():
                 if status == Status.Approved.value:
                     now = datetime.datetime.now(tz=datetime.timezone.utc)
                     maturita = Maturita.query.filter(Maturita.startDate <= now, Maturita.endDate >= now).first()
-                    idTopic = Maturita_Task.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first().idTopic
-
-                    maturitaTask = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
-                    variant = 65 if not maturitaTask or not maturitaTask.variant else ord(maturitaTask.variant) + 1
-                    
-                    if variant >= 91:
-                        return send_response(400, 32100, {"message":"Reached max variants for this topic"}, "error")
-                    
-                    maturitaTask.variant = chr(variant)
                     team.status = Status(status)
                     db.session.commit()
 
                     if maturita:
-                        await maturita_task_delete(user.idUser, maturita.id)
+                        idTopic = Maturita_Task.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first().idTopic
+
+                        maturitaTask = Maturita_Task.query.filter_by(idTopic = idTopic, idMaturita = maturita.id).order_by(Maturita_Task.variant.desc()).first()
+                        variant = 65 if not maturitaTask or not maturitaTask.variant else ord(maturitaTask.variant) + 1
+                        
+                        if variant >= 91:
+                            return send_response(400, 32100, {"message":"Reached max variants for this topic"}, "error")
+                        
+                        maturitaTask.variant = chr(variant)
+                        maturita_task_delete(user.idUser, maturita.id)
                 else:
                     team.status = Status(status)
                     db.session.commit()

@@ -10,16 +10,14 @@ from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint
-from app import db, pfp_path, url, max_INT
+from app import db, url, max_INT
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.User_Team import User_Team
 from src.models.Task import Task
-from src.models.Team import Team
 from src.models.Maturita_Task import Maturita_Task
-from src.models.Version_Team import Version_Team
-from src.utils.task import task_delete_sftp
+from src.utils.task import delete_upload_task
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role
@@ -203,17 +201,20 @@ def add_file():
 @user_bp.route("/user/update", methods = ["PUT"])
 @check_file_size(2*1024*1024)
 @flask_login.login_required
-async def update():
+def update():
     #gets data (json)
-    name = request.form.get("name", None)
-    surname = request.form.get("surname", None)
-    abbreviation = request.form.get("abbreviation", None)
-    role = request.form.get("role", None)
-    email = request.form.get("email", None)
-    idUser = request.form.get("idUser", None)
-    reminders = request.form.get("reminders", None)
-    rawIdClass = request.form.get("idClass", "")
-    profilePicture = request.files.get("profilePicture", None)
+    data = request.get_json(force=True)
+    name = data.get("name", None)
+    surname = data.get("surname", None)
+    abbreviation = data.get("abbreviation", None)
+    role = data.get("role", None)
+    email = data.get("email", None)
+    idUser = data.get("idUser", None)
+    reminders = data.get("reminders", None)
+    rawIdClass = data.get("idClass", "")
+    profilePicture = data.get("profilePicture", None)
+    token = None
+    uploadUrl = None
     
     try:
         idClass = json.loads(rawIdClass) if rawIdClass.strip() else None
@@ -229,12 +230,11 @@ async def update():
         if not profilePicture and not reminders:
             return send_response(400, 2010, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
-            if len(profilePicture.filename) > 255:
-                return send_response(400, 2020, {"message": "Filename too long"}, "error")
-            if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-                return send_response(400, 2030, {"message": "Wrong file format"}, "error")
+            if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
+                return send_response(400, 2020, {"message": "Wrong file format"}, "error")
                 
-            await pfp_save(pfp_path, user, profilePicture)
+            fileName, token, uploadUrl = pfp_save(profilePicture)
+            user.profilePicture = fileName
 
         if reminders:
             user.reminders = reminders.lower() == "true"
@@ -243,39 +243,39 @@ async def update():
         
         db.session.commit()
 
-        return send_response(200, 2041, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
+        return send_response(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "token":token, "uploadUrl":uploadUrl}, "success")
 
     if not user.role == Role.Admin:
-        return send_response(400, 2050, {"message": "No permission for that"}, "error")
+        return send_response(400, 2040, {"message": "No permission for that"}, "error")
     
     try:
         idUser = int(idUser)
     except:
-            return send_response(400, 2060, {"message": "IdUser not integer"}, "error")
+            return send_response(400, 2050, {"message": "IdUser not integer"}, "error")
     
     if idUser > max_INT or idUser <= 0:
-        return send_response(400, 2070, {"message": "IdUser not valid"}, "error")
+        return send_response(400, 2060, {"message": "IdUser not valid"}, "error")
 
     secondUser = User.query.filter_by(id = idUser).first()
 
     if not secondUser:
-        return send_response(400, 2080, {"message": "Wrong user id"}, "error")
+        return send_response(400, 2070, {"message": "Wrong user id"}, "error")
     if name:
         name = str(name)
         if len(name) > 255:
-            return send_response(400, 2090, {"message": "Name too long"}, "error")
+            return send_response(400, 2080, {"message": "Name too long"}, "error")
         secondUser.name = (name)  
     if surname:
         surname = str(surname)
         if len(surname) > 255:
-            return send_response(400, 2100, {"message": "Surname too long"}, "error")
+            return send_response(400, 2090, {"message": "Surname too long"}, "error")
         secondUser.surname = (surname)
     if abbreviation:
         abbreviation = str(abbreviation)
         if User.query.filter_by(abbreviation = abbreviation).first() and User.query.filter_by(abbreviation = abbreviation).first() != secondUser:
-            return send_response(400, 2110, {"message": "Abbreviation is already in use"}, "error")
+            return send_response(400, 2100, {"message": "Abbreviation is already in use"}, "error")
         if len(abbreviation) > 4:
-            return send_response(400, 2120, {"message": "Abbreviation is too long"}, "error")
+            return send_response(400, 2110, {"message": "Abbreviation is too long"}, "error")
         secondUser.abbreviation = abbreviation.upper()
     if role in [r.value for r in Role]:
         secondUser.role = Role(role)
@@ -286,18 +286,18 @@ async def update():
     if email:
         email = str(email)
         if not re.match(email_regex, email):
-            return send_response(400, 2130, {"message": "Wrong email format"}, "error")
+            return send_response(400, 2120, {"message": "Wrong email format"}, "error")
         if User.query.filter_by(email = email).first() and User.query.filter_by(email = email).first() != secondUser:
-            return send_response(400, 2140, {"message": "Email is already in use"}, "error")
+            return send_response(400, 2130, {"message": "Email is already in use"}, "error")
         if len(email) > 255:
-            return send_response(400, 2150, {"message": "Email too long"}, "error")
+            return send_response(400, 2140, {"message": "Email too long"}, "error")
         secondUser.email = email
     if profilePicture:
-        if not profilePicture.filename.rsplit(".", 1)[1].lower() in pfp_extensions:
-            return send_response(400, 2160, {"message": "Wrong file format"}, "error")
-        if len(profilePicture.filename) > 255:
-            return send_response(400, 2170, {"message": "Filename too long"}, "error")
-        await pfp_save(pfp_path, secondUser, profilePicture)
+        if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
+            return send_response(400, 2150, {"message": "Wrong file format"}, "error")
+        
+        fileName, token, uploadUrl = pfp_save(profilePicture)
+        secondUser.profilePicture = fileName
 
     if isinstance(idClass, list):    
         UserClass = User_Class.query.filter_by(idUser = secondUser.id)
@@ -323,11 +323,11 @@ async def update():
 
     db.session.commit()
 
-    return send_response(200, 2181, {"message": "User changed successfuly", "badIds":badIds, "goodIds":goodIds}, "success")
+    return send_response(200, 2161, {"message": "User changed successfuly", "badIds":badIds, "goodIds":goodIds, "token":token, "uploadUrl":uploadUrl}, "success")
     
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
-async def delete():
+def delete():
     data = request.get_json(force = True)
     idUser = data.get("idUser", None)
     goodIds = []
@@ -370,25 +370,11 @@ async def delete():
             for object in objects:
                 object.objector = None
             for task in tas:
-                teams = Team.query.filter_by(guarantor = id, idTask = task.id)
-
-                for team in teams:
-                    userTeams = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
-                    versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor)
-
-                    for userTeam in userTeams:
-                        db.session.delete(userTeam)
-                    for version in versions:
-                        db.session.delete(version)
-
-                    db.session.delete(team)
-
-                db.session.commit()
-                await delete_teams_for_task(task.id)
-                await task_delete_sftp(task.id)
+                delete_teams_for_task(task.id, id)
+                delete_upload_task(task.task, task.id, id)
                 db.session.delete(task)
 
-            await pfp_delete(pfp_path, delUser)
+            pfp_delete(delUser.profilePicture)
             db.session.commit()
             db.session.delete(delUser)
             db.session.commit()
