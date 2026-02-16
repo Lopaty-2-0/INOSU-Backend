@@ -9,18 +9,12 @@ from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.models.Version_Team import Version_Team
 
-def check_file_size(maxLength):
-        if not request.is_json:
-            return send_response(400, "F15010", {"message": "JSON required"}, "error")
+def check_file_size(maxLength, size):
+        if size is None:
+            return send_response(400, "F15010", {"message": "Missing size"}, "error")
 
-        data = request.get_json(silent=True) or {}
-        declared_size = data.get("size")
-
-        if declared_size is None:
-            return send_response(400, "F15020", {"message": "Missing size"}, "error")
-
-        if declared_size > maxLength:
-            return send_response(413, "F15030", {"message": "File exceeded max size"}, "error")
+        if size > maxLength:
+            return send_response(413, "F15020", {"message": "File exceeded max size"}, "error")
 
 
 def check_file_access(folder_type):

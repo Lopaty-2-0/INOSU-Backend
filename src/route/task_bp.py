@@ -36,6 +36,7 @@ def add():
     task = data.get("task", None)
     deadline = data.get("deadline", None)
     points = data.get("points", None)
+    size = data.get("size", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
 
@@ -87,7 +88,7 @@ def add():
     else:
         points = None
 
-    taskResponse = check_file_size(32*1024*1024)
+    taskResponse = check_file_size(32*1024*1024, size)
 
     if taskResponse:
         return taskResponse
@@ -115,6 +116,7 @@ def add_maturita_guarantor():
     task = data.get("task", None)
     idUser = data.get("idUser", None)
     idTopic = data.get("idTopic", None)
+    size = data.get("size", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
     maturita = Maturita.query.filter((Maturita.endDate > startDate) & (Maturita.startDate < startDate)).order_by(Maturita.id.desc()).first()
@@ -167,7 +169,7 @@ def add_maturita_guarantor():
     if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 61170, {"message": "Wrong file format or too long"}, "error")
     
-    taskResponse = check_file_size(32*1024*1024)
+    taskResponse = check_file_size(32*1024*1024, size)
 
     if taskResponse:
         return taskResponse
@@ -213,6 +215,7 @@ def add_maturita_student():
     task = data.get("task", None)
     idUser = data.get("idUser", None)
     idTopic = data.get("idTopic", None)
+    size = data.get("size", None)
 
     startDate = datetime.datetime.now(datetime.timezone.utc)
     maturita = Maturita.query.filter((Maturita.endDate > startDate) & (Maturita.startDate < startDate)).order_by(Maturita.id.desc()).first()
@@ -263,7 +266,7 @@ def add_maturita_student():
     if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 62160, {"message": "Wrong file format or too long"}, "error")
     
-    taskResponse = check_file_size(32*1024*1024)
+    taskResponse = check_file_size(32*1024*1024, size)
 
     if taskResponse:
         return taskResponse
@@ -677,7 +680,7 @@ def update():
     deadline = data.get("deadline", None)
     points = data.get("points", None)
     objector = data.get("objector", None)
-    token = None
+    size = data.get("size", None)
     uploadUrl = None
 
     if flask_login.current_user.role == Role.Student:
@@ -704,7 +707,7 @@ def update():
         actualTask.name = taskName
 
     if task:
-        taskResponse = check_file_size(32*1024*1024)
+        taskResponse = check_file_size(32*1024*1024, size)
 
         if taskResponse:
             return taskResponse
@@ -1141,7 +1144,7 @@ def update_maturita_student():
     taskName = data.get("name", None)
     task = data.get("task", None)
     guarantor = data.get("guarantor", None)
-    token = None
+    size = data.get("size", None)
     uploadUrl = None
 
     now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -1184,7 +1187,7 @@ def update_maturita_student():
         actualTask.name = taskName
 
     if task:
-        taskResponse = check_file_size(32*1024*1024)
+        taskResponse = check_file_size(32*1024*1024, size)
 
         if taskResponse:
             return taskResponse

@@ -211,6 +211,7 @@ def update():
     reminders = data.get("reminders", None)
     rawIdClass = data.get("idClass", "")
     profilePicture = data.get("profilePicture", None)
+    size = data.get("size", None)
     uploadUrl = None
     
     try:
@@ -223,7 +224,7 @@ def update():
     goodIds = []
 
     if profilePicture:
-        pictureResponse = check_file_size(2*1024*1024)
+        pictureResponse = check_file_size(2*1024*1024, size)
 
         if pictureResponse:
             return pictureResponse

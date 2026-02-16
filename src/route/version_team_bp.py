@@ -24,6 +24,7 @@ def add():
     idTask = data.get("idTask", None)
     idTeam = data.get("idTeam", None)
     guarantor = data.get("guarantor", None)
+    size = data.get("size", None)
 
     if not idTeam:
         return send_response(400, 38010, {"message": "idTeam not entered"}, "error")
@@ -77,7 +78,7 @@ def add():
         if deadline< datetime.datetime.now(datetime.timezone.utc):
             return send_response(400, 38170, {"message": "Cannot update version after deadline"}, "error")
     
-    elaborationResponse = check_file_size(5 * 1024 * 1024 * 1024) 
+    elaborationResponse = check_file_size(5 * 1024 * 1024 * 1024, size) 
 
     if elaborationResponse:
         return elaborationResponse
