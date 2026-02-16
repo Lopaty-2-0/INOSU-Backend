@@ -226,7 +226,7 @@ def update():
 
     #checks if there is id for user
     if not idUser:
-        if not profilePicture and not reminders:
+        if not profilePicture and not isinstance(reminders, bool):
             return send_response(400, 2010, {"message": "Nothing entered to change"}, "error")
         if profilePicture:
             if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
@@ -236,7 +236,7 @@ def update():
             fileName, uploadUrl = pfp_save(profilePicture)
             user.profilePicture = fileName
 
-        if reminders:
+        if isinstance(reminders, bool):
             user.reminders = reminders
 
         user.updatedAt = datetime.datetime.now(datetime.timezone.utc)
