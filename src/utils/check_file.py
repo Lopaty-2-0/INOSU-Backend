@@ -10,25 +10,18 @@ from src.models.Team import Team
 from src.models.Version_Team import Version_Team
 
 def check_file_size(maxLength):
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
+        if not request.is_json:
+            return send_response(400, "F15010", {"message": "JSON required"}, "error")
 
-            if not request.is_json:
-                return send_response(400, "F15010", {"message": "JSON required"}, "error")
+        data = request.get_json(silent=True) or {}
+        declared_size = data.get("size")
 
-            data = request.get_json(silent=True) or {}
-            declared_size = data.get("size")
+        if declared_size is None:
+            return send_response(400, "F15020", {"message": "Missing size"}, "error")
 
-            if declared_size is None:
-                return send_response(400, "F15020", {"message": "Missing size"}, "error")
+        if declared_size > maxLength:
+            return send_response(413, "F15030", {"message": "File exceeded max size"}, "error")
 
-            if declared_size > maxLength:
-                return send_response(413, "F15030", {"message": "File exceeded max size"}, "error")
-
-            return f(*args, **kwargs)
-        return wrapper
-    return decorator
 
 def check_file_access(folder_type):
     def decorator(func):

@@ -17,7 +17,6 @@ version_team_bp = Blueprint("version_team", __name__)
 elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @version_team_bp.route("/version_team/add", methods = ["POST"])
-@check_file_size(5 * 1024 * 1024 * 1024)
 @flask_login.login_required
 def add():
     data = request.get_json(force=True)
@@ -77,6 +76,11 @@ def add():
         deadline = task.deadline.replace(tzinfo=datetime.timezone.utc)
         if deadline< datetime.datetime.now(datetime.timezone.utc):
             return send_response(400, 38170, {"message": "Cannot update version after deadline"}, "error")
+    
+    elaborationResponse = check_file_size(5 * 1024 * 1024 * 1024) 
+
+    if elaborationResponse:
+        return elaborationResponse
     
     redirectUrl = make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
     

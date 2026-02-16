@@ -31,7 +31,6 @@ addUser_extensions = {"json"}
 
 @user_bp.route("/user/add", methods = ["POST"])
 @flask_login.login_required
-@check_file_size(2*1024*1024)
 def add():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 1010, {"message": "No permission for that"}, "error")
@@ -199,7 +198,6 @@ def add_file():
     return send_response (201, 50041, {"message": "All users created successfuly"}, "success")
 
 @user_bp.route("/user/update", methods = ["PUT"])
-@check_file_size(2*1024*1024)
 @flask_login.login_required
 def update():
     #gets data (json)
@@ -224,6 +222,12 @@ def update():
     badIds = []
     goodIds = []
 
+    if profilePicture:
+        pictureResponse = check_file_size(2*1024*1024)
+
+        if pictureResponse:
+            return pictureResponse
+        
     #checks if there is id for user
     if not idUser:
         if not profilePicture and not isinstance(reminders, bool):

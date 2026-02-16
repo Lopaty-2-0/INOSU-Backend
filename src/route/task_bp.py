@@ -28,7 +28,6 @@ task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @flask_login.login_required
-@check_file_size(32*1024*1024)
 @task_bp.route("/task/add", methods = ["POST"])
 def add():
     data = request.get_json(force=True)
@@ -88,6 +87,11 @@ def add():
     else:
         points = None
 
+    taskResponse = check_file_size(32*1024*1024)
+
+    if taskResponse:
+        return taskResponse
+    
     newTask, id, uploadUrl = make_task(name=taskName, startDate=startDate, endDate=endDate,guarantor=user.id, file = task, type = type, points = points, deadline = deadline)
 
     guarantor = {
@@ -104,7 +108,6 @@ def add():
     return send_response(201, 26141, {"message":"Task created successfuly", "task":{"id": id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl": uploadUrl}, "success")
 
 @flask_login.login_required
-@check_file_size(32*1024*1024)
 @task_bp.route("/task/add/maturita/guarantor", methods = ["POST"])
 def add_maturita_guarantor():
     data = request.get_json(force=True)
@@ -164,6 +167,11 @@ def add_maturita_guarantor():
     if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 61170, {"message": "Wrong file format or too long"}, "error")
     
+    taskResponse = check_file_size(32*1024*1024)
+
+    if taskResponse:
+        return taskResponse
+
     type = Type.Maturita
     user = flask_login.current_user
 
@@ -198,7 +206,6 @@ def add_maturita_guarantor():
     return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
-@check_file_size(32*1024*1024)
 @task_bp.route("/task/add/maturita/student", methods = ["POST"])
 def add_maturita_student():
     data = request.get_json(force=True)
@@ -256,6 +263,11 @@ def add_maturita_student():
     if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
         return send_response(400, 62160, {"message": "Wrong file format or too long"}, "error")
     
+    taskResponse = check_file_size(32*1024*1024)
+
+    if taskResponse:
+        return taskResponse
+
     type = Type.Maturita
 
     newTask, idTask, uploadUrl = make_task(name=taskName, startDate=startDate, endDate=maturita.endDate,guarantor=idUser, file = task, type = type, points = maturita.maxPoints, deadline = maturita.endDate)
@@ -655,7 +667,6 @@ def get_task():
 
 
 @flask_login.login_required
-@check_file_size(32*1024*1024)
 @task_bp.route("/task/update", methods=["PUT"])
 def update():
     data = request.get_json(force=True)
@@ -693,6 +704,11 @@ def update():
         actualTask.name = taskName
 
     if task:
+        taskResponse = check_file_size(32*1024*1024)
+
+        if taskResponse:
+            return taskResponse
+        
         if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 74070, {"message": "Wrong file format or too long"}, "error")
         
@@ -1118,7 +1134,6 @@ def get_maturita_student_pending():
     return send_response(200, 79091, {"message": "Found pending maturitas for student", "tasks": allTasks, "count": count}, "success")
 
 @flask_login.login_required
-@check_file_size(32*1024*1024)
 @task_bp.route("/task/update/maturita/student", methods=["PUT"])
 def update_maturita_student():
     data = request.get_json(force=True)
@@ -1169,6 +1184,11 @@ def update_maturita_student():
         actualTask.name = taskName
 
     if task:
+        taskResponse = check_file_size(32*1024*1024)
+
+        if taskResponse:
+            return taskResponse
+        
         if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 80110, {"message": "Wrong file format or too long"}, "error")
         
