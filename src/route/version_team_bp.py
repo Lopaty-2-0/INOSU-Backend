@@ -5,7 +5,7 @@ from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.utils.response import send_response
 from src.utils.enums import Status
-from src.utils.version import make_version, delete_upload_version, complete_upload_version
+from src.utils.version import make_version, delete_upload_version
 import flask_login
 from app import db, max_INT
 from src.utils.check_file import check_file_size

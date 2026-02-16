@@ -1,7 +1,7 @@
 from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
-from src.utils.task import make_task, complete_upload_task, delete_upload_task, upload_task
+from src.utils.task import make_task, delete_upload_task, upload_task
 from src.utils.check_file import check_file_size
 from src.models.User import User
 from src.models.Task import Task
