@@ -231,7 +231,8 @@ def update():
         if profilePicture:
             if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return send_response(400, 2020, {"message": "Wrong file format"}, "error")
-                
+            
+            pfp_delete(user.profilePicture)
             fileName, uploadUrl = pfp_save(profilePicture)
             user.profilePicture = fileName
 
@@ -295,6 +296,7 @@ def update():
         if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
             return send_response(400, 2150, {"message": "Wrong file format"}, "error")
         
+        pfp_delete(user.profilePicture)
         fileName, uploadUrl = pfp_save(profilePicture)
         secondUser.profilePicture = fileName
 

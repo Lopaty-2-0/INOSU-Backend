@@ -696,6 +696,7 @@ def update():
         if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 74070, {"message": "Wrong file format or too long"}, "error")
         
+        delete_upload_task(task, flask_login.current_user.id, idTask)
         uploadUrl = upload_task(task, flask_login.current_user.id, idTask)
         actualTask.task = task
         
@@ -1171,7 +1172,8 @@ def update_maturita_student():
         if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 80110, {"message": "Wrong file format or too long"}, "error")
         
-        uploadUrl = upload_task(task, flask_login.current_user.id, idTask)
+        delete_upload_task(task, guarantor, idTask)
+        uploadUrl = upload_task(task, guarantor, idTask)
         actualTask.task = task
     
     db.session.commit()
