@@ -14,7 +14,7 @@ def pfp_save(file):
     message = f"/uploads/{pfp_path}/{fileName}"
     token = generate_hmac_token(message)
 
-    return fileName, token, hmac_ip + message 
+    return fileName, hmac_ip + message + "?token=" + token 
 
 def pfp_delete(pfp):
     relPath = pfp_path + pfp
