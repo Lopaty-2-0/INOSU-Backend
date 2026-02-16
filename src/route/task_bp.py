@@ -28,6 +28,7 @@ task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @flask_login.login_required
+@check_file_size(32*1024*1024)
 @task_bp.route("/task/add", methods = ["POST"])
 def add():
     data = request.get_json(force=True)
