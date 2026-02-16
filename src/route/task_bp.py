@@ -28,7 +28,7 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @flask_login.login_required
 @task_bp.route("/task/complete_upload", methods = ["POST"])
-def complete_upload():
+def task_complete_upload():
     data = request.get_json(force=True)
     task = data.get("task", None)
     id = data.get("id", None)

@@ -59,7 +59,7 @@ def make_task(file, name, guarantor, deadline, points, endDate, startDate, type)
 
     rel_path = task_path + str(guarantor) + "/" + str(id)
 
-    message = f"/uploads/{rel_path}/"
+    message = f"/uploads/{rel_path}/{file}"
     token = generate_hmac_token(message)
 
     return newTask, id, token, hmac_ip + message
