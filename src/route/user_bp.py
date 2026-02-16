@@ -213,7 +213,6 @@ def update():
     reminders = data.get("reminders", None)
     rawIdClass = data.get("idClass", "")
     profilePicture = data.get("profilePicture", None)
-    token = None
     uploadUrl = None
     
     try:
@@ -237,7 +236,7 @@ def update():
             user.profilePicture = fileName
 
         if reminders:
-            user.reminders = reminders.lower() == "true"
+            user.reminders = reminders
 
         user.updatedAt = datetime.datetime.now(datetime.timezone.utc)
         
