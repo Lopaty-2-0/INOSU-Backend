@@ -1,12 +1,61 @@
+import os
+import shlex
+import subprocess
 import flask_login
 from sqlalchemy import or_
-from flask import Blueprint, request, session, make_response
+from flask import Blueprint, abort, request, session, make_response
 from werkzeug.security import check_password_hash
 from src.utils.response import send_response
 from src.models.User import User
 from src.utils.all_user_classes import all_user_classes
+from src.utils.token import generate_hmac_token
+from app import ssh
 
 auth_bp = Blueprint("auth", __name__)
+
+@auth_bp.post("/api/create-upload")
+def create_upload():
+    rel_path = "test/abc1"
+
+    message = f"/uploads/{rel_path}/"
+    token = generate_hmac_token(message)
+
+    return {
+        "token": token,
+        "uploadUrl": f"https://100.114.228.127/uploads/{rel_path}"
+    }
+
+@auth_bp.post("/api/complete-upload")
+def complete_upload():
+    data = request.json
+    rel_path = data["relPath"]
+    safe_path = shlex.quote(rel_path)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/assemble_chunks.sh {safe_path}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+    error_output = stderr.read().decode()
+
+    if exit_status != 0:
+        return {"status": "error", "error": error_output}, 500
+
+    return {"status": "completed"}
+
+
+@auth_bp.get("/api/download/<path:rel_path>")
+def download(rel_path):
+    rel_path = os.path.normpath(rel_path)
+
+    if rel_path.startswith(".."):
+        return {"error": "Invalid path"}, 400
+
+    message = f"/downloads/{rel_path}"
+    token = generate_hmac_token(message)
+
+    file_url = f"https://100.114.228.127/downloads/{rel_path}?token={token}"
+    return {"downloadUrl": file_url}
 
 @auth_bp.route("/auth/login", methods = ["POST"])
 def login():

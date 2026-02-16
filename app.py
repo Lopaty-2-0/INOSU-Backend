@@ -47,6 +47,7 @@ try:
     app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
 
     ssh = ssh_connect()
+    app.ssh = ssh
     db = sql(app)
     jwt = JWTManager(app)
     migration = Migrate(app, db)
