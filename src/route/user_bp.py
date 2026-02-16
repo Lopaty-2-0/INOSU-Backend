@@ -118,7 +118,6 @@ def add():
     return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}, "goodIds": goodIds, "badIds":badIds}, "success")
   
 @user_bp.route("/user/add/file", methods = ["POST"])
-@check_file_size(4*1024*1024)
 @flask_login.login_required
 def add_file():
     badUsers = 0
@@ -126,7 +125,13 @@ def add_file():
     badIds = []
     goodIds = []
     users = request.files.get("jsonFile", None)
+    size = request.form.get("size", None)
 
+    response = check_file_size(4*1024*1024, size)
+
+    if response:
+        return response
+    
     file_content = users.read().decode("utf-8").strip()
 
     if not file_content:
