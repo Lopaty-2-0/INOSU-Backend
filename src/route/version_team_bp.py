@@ -78,9 +78,9 @@ def add():
         if deadline< datetime.datetime.now(datetime.timezone.utc):
             return send_response(400, 38170, {"message": "Cannot update version after deadline"}, "error")
     
-    token, redirectUrl = make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
+    redirectUrl = make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
     
-    return send_response(200, 38181, {"message": "Version_team created", "token":token, "redirectUrl":redirectUrl}, "success")
+    return send_response(200, 38181, {"message": "Version_team created", "redirectUrl":redirectUrl}, "success")
 
 @version_team_bp.route("/version_team/change", methods = ["PUT"])
 @flask_login.login_required

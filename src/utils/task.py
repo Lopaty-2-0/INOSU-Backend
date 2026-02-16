@@ -13,9 +13,9 @@ def make_task(file, name, guarantor, deadline, points, endDate, startDate, type)
     db.session.add(newTask)
     db.session.commit()
 
-    token, uploadUrl = upload_task(file, guarantor, id)
+    uploadUrl = upload_task(file, guarantor, id)
 
-    return newTask, id, token, uploadUrl
+    return newTask, id, uploadUrl
 
 def delete_upload_task(task, guarantor, id):
     relPath = task_path + str(guarantor) + "/" + str(id) + "/" + task
@@ -38,4 +38,4 @@ def upload_task(task, guarantor, id):
     message = f"/uploads/{relPath}/{task}"
     token = generate_hmac_token(message)
 
-    return token, hmac_ip + message
+    return hmac_ip + message + "?token=" + token

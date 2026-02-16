@@ -233,7 +233,7 @@ def update():
             if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return send_response(400, 2020, {"message": "Wrong file format"}, "error")
                 
-            fileName, token, uploadUrl = pfp_save(profilePicture)
+            fileName, uploadUrl = pfp_save(profilePicture)
             user.profilePicture = fileName
 
         if reminders:
@@ -243,7 +243,7 @@ def update():
         
         db.session.commit()
 
-        return send_response(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "token":token, "uploadUrl":uploadUrl}, "success")
+        return send_response(200, 2031, {"message": "User changed successfuly", "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "uploadUrl":uploadUrl}, "success")
 
     if not user.role == Role.Admin:
         return send_response(400, 2040, {"message": "No permission for that"}, "error")
@@ -296,7 +296,7 @@ def update():
         if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
             return send_response(400, 2150, {"message": "Wrong file format"}, "error")
         
-        fileName, token, uploadUrl = pfp_save(profilePicture)
+        fileName, uploadUrl = pfp_save(profilePicture)
         secondUser.profilePicture = fileName
 
     if isinstance(idClass, list):    
@@ -323,7 +323,7 @@ def update():
 
     db.session.commit()
 
-    return send_response(200, 2161, {"message": "User changed successfuly", "badIds":badIds, "goodIds":goodIds, "token":token, "uploadUrl":uploadUrl}, "success")
+    return send_response(200, 2161, {"message": "User changed successfuly", "badIds":badIds, "goodIds":goodIds, "uploadUrl":uploadUrl}, "success")
     
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
