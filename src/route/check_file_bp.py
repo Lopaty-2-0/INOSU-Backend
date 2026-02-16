@@ -2,7 +2,7 @@ import flask_login
 import os
 from urllib.parse import quote
 from app import pfp_path, task_path, hmac_ip
-from flask import Blueprint
+from flask import Blueprint, redirect
 from src.utils.check_file import check_file_access
 from src.utils.token import generate_hmac_token
 from src.utils.response import send_response
@@ -17,6 +17,7 @@ expiresIn = 600
 @check_file_access("profilePictures")
 def check_pfp(filename):
     filename = os.path.normpath(filename).replace("\\", "/")
+
     if filename.startswith(".."):
         return send_response(400, 44010, {"message": "Invalid path"}, "error")
     
@@ -26,14 +27,14 @@ def check_pfp(filename):
 
     redirectUrl = f"{hmac_ip}{encoded_path}?token={token}"
 
-    return send_response(200,44021, {"message": "Download url generated","redirectUrl": redirectUrl}, "success")
-
+    return redirect(redirectUrl)
 
 @check_file_bp.route("/file/tasks/<string:guarantor>/<string:idTask>/<string:idTeam>/<string:idVersion>/<string:filename>", methods = ["GET"])
 @flask_login.login_required 
 @check_file_access("tasks")
 def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
     filename = os.path.normpath(filename).replace("\\", "/")
+    
     if filename.startswith(".."):
         return send_response(400, 53010, {"message": "Invalid path"}, "error")
     
@@ -43,7 +44,7 @@ def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
 
     redirectUrl = f"{hmac_ip}{encoded_path}?token={token}"
 
-    return send_response(200,53021, {"message": "Download url generated","redirectUrl": redirectUrl}, "success")
+    return redirect(redirectUrl)
 
 @check_file_bp.route("/file/task/<string:guarantor>/<string:idTask>/<string:filename>", methods = ["GET"])
 @flask_login.login_required
@@ -60,4 +61,4 @@ def check_task(filename, idTask, guarantor):
 
     redirectUrl = f"{hmac_ip}{encoded_path}?token={token}"
 
-    return send_response(200,58021, {"message": "Download url generated","redirectUrl": redirectUrl}, "success")
+    return redirect(redirectUrl)
