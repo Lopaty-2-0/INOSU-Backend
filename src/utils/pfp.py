@@ -9,10 +9,9 @@ def pfp_save(file):
         return False
 
     fileName = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + chr(random.randint(65, 90)) + "." + file.rsplit('.', 1)[1].lower()
-    
 
     message = f"/uploads/{pfp_path}{fileName}"
-    token = generate_hmac_token(message)
+    token = generate_hmac_token(message, max_size=2 * 1024 * 1024)
 
     return fileName, hmac_ip + message + "?token=" + token 
 

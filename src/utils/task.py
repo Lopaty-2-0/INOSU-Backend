@@ -36,6 +36,6 @@ def upload_task(task, guarantor, id):
     relPath = task_path + str(guarantor) + "/" + str(id)
 
     message = f"/uploads/{relPath}/{task}"
-    token = generate_hmac_token(message)
+    token = generate_hmac_token(message, max_size=32 * 1024 * 1024)
 
     return hmac_ip + message + "?token=" + token

@@ -19,7 +19,7 @@ def make_version(idTask, idTeam, file, guarantor):
     relPath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(id)
 
     message = f"/uploads/{relPath}/{file}"
-    token = generate_hmac_token(message)
+    token = generate_hmac_token(message, max_size=5 * 1024 * 1024 * 1024)
 
     return hmac_ip + message + "?token=" + token
 
