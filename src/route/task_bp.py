@@ -1518,7 +1518,7 @@ def put_task_to_database():
     if not check_upload_task(task, idGuarantor, idTask):
         return send_response(400, 84110, {"message": "task does not exist"}, "error")
     
-    if actualTask.task != "waiting" and actualTask.task != task:
+    if actualTask.task != task:
         delete_upload_task(actualTask.task, idGuarantor, idTask)
 
     actualTask.task == task

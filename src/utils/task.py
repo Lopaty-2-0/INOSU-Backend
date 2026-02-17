@@ -9,7 +9,7 @@ def make_task(file, name, guarantor, deadline, points, endDate, startDate, type)
     task = Task.query.filter_by(guarantor = guarantor).order_by(Task.id.desc()).first()
     id = task.id + 1 if task else 1
 
-    newTask = Task(name=name, startDate=startDate, endDate=endDate,guarantor=guarantor, task = "waiting", type = type, points = points, deadline = deadline, id = id)
+    newTask = Task(name=name, startDate=startDate, endDate=endDate,guarantor=guarantor, task = None, type = type, points = points, deadline = deadline, id = id)
     db.session.add(newTask)
     db.session.commit()
 

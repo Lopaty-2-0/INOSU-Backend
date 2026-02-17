@@ -307,7 +307,7 @@ def put_elaboration_to_database():
     if not check_upload_version(idTask, idTeam, elaboration, guarantor, idVersion):
         return send_response(400, 85190, {"message": "elaboration does not exist"}, "error")
 
-    if version.elaboration and version.elaboration != elaboration:
+    if version.elaboration != elaboration:
         delete_upload_version(idTask, idTeam, version.elaboration, guarantor, idVersion)
     
     version.elaboration = elaboration
