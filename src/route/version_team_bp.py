@@ -236,7 +236,7 @@ def get():
     return send_response(200, 59211, {"message": "All versions for this team", "versions":versions, "count": count}, "success")
 
 
-@version_team_bp.route("/version_team/put/elaboration", methods = ["POST"])
+@version_team_bp.route("/version_team/put/elaboration", methods = ["PUT"])
 @flask_login.login_required
 def put_elaboration_to_database():
     data = request.get_json(force=True)
