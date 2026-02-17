@@ -59,7 +59,7 @@ def get():
         return send_response(400, 73100, {"message": "idMaturita not valid"}, "error")
     
     if not Maturita.query.filter_by(id = idMaturita).first():
-        return send_response(400, 73110, {"message": "maturita not found"}, "error")
+        return send_response(404, 73110, {"message": "maturita not found"}, "error")
 
     if not searchQuery:
         evaluators = Evaluator.query.filter_by(idMaturita = idMaturita).order_by(Evaluator.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)

@@ -12,7 +12,7 @@ class Task(db.Model):
     endDate = db.Column(db.DateTime(timezone = True), nullable = False)
     deadline = db.Column(db.DateTime(timezone = True), nullable = True)
     task = db.Column(db.VARCHAR(255), nullable = True)
-    guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id"), primary_key = True, nullable = False)
+    guarantor = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id", ondelete = "CASCADE"), primary_key = True, nullable = False)
     type = db.Column(db.Enum(Type), nullable = False)
     points = db.Column(FLOAT(unsigned=True), nullable = True)
 

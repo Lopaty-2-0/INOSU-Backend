@@ -15,7 +15,8 @@ class Version_Team(db.Model):
     __table_args__ = (
         db.ForeignKeyConstraint(
             ["idTask", "guarantor", "idTeam"],
-            ["team.idTask", "team.guarantor", "team.idTeam"]
+            ["team.idTask", "team.guarantor", "team.idTeam"],
+            ondelete = "CASCADE"
         ),
     )
 

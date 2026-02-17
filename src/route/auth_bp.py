@@ -1,15 +1,11 @@
-import os
-import shlex
-import subprocess
+
 import flask_login
 from sqlalchemy import or_
-from flask import Blueprint, abort, request, session, make_response
+from flask import Blueprint, request, session, make_response
 from werkzeug.security import check_password_hash
 from src.utils.response import send_response
 from src.models.User import User
 from src.utils.all_user_classes import all_user_classes
-from src.utils.token import generate_hmac_token
-from app import ssh
 
 auth_bp = Blueprint("auth", __name__)
 

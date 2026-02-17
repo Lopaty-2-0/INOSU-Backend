@@ -19,6 +19,7 @@ from src.utils.version import delete_upload_version
 
 maturita_bp = Blueprint("maturita", __name__)
 
+
 @maturita_bp.route("/maturita/add", methods = ["POST"])
 @flask_login.login_required
 def add():
@@ -133,7 +134,7 @@ def update():
     maturita = Maturita.query.filter_by(id = idMaturita).first()
 
     if not maturita:
-        return send_response(400, 68060, {"message": "maturita not found"}, "error")
+        return send_response(404, 68060, {"message": "maturita not found"}, "error")
     
     if grade:
         grade = str(grade)
@@ -226,21 +227,7 @@ def update():
             for maturitaTask in maturitaTasks:
 
                 task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = evaluatorId).first()
-                team = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = evaluatorId).first()
-                userTeam = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluatorId).first() 
-                versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = evaluatorId).all()
 
-                for version in versions:
-                    if version.elaboration:
-                        delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
-                    db.session.delete(version)
-
-                db.session.delete(userTeam)
-                db.session.delete(maturitaTask)
-                db.session.commit()
-                db.session.delete(team)
-                db.session.commit()
-                delete_upload_task(task.task, task.guarantor, task.id)
                 db.session.delete(task)
 
     db.session.commit()
@@ -326,34 +313,18 @@ def delete():
             continue
     
         maturitaTasks = Maturita_Task.query.filter_by(idMaturita = id)
-        evaluators = Evaluator.query.filter_by(idMaturita = id).all()
-
-        for evaluator in evaluators:
-            db.session.delete(evaluator)
-        db.session.commit()
 
         for maturitaTask in maturitaTasks:
             task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
             team = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
-            userTeam = User_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).first() 
             versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
 
             for version in versions:
                 if version.elaboration:
                     delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
-                db.session.delete(version)
 
-            if userTeam:
-                db.session.delete(userTeam)
-            if maturitaTask:
-                db.session.delete(maturitaTask)
-            db.session.commit()
-            if team:
-                db.session.delete(team)
-                db.session.commit()
             if task:
                 delete_upload_task(task.task, task.guarantor, task.id)
-                db.session.delete(task)
             
         db.session.delete(maturita)
         goodIds.append(id)

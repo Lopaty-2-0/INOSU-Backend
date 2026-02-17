@@ -22,7 +22,6 @@ import datetime
 team_bp = Blueprint("team", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
-
 @team_bp.route("/team/add", methods=["POST"])
 @flask_login.login_required
 def add():
@@ -45,7 +44,7 @@ def add():
         return send_response(400, 30040, {"message": "Cannot add team to this task"}, "error")
 
     if not task:
-        return send_response(400, 30050, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 30050, {"message": "Nonexistent task"}, "error")
     if name:
         name = str(name)
         if len(name) > 255:
@@ -77,7 +76,7 @@ def delete():
     if idTask > max_INT or idTask <=0:
         return send_response(400, 31040, {"message": "idTask not valid"}, "error")
     if not Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first():
-        return send_response(400, 31050, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 31050, {"message": "Nonexistent task"}, "error")
     if not isinstance(idTeam, list):
         idTeam = [idTeam]
 
@@ -91,7 +90,7 @@ def delete():
             badIds.append(id)
             continue
 
-        if not Team.query.filter_by(idTeam = id, idTask = idTask).first():
+        if not Team.query.filter_by(idTeam = id, idTask = idTask, guarantor = flask_login.current_user.id).first():
             badIds.append(id)
             continue
 
@@ -100,16 +99,12 @@ def delete():
         versions = Version_Team.query.filter_by(idTeam = id, idTask = idTask, guarantor = flask_login.current_user.id)
 
         for user in users:
-            db.session.delete(user)
-
             cancel_reminder(idUser = user.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
              
         for version in versions:
             if version.elaboration:
                 delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
-            db.session.delete(version)
-        
-        db.session.commit()
+
         db.session.delete(team)
         goodIds.append(id)
 
@@ -148,12 +143,12 @@ def update():
     task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
 
     if not task:
-        return send_response(400, 32070, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 32070, {"message": "Nonexistent task"}, "error")
     
     team = Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id).first()
 
     if not team:
-        return send_response(400, 32080, {"message": "Nonexistent team"}, "error")
+        return send_response(404, 32080, {"message": "Nonexistent team"}, "error")
     if status and Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first().type == Type.Maturita:
         if status not in [s.value for s in Status]:
             return send_response(400, 32090, {"message": "Status not our type"}, "error")
@@ -256,7 +251,7 @@ def get_users_task():
         return send_response(400, 41110, {"message": "idTask not valid"}, "error")
 
     if not Task.query.filter_by(id = idTask).first():
-        return send_response(400, 41120, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 41120, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
         teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == False).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -350,7 +345,7 @@ def get_teams_task():
         return send_response(400, 56110, {"message": "IdTask not valid"}, "error")
 
     if not Task.query.filter_by(id = idTask).first():
-        return send_response(400, 56120, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 56120, {"message": "Nonexistent task"}, "error")
     
     if not searchQuery:
         teams = Team.query.outerjoin(User_Team, Team.idTeam == User_Team.idTeam).filter(Team.idTask == idTask, Team.guarantor == flask_login.current_user.id).group_by(Team.idTeam, Team.idTask).having(Team.isTeam == True).order_by(Team.idTeam.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
@@ -414,7 +409,7 @@ def get_team_info():
     user = User.query.filter_by(id = guarantor).first()
 
     if not user:
-        return send_response(400, 45070, {"message": "Nonexistent guarantor"}, "error")
+        return send_response(404, 45070, {"message": "Nonexistent guarantor"}, "error")
     
     if not idTask:
         return send_response(400, 45080, {"message": "idTask not entered"}, "error")
@@ -428,12 +423,15 @@ def get_team_info():
     task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
 
     if not task:
-        return send_response(400, 45110, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 45110, {"message": "Nonexistent task"}, "error")
     
     team = Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
 
     if not team:
-        return send_response(400, 45120, {"message": "Nonexistent team"}, "error")
+        return send_response(404, 45120, {"message": "Nonexistent team"}, "error")
+    
+    if not User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor, idUser = flask_login.current_user.id).first() and flask_login.current_user.id != guarantor and Maturita_Task.query.filter_by(guarantor = guarantor, idTask = idTask, objector = flask_login.current_user.id).first():
+        return send_response(400, 45130, {"message": "No permission for that"}, "error")
 
     userTeams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).order_by(User_Team.idUser.desc())
 
@@ -442,4 +440,4 @@ def get_team_info():
     
     teamInfo = {"idTeam": idTeam, "idTask": idTask, "name": team.name, "points":team.points, "review":team.review, "status":team.status.value, "isTeam": team.isTeam, "reviewUpdatedAt":team.reviewUpdatedAt, "teamUpdatedAt":team.teamUpdatedAt}
     
-    return send_response(200, 45091, {"message": "Team info found", "users":users, "team":teamInfo}, "success")
+    return send_response(200, 45141, {"message": "Team info found", "users":users, "team":teamInfo}, "success")

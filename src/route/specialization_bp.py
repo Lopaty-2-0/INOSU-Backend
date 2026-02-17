@@ -83,17 +83,6 @@ def delete():
             badIds.append(id)
             continue
 
-        classes = Class.query.filter_by(idSpecialization = id)
-
-        for specificClass in classes:
-            users = User_Class.query.filter_by(idClass = specificClass.id)
-
-            for user in users:
-                db.session.delete(user)
-            db.session.commit()
-            db.session.delete(specificClass)
-        
-        db.session.commit()
         db.session.delete(Specialization.query.filter_by(id = id).first())
         goodIds.append(id)
 

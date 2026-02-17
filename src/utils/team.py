@@ -3,6 +3,7 @@ from src.models.User_Team import User_Team
 from src.models.Version_Team import Version_Team
 from app import db
 from src.utils.version import delete_upload_version
+from src.utils.reminder import cancel_reminder
 
 def make_team(idTask, status, name, isTeam, guarantor):
     if not Team.query.filter_by(idTask = idTask, guarantor = guarantor).first():
@@ -26,12 +27,6 @@ def delete_teams_for_task(idTask, guarantor):
         for version in versions:
             if version.elaboration:
                 delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
-            db.session.delete(version)
 
         for user in users:
-            db.session.delete(user)
-
-        db.session.commit()
-        db.session.delete(team)
-        
-    db.session.commit()
+            cancel_reminder(user.idUser, idTask, guarantor)

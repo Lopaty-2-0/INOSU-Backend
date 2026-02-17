@@ -7,7 +7,7 @@ class Class(db.Model):
     id = db.Column(INTEGER(unsigned=True), primary_key=True, autoincrement=True)
     grade = db.Column(INTEGER(unsigned=True), nullable=False)
     group = db.Column(db.String(1), nullable=False)
-    idSpecialization = db.Column(INTEGER(unsigned=True), db.ForeignKey("specialization.id"), nullable=False)
+    idSpecialization = db.Column(INTEGER(unsigned=True), db.ForeignKey("specialization.id", ondelete = "CASCADE"), nullable=False)
     name = db.Column(db.String(255), nullable=False, unique=True)
 
     def __init__(self, grade, group, idSpecialization, name):

@@ -12,6 +12,7 @@ from src.utils.check_file import check_file_size
 import datetime
 from src.models.User import User
 from src.utils.enums import Role
+from src.models.Maturita_Task import Maturita_Task
 
 version_team_bp = Blueprint("version_team", __name__)
 elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -209,10 +210,10 @@ def get():
         return send_response(400, 59140, {"message": "guarantor not valid"}, "error")
     
     if not User.query.filter_by(id = guarantor).first():
-        return send_response(400, 59150, {"message": "Nonexistent guarantor"}, "error")
+        return send_response(404, 59150, {"message": "Nonexistent guarantor"}, "error")
     
     if not Task.query.filter_by(id = idTask, guarantor = guarantor).first():
-        return send_response(400, 59160, {"message": "Nonexistent task"}, "error")
+        return send_response(404, 59160, {"message": "Nonexistent task"}, "error")
     
     if not idTeam:
         return send_response(400, 59170, {"message": "idTeam not entered"}, "error")
@@ -225,7 +226,10 @@ def get():
 
     
     if not Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = guarantor).first():
-        return send_response(400, 59200, {"message": "Nonexistent team"}, "error")
+        return send_response(404, 59200, {"message": "Nonexistent team"}, "error")
+    
+    if not User_Team.query.filter_by(idTeam = idTeam, idTask = idTask, guarantor = guarantor, idUser = flask_login.current_user.id).first() and flask_login.current_user.id != guarantor and not Maturita_Task.query.filter_by(idTask = idTask, guarantor = guarantor, objector = flask_login.current_user.id).first():
+        return send_response(400, 59210, {"message": "no permission for that"}, "error")
     
     versionsTeam = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam, Version_Team.guarantor == guarantor).order_by(Version_Team.idVersion.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count = Version_Team.query.filter(Version_Team.idTask == idTask, Version_Team.idTeam == idTeam, Version_Team.guarantor == guarantor).count()
@@ -233,7 +237,7 @@ def get():
     for version in versionsTeam:
         versions.append({"idVersion":version.idVersion, "elaboration":version.elaboration, "createdAt":version.createdAt})
 
-    return send_response(200, 59211, {"message": "All versions for this team", "versions":versions, "count": count}, "success")
+    return send_response(200, 59221, {"message": "All versions for this team", "versions":versions, "count": count}, "success")
 
 
 @version_team_bp.route("/version_team/put/elaboration", methods = ["PUT"])

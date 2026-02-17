@@ -19,7 +19,8 @@ class Team(db.Model):
     __table_args__ = (
         db.ForeignKeyConstraint(
             ["idTask", "guarantor"],
-            ["task.id", "task.guarantor"]
+            ["task.id", "task.guarantor"],
+            ondelete = "CASCADE"
         ),
     )
 

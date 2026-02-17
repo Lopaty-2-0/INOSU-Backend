@@ -33,9 +33,9 @@ def add():
     if idUser > max_INT or idUser <=0:
         return send_response(400, 33050, {"message": "idUser not valid"}, "error")
     if not User.query.filter_by(id = idUser).first():
-        return send_response(400, 33060, {"message": "Nonexistent user"}, "error")
+        return send_response(404, 33060, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return send_response(400, 33070, {"message": "Nonexistent class"}, "error")
+        return send_response(404, 33070, {"message": "Nonexistent class"}, "error")
     if not isinstance(idClass, list):
         idClass = [idClass]
     
@@ -148,7 +148,7 @@ def get_users():
         return send_response(400, 35110, {"message": "idClass not valid"}, "error")
 
     if not Class.query.filter_by(id = idClass).first():
-        return send_response(400, 35120, {"message":"Nonexistent class"}, "error")
+        return send_response(404, 35120, {"message":"Nonexistent class"}, "error")
     if not searchQuery:
         users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
         count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).count()

@@ -1,6 +1,5 @@
 import flask_login
 from src.models.Class import Class
-from src.models.User_Class import User_Class
 from src.models.Specialization import Specialization
 from src.utils.paging import class_paging
 from src.utils.response import send_response
@@ -84,11 +83,6 @@ def delete():
         if not Class.query.filter_by(id = id).first() or id > max_INT or id <= 0:
             badIds.append(id)
             continue
-
-        users = User_Class.query.filter_by(idClass = id)
-
-        for user in users:
-            db.session.delete(user)
 
         db.session.delete(Class.query.filter_by(id = id).first())
         goodIds.append(id)

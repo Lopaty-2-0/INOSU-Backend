@@ -4,17 +4,18 @@ from sqlalchemy.dialects.mysql import INTEGER
 class Maturita_Task(db.Model):
     __tablename__ = "maturita_task"
 
-    idTopic = db.Column(INTEGER(unsigned=True), db.ForeignKey("topic.id"), primary_key = True, nullable = False)
+    idTopic = db.Column(INTEGER(unsigned=True), db.ForeignKey("topic.id", ondelete = "CASCADE"), primary_key = True, nullable = False)
     idTask = db.Column(INTEGER(unsigned=True), primary_key = True, nullable = False)
     guarantor = db.Column(INTEGER(unsigned=True), primary_key = True, nullable = False)
     objector = db.Column(INTEGER(unsigned=True), nullable = True)
-    idMaturita = db.Column(INTEGER(unsigned=True), db.ForeignKey("maturita.id"), primary_key = True, nullable = True)
+    idMaturita = db.Column(INTEGER(unsigned=True), db.ForeignKey("maturita.id", ondelete = "CASCADE"), primary_key = True, nullable = True)
     variant = db.Column(db.CHAR(1), nullable = True)
 
     __table_args__ = (
         db.ForeignKeyConstraint(
             ["idTask", "guarantor"],
-            ["task.id", "task.guarantor"]
+            ["task.id", "task.guarantor"],
+            ondelete = "CASCADE"
         ),
     )
 

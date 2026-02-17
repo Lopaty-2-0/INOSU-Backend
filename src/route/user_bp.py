@@ -14,7 +14,8 @@ from app import db, url, max_INT
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
-from src.models.User_Team import User_Team
+from src.models.Conversation import Conversation
+from src.models.Message import Message
 from src.models.Task import Task
 from src.models.Maturita_Task import Maturita_Task
 from src.utils.task import delete_upload_task
@@ -22,6 +23,7 @@ from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role
 from src.utils.paging import user_paging
+from sqlalchemy import or_
 
 user_bp = Blueprint("user", __name__)
 
@@ -363,32 +365,38 @@ def delete():
         delUser = User.query.filter_by(id = id).first()
 
         if delUser:
-            cl = User_Class.query.filter_by(idUser = id)
-            ta = User_Team.query.filter_by(idUser = id)
             tas = Task.query.filter_by(guarantor = id)
-            guarants = Maturita_Task.query.filter_by(guarantor = id)
             objects = Maturita_Task.query.filter_by(objector = id)
 
-            for t in ta:
-                db.session.delete(t)
-            for c in cl:
-                db.session.delete(c)
-            for guarant in guarants:
-                db.session.delete(guarant)
             for object in objects:
                 object.objector = None
             for task in tas:
                 delete_teams_for_task(task.id, id)
                 delete_upload_task(task.task, task.id, id)
-                db.session.delete(task)
+
+            conversations = Conversation.query.filter(or_(Conversation.idUser1 == id, Conversation.idUser2 == id))
+
+            for conversation in conversations:
+                if conversation.idUser1 == id:
+                    conversation.idUser1 = None
+                else:
+                    conversation.idUser2 = None
+                
+                messages = Message.query.filter_by(idConversation = conversation.idConversation, sender = id)
+
+                for message in messages:
+                    message.sender = None
+
+                if not conversation.idUser1 and not conversation.idUser2:
+                    db.session.delete(conversation)
+
+                db.session.commit()
 
             pfp_delete(delUser.profilePicture)
-            db.session.commit()
             db.session.delete(delUser)
             db.session.commit()
             goodIds.append(id)
-        else:
-            badIds.append(id)
+
     if not goodIds:
         return send_response(400, 3040, {"message": "Nothing deleted"}, "error")
 
@@ -443,7 +451,7 @@ def password_res():
     text = "Pro resetování hesla zkopírujte tento odkaz: " + link
     send_email(email, "Password reset", html, text)
 
-    return send_response(200, 12051, {"message": "Token created successfuly and send to email"}, "success")
+    return send_response(201, 12051, {"message": "Token created successfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["POST"])
 def password_verify():

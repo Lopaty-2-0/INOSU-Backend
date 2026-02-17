@@ -12,6 +12,7 @@ from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
 from flask import request, Blueprint
 from app import db, max_INT
+from src.utils.reminder import cancel_reminder
 
 
 topic_bp = Blueprint("topic", __name__)
@@ -84,22 +85,14 @@ def delete():
                 versions = Version_Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor, idTeam = team.idTeam)
                 
                 for userTeam in userTeams:
-                    db.session.delete(userTeam)
+                    cancel_reminder(userTeam.idUser, userTeam.idTask, userTeam.guarantor)
+
                 for version in versions:
                     if version.elaboration:
                         delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
-                    db.session.delete(version)
-                
-                db.session.commit()
-                db.session.delete(team)
-            
-            db.session.delete(maturitaTask)
 
-            db.session.commit()
             delete_upload_task(task.task, task.guarantor, task.id)
-            db.session.delete(task)
 
-        db.session.commit()
         db.session.delete(Topic.query.filter_by(id = id).first())
         goodIds.append(id)
 
