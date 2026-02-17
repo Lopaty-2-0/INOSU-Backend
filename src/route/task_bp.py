@@ -1542,7 +1542,7 @@ def put_task_to_database():
     if actualTask.task != task and actualTask.task:
         delete_upload_task(actualTask.task, idGuarantor, idTask)
 
-    actualTask.task == task
+    actualTask.task = task
     db.session.commit()
 
     return send_response(201, 84121, {"message":"Task changed successfuly"}, "success")
