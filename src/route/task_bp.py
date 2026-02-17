@@ -102,7 +102,7 @@ def add():
                 "email":user.email
                 }
 
-    return send_response(201, 26141, {"message":"Task created successfuly", "task":{"id": id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl": uploadUrl}, "success")
+    return send_response(201, 26141, {"message":"Task created successfuly", "task":{"id": id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl": uploadUrl}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/add/maturita/guarantor", methods = ["POST"])
@@ -201,7 +201,7 @@ def add_maturita_guarantor():
                 "email":user.email
                 }
 
-    return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
+    return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/add/maturita/student", methods = ["POST"])
@@ -289,7 +289,7 @@ def add_maturita_student():
                 "email":user.email
                 }
 
-    return send_response(201, 62171, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": newTask.task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
+    return send_response(201, 62171, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
@@ -770,7 +770,18 @@ def update():
             
     db.session.commit()
 
-    return send_response(201, 74201, {"message":"Task updated successfuly", "uploadUrl":uploadUrl}, "success")
+    guarantor = {
+            "id":flask_login.current_user.id,
+            "name":flask_login.current_user.name,
+            "surname": flask_login.current_user.surname,
+            "abbreviation": flask_login.current_user.abbreviation,
+            "createdAt": flask_login.current_user.createdAt,
+            "role": flask_login.current_user.role.value,
+            "profilePicture":flask_login.current_user.profilePicture,
+            "email":flask_login.current_user.email
+            }
+
+    return send_response(201, 74201, {"message":"Task updated successfuly", "task": {"id": idTask, "name": actualTask.name, "startDate": actualTask.startDate, "endDate": actualTask.endDate, "task": task, "guarantor": guarantor, "deadline": actualTask.deadline, "points": actualTask.points}, "uploadUrl":uploadUrl}, "success")
 
 @flask_login.login_required
 @task_bp.route("/task/get/maturita/guarantor/approved", methods=["GET"])
@@ -1191,8 +1202,18 @@ def update_maturita_student():
         uploadUrl = upload_task(task, guarantor, idTask)
         
     db.session.commit()
+    guarantorData = {
+            "id":user.id,
+            "name":user.name,
+            "surname": user.surname,
+            "abbreviation": user.abbreviation,
+            "createdAt": user.createdAt,
+            "role": user.role.value,
+            "profilePicture":user.profilePicture,
+            "email":user.email
+            }
 
-    return send_response(201, 80121, {"message":"Task updated successfuly", "uploadUrl":uploadUrl}, "success")
+    return send_response(201, 80121, {"message":"Task updated successfuly", "task": {"id": idTask, "name": actualTask.name, "startDate": actualTask.startDate, "endDate": actualTask.endDate, "task": task, "guarantor": guarantorData, "deadline": actualTask.deadline, "points": actualTask.points}, "uploadUrl":uploadUrl}, "success")
 
 
 @flask_login.login_required

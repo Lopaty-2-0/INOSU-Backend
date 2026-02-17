@@ -83,9 +83,9 @@ def add():
     if elaborationResponse:
         return elaborationResponse
     
-    redirectUrl = make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
+    id, createdAt, redirectUrl = make_version(idTask = idTask, idTeam = idTeam, file = elaboration, guarantor = guarantor)
     
-    return send_response(200, 38181, {"message": "Version_team created", "redirectUrl":redirectUrl}, "success")
+    return send_response(200, 38181, {"message": "Version_team created", "version":{"idVersion":id, "idTask":idTask, "guarantor":guarantor, "idTeam":idTeam, "elaboration":elaboration, "createdAt":createdAt}, "redirectUrl":redirectUrl}, "success")
 
 @version_team_bp.route("/version_team/change", methods = ["PUT"])
 @flask_login.login_required
@@ -313,4 +313,4 @@ def put_elaboration_to_database():
     version.elaboration = elaboration
     db.session.commit()
     
-    return send_response(200, 85201, {"message": "Version_team created"}, "success")
+    return send_response(200, 85201, {"message": "elaboration added"}, "success")

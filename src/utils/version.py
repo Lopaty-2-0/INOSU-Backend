@@ -21,7 +21,7 @@ def make_version(idTask, idTeam, file, guarantor):
     message = f"/uploads/{relPath}/{file}"
     token = generate_hmac_token(message, max_size=5 * 1024 * 1024 * 1024)
 
-    return hmac_ip + message + "?token=" + token
+    return id, newVersion.createdAt ,hmac_ip + message + "?token=" + token
 
 def delete_upload_version(idTask, idTeam, file, guarantor, idVersion):
     relPath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + file
