@@ -1,13 +1,12 @@
 from flask import request, Blueprint
 import flask_login
 from src.utils.response import send_response
-from src.utils.task import make_task, delete_upload_task, upload_task
+from src.utils.task import make_task, delete_upload_task, upload_task, check_upload_task
 from src.utils.check_file import check_file_size
 from src.models.User import User
 from src.models.Task import Task
 from src.models.User_Team import User_Team
 from src.models.Team import Team
-from src.models.Version_Team import Version_Team
 from src.models.Maturita_Task import Maturita_Task
 from src.models.Maturita import Maturita
 from src.models.Evaluator import Evaluator
@@ -17,13 +16,10 @@ from src.utils.maturita_task import maturita_task_delete
 import datetime
 from src.utils.paging import task_paging, maturita_task_paging
 from src.utils.team import make_team, delete_teams_for_task
-from src.utils.version import delete_upload_version
 from app import db, max_INT, max_FLOAT
 from src.utils.reminder import cancel_reminder
 
-#TODO: nutné dodat u všech get, kde se získává maturita, získání topic, maturita a maturita_task
-#TODO: při vytváření maturit je nutné dělat i maturita_task (kontrolovat s topic, maturita a Evaluator) + při vytváření od garanta udělat funkci na smazání všechn návrhů studenta
-#TODO: využít tyto hovna: 57xxx, 
+
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
@@ -715,11 +711,8 @@ def update():
         if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 74070, {"message": "Wrong file format or too long"}, "error")
         
-        delete_upload_task(task, flask_login.current_user.id, idTask)
         uploadUrl = upload_task(task, flask_login.current_user.id, idTask)
-        actualTask.task = task
-        
-    
+
     if actualTask.type == Type.Task:
         if endDate:
             try:
@@ -1195,10 +1188,8 @@ def update_maturita_student():
         if len(task.rsplit(".",1)) < 2 or not task.rsplit(".", 1)[1].lower() in task_extensions or len(task) > 255:
             return send_response(400, 80110, {"message": "Wrong file format or too long"}, "error")
         
-        delete_upload_task(task, guarantor, idTask)
         uploadUrl = upload_task(task, guarantor, idTask)
-        actualTask.task = task
-    
+        
     db.session.commit()
 
     return send_response(201, 80121, {"message":"Task updated successfuly", "uploadUrl":uploadUrl}, "success")
@@ -1482,3 +1473,55 @@ def get_maturita_student_not_approved():
         })
         
     return send_response(200, 40091, {"message": "Found not approved maturitas for guarantor", "tasks": allTasks, "count": count}, "success")
+
+
+@flask_login.login_required
+@task_bp.route("/task/put/task", methods=["PUT"])
+def put_task_to_database():
+    data = request.get_json(force=True)
+    idTask = data.get("id",None)
+    task = data.get("task", None)
+    idGuarantor = data.get("guarantor", None)
+
+    if not idGuarantor:
+        return send_response(400, 84010, {"message": "No guarantor entered"}, "error")
+    try:
+        idGuarantor = int(idGuarantor)
+    except:
+        return send_response(400, 84020, {"message": "guarantor not integer"}, "error")
+    if idGuarantor > max_INT or idGuarantor <=0:
+        return send_response(400, 84030, {"message": "guarantor not valid"}, "error")
+    if not idTask:
+        return send_response(400, 84040, {"message": "No id entered"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 84050, {"message": "Id not integer"}, "error")
+    if idTask > max_INT or idTask <=0:
+        return send_response(400, 84060, {"message": "Id not valid"}, "error")
+    if not task:
+        return send_response(400, 84070, {"message": "No id entered"}, "error")
+    
+    guarantor = User.query.filter_by(id = idGuarantor).first()
+    
+    if not guarantor:
+        return send_response(400, 84080, {"message": "No guarantor found"}, "error")
+    
+    actualTask = Task.query.filter_by(id = idTask, guarantor = idGuarantor).first()
+
+    if not actualTask:
+       return send_response(400, 84090, {"message": "No task found"}, "error")
+    
+    if flask_login.current_user.id != idGuarantor and not User_Team.query.join(Maturita_Task, (Maturita_Task.idTask == User_Team.idTask) & (Maturita_Task.guarantor == User_Team.guarantor)).join(Team, (Team.idTeam == User_Team.idTeam) & (Team.guarantor == User_Team.guarantor) & (Team.idTask == User_Team.idTask)).filter(Team.status == Status.Pending, User_Team.guarantor == idGuarantor, User_Team.idTask == idTask, User_Team.idUser == flask_login.current_user.id).first():
+        return send_response(403, 84100, {"message": "No permission for that"}, "error")
+    
+    if not check_upload_task(task, idGuarantor, idTask):
+        return send_response(400, 84110, {"message": "task does not exist"}, "error")
+    
+    if actualTask.task != "waiting" and actualTask.task != task:
+        delete_upload_task(actualTask.task, idGuarantor, idTask)
+
+    actualTask.task == task
+    db.session.commit()
+
+    return send_response(201, 84121, {"message":"Task changed successfuly"}, "success")

@@ -17,8 +17,6 @@ import datetime
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
 
-#TODO: přidat gety
-
 maturita_bp = Blueprint("maturita", __name__)
 
 @maturita_bp.route("/maturita/add", methods = ["POST"])

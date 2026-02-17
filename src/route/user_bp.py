@@ -4,7 +4,7 @@ import json
 import flask_jwt_extended
 import datetime
 from src.email.templates.reset_password import email_reset_password_template
-from src.utils.pfp import pfp_save, pfp_delete
+from src.utils.pfp import pfp_save, pfp_delete, pfp_check
 from src.utils.all_user_classes import all_user_classes
 from src.utils.response import send_response
 from src.utils.send_email import send_email
@@ -241,12 +241,8 @@ def update():
         if profilePicture:
             if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
                 return send_response(400, 2020, {"message": "Wrong file format"}, "error")
-            
-            if user.profilePicture != "default.jpg":
-                pfp_delete(user.profilePicture)
 
-            fileName, uploadUrl = pfp_save(profilePicture)
-            user.profilePicture = fileName
+            uploadUrl = pfp_save(profilePicture)
 
         if isinstance(reminders, bool):
             user.reminders = reminders
@@ -307,12 +303,8 @@ def update():
     if profilePicture:
         if len(profilePicture.rsplit(".", 1)) < 2 or not profilePicture.rsplit(".", 1)[1].lower() in pfp_extensions:
             return send_response(400, 2150, {"message": "Wrong file format"}, "error")
-        
-        if secondUser.profilePicture != "default.jpg":
-            pfp_delete(secondUser.profilePicture)
 
-        fileName, uploadUrl = pfp_save(profilePicture)
-        secondUser.profilePicture = fileName
+        uploadUrl = pfp_save(profilePicture)
 
     if isinstance(idClass, list):    
         UserClass = User_Class.query.filter_by(idUser = secondUser.id)
@@ -754,3 +746,44 @@ def get_user_page():
                             "reminders":user.reminders
                         })
     return send_response(200, 52091, {"message": "Users found", "users":rightUsers, "count":count}, "success")
+
+@user_bp.route("/user/put/pfp", methods = ["PUT"])
+@flask_login.login_required
+def put_pfp_to_database():
+    
+    data = request.get_json(force=True)
+    idUser = data.get("idUser", None)
+    profilePicture = data.get("profilePicture", None)
+    
+    if not idUser:
+        return send_response(400, 57010, {"message": "idUser not entered"}, "error")
+    if not profilePicture:
+        return send_response(400, 57020, {"message": "profilePicture not entered"}, "error")
+    
+    try:
+        idUser = int(idUser)
+    except:
+            return send_response(400, 57030, {"message": "IdUser not integer"}, "error")
+    
+    if idUser > max_INT or idUser <= 0:
+        return send_response(400, 57040, {"message": "IdUser not valid"}, "error")
+
+    user = User.query.filter_by(id = idUser).first()
+
+    if not user:
+        return send_response(400, 57050, {"message": "Wrong user id"}, "error")
+    
+    if flask_login.current_user.role != Role.Admin and flask_login.current_user.id != idUser:
+        return send_response(403, 57060, {"message": "No permission for that"}, "error")
+    
+    if not pfp_check(profilePicture):
+        return send_response(400, 57070, {"message": "profilePicture does not exist"}, "error")
+    
+    if user.profilePicture != "default.jpg":
+        pfp_delete(user.profilePicture)
+
+    user.profilePicture = profilePicture
+    db.session.commit()
+
+    return send_response(200, 57081, {"message": "profilePicture changed successfuly"}, "success")
+    

@@ -15,6 +15,22 @@ def pfp_save(file):
 
     return fileName, hmac_ip + message + "?token=" + token 
 
+def pfp_check(pfp):
+    relPath = pfp_path + pfp
+
+    safePath = shlex.quote(relPath)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/check_final.sh {safePath}" #TODO: změnit jakmile to udělá
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
+        return False
+
+    return True
+
 def pfp_delete(pfp):
     relPath = pfp_path + pfp
 

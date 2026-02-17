@@ -11,7 +11,7 @@ def make_version(idTask, idTeam, file, guarantor):
         id = Version_Team.query.filter_by(idTask=idTask, idTeam = idTeam, guarantor = guarantor).order_by(Version_Team.idVersion.desc()).first().idVersion + 1
 
     
-    newVersion = Version_Team(idVersion = id, idTask = idTask, elaboration = file, idTeam = idTeam, guarantor = guarantor)
+    newVersion = Version_Team(idVersion = id, idTask = idTask, elaboration = None, idTeam = idTeam, guarantor = guarantor)
     
     db.session.add(newVersion)
     db.session.commit()
@@ -29,6 +29,21 @@ def delete_upload_version(idTask, idTeam, file, guarantor, idVersion):
 
     stdin, stdout, stderr = ssh.exec_command(
         f"/home/assembler/remove_final.sh {safePath}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
+        return False
+
+    return True
+
+def check_upload_version(idTask, idTeam, file, guarantor, idVersion):
+    relPath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + file
+    safePath = shlex.quote(relPath)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/check_final.sh {safePath}"
     )
 
     exit_status = stdout.channel.recv_exit_status()

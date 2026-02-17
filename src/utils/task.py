@@ -9,7 +9,7 @@ def make_task(file, name, guarantor, deadline, points, endDate, startDate, type)
     task = Task.query.filter_by(guarantor = guarantor).order_by(Task.id.desc()).first()
     id = task.id + 1 if task else 1
 
-    newTask = Task(name=name, startDate=startDate, endDate=endDate,guarantor=guarantor, task = file, type = type, points = points, deadline = deadline, id = id)
+    newTask = Task(name=name, startDate=startDate, endDate=endDate,guarantor=guarantor, task = "waiting", type = type, points = points, deadline = deadline, id = id)
     db.session.add(newTask)
     db.session.commit()
 
@@ -39,3 +39,18 @@ def upload_task(task, guarantor, id):
     token = generate_hmac_token(message, max_size=32 * 1024 * 1024)
 
     return hmac_ip + message + "?token=" + token
+
+def check_upload_task(task, guarantor, id):
+    relPath = task_path + str(guarantor) + "/" + str(id) + "/" + task
+    safePath = shlex.quote(relPath)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/check_final.sh {safePath}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
+        return False
+
+    return True

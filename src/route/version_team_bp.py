@@ -5,7 +5,7 @@ from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.utils.response import send_response
 from src.utils.enums import Status
-from src.utils.version import make_version, delete_upload_version
+from src.utils.version import make_version, delete_upload_version, check_upload_version
 import flask_login
 from app import db, max_INT
 from src.utils.check_file import check_file_size
@@ -234,3 +234,83 @@ def get():
         versions.append({"idVersion":version.idVersion, "elaboration":version.elaboration, "createdAt":version.createdAt})
 
     return send_response(200, 59211, {"message": "All versions for this team", "versions":versions, "count": count}, "success")
+
+
+@version_team_bp.route("/version_team/put/elaboration", methods = ["POST"])
+@flask_login.login_required
+def put_elaboration_to_database():
+    data = request.get_json(force=True)
+    elaboration = data.get("elaboration", None)
+    idTask = data.get("idTask", None)
+    idTeam = data.get("idTeam", None)
+    guarantor = data.get("guarantor", None)
+    idVersion = data.get("idVersion", None)
+
+    if not idTeam:
+        return send_response(400, 85010, {"message": "idTeam not entered"}, "error")
+    if not idTask:
+        return send_response(400, 85020, {"message": "idTask not entered"}, "error")
+    if not idVersion:
+        return send_response(400, 85030, {"message": "idVersion not entered"}, "error")
+    if not elaboration:
+        return send_response(400, 85040, {"message": "Elaboration not entered"}, "error")
+    try:
+        idTeam = int(idTeam)
+    except:
+        return send_response(400, 85050, {"message": "idTeam not integer"}, "error")
+    if idTeam > max_INT or idTeam <=0:
+        return send_response(400, 85060, {"message": "idTeam not valid"}, "error")
+    try:
+        idTask = int(idTask)
+    except:
+        return send_response(400, 85070, {"message": "idTask not integer"}, "error")
+    if idTask > max_INT or idTask <=0:
+        return send_response(400, 85080, {"message": "idTask not valid"}, "error")
+    try:
+        guarantor = int(guarantor)
+    except:
+        return send_response(400, 85090, {"message": "guarantor not integer"}, "error")
+    if guarantor > max_INT or guarantor <=0:
+        return send_response(400, 85100, {"message": "guarantor not valid"}, "error")
+    try:
+        idVersion = int(idVersion)
+    except:
+        return send_response(400, 85110, {"message": "idVersion not integer"}, "error")
+    if idVersion > max_INT or idVersion <=0:
+        return send_response(400, 85120, {"message": "idVersion not valid"}, "error")
+    
+    user = User.query.filter_by(id = guarantor).first()
+
+    if not user:
+        return send_response(400, 85130, {"message": "This guarantor doesnt exist"}, "error")
+    if user.role == Role.Student:
+        return send_response(400, 85140, {"message": "This user is not guarantor"}, "error")
+    
+    task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
+
+    if not task:
+        return send_response(400, 85150, {"message": "This task doesnt exist"}, "error")
+    
+    team = Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
+    
+    if not team:
+        return send_response(400, 85160, {"message": "This team doesnt exist"}, "error")
+    
+    version = Version_Team.query.filter_by(idVersion = idVersion, idTask = idTask, idTeam = idTeam, guarantor = guarantor).first()
+
+    if not version:
+        return send_response(400, 85170, {"message": "This version doesnt exist"}, "error")
+    
+    if not User_Team.query.filter_by(idUser = flask_login.current_user.id, idTeam = idTeam, idTask = idTask, guarantor = guarantor).first() or team.status != Status.Approved:
+        return send_response(403, 85180, {"message": "No permission for taht"}, "error")
+    
+    if not check_upload_version(idTask, idTeam, elaboration, guarantor, idVersion):
+        return send_response(400, 85190, {"message": "elaboration does not exist"}, "error")
+
+    if version.elaboration and version.elaboration != elaboration:
+        delete_upload_version(idTask, idTeam, version.elaboration, guarantor, idVersion)
+    
+    version.elaboration = elaboration
+    db.session.commit()
+    
+    return send_response(200, 85201, {"message": "Version_team created"}, "success")
