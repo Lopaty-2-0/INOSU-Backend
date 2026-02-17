@@ -218,6 +218,7 @@ def update():
     profilePicture = data.get("profilePicture", None)
     size = data.get("size", None)
     uploadUrl = None
+    fileName = None
     
     try:
         idClass = json.loads(rawIdClass) if rawIdClass.strip() else None
