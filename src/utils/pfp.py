@@ -13,7 +13,7 @@ def pfp_save(file):
     message = f"/uploads/{pfp_path}{fileName}"
     token = generate_hmac_token(message, max_size=2 * 1024 * 1024)
 
-    return fileName, hmac_ip + message + "?token=" + token 
+    return hmac_ip + message + "?token=" + token 
 
 def pfp_check(pfp):
     relPath = pfp_path + pfp
