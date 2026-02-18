@@ -518,8 +518,8 @@ def get_by_id():
     
     return send_response(200, 18051, {"message": "User found", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt}}, "success")
 
-@flask_login.login_required
 @user_bp.route("/user/get/role", methods = ["GET"])
+@flask_login.login_required
 def get_by_role():
     role = request.args.get("role", None)
     amountForPaging = request.args.get("amountForPaging", None)
@@ -611,8 +611,8 @@ def get_roles():
 def get_current_role():
     return send_response(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
 
-@flask_login.login_required
 @user_bp.route("/user/get/noClass", methods =["GET"])
+@flask_login.login_required
 def get_no_class():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -673,8 +673,8 @@ def get_no_class():
 
     return send_response(200, 51091, {"message": "All students without class", "users": users, "count": count}, "success")
 
-@flask_login.login_required
 @user_bp.route("/user/get/count/byRole", methods=["GET"])
+@flask_login.login_required
 def get_count_by_role():
     role = request.args.get("role", None)
 

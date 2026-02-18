@@ -203,8 +203,8 @@ def update():
 
     return send_response(200, 32161, {"message": "team updated"}, "success")
 
-@flask_login.login_required
 @team_bp.route("/team/get/users", methods=["GET"])
+@flask_login.login_required
 def get_users_task():
     idTask = request.args.get("idTask", None)
     amountForPaging = request.args.get("amountForPaging", None)
@@ -297,8 +297,8 @@ def get_users_task():
 
     return send_response(200, 41131, {"message": "All teams for this task", "users":users, "count": count}, "success")
 
-@flask_login.login_required
 @team_bp.route("/team/get/teams", methods=["GET"])
+@flask_login.login_required
 def get_teams_task():
     idTask = request.args.get("idTask", None)
     amountForPaging = request.args.get("amountForPaging", None)

@@ -16,8 +16,8 @@ from src.models.Maturita_Task import Maturita_Task
 conversation_bp = Blueprint("conversation_bp", __name__)
 #TODO: přidat job kterej změní chat na archivní pokud se jedná o maturitní chat
 
-@flask_login.login_required
 @conversation_bp.route("/conversation/add", methods = ["POST"])
+@flask_login.login_required
 def add():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
@@ -75,8 +75,8 @@ def add():
 
     return send_response(201, 86141, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
 
-@flask_login.login_required
 @conversation_bp.route("/conversation/delete", methods = ["DELETE"])
+@flask_login.login_required
 def delete():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
@@ -112,8 +112,8 @@ def delete():
 
     return send_response(200, 87051, {"message": "Conversation deleted successfully for current user"}, "success")
 
-@flask_login.login_required
 @conversation_bp.route("/conversation/get", methods = ["GET"])
+@flask_login.login_required
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -178,8 +178,8 @@ def get():
 
     return send_response(200, 89091, {"message": "Conversations found successfuly", "conversations":allConversations, "count":count}, "success")
 
-@flask_login.login_required
 @conversation_bp.route("/conversation/get/guarantor", methods = ["GET"])
+@flask_login.login_required
 def get_guarantor():
     idTask = request.args.get("idTask", None)
     
@@ -228,8 +228,8 @@ def get_guarantor():
 
     return send_response(200, 90061, {"message": "Conversations found successfuly", "objectorConversation":objectorConversation, "studentConversation":studentConversation}, "success")
 
-@flask_login.login_required
 @conversation_bp.route("/conversation/get/participant", methods = ["GET"])
+@flask_login.login_required
 def get_participant():
     idTask = request.args.get("idTask", None)
     guarantor = request.args.get("guarantor", None)

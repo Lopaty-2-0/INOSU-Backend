@@ -11,8 +11,8 @@ from src.utils.all_user_classes import all_user_classes
 
 message_bp = Blueprint("message_bp", __name__)
 
-@flask_login.login_required
 @message_bp.route("/message/add", methods = ["POST"])
+@flask_login.login_required
 def add():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
@@ -58,9 +58,8 @@ def add():
 
     return send_response(200, 87111, {"message": "Message sent successfuly", "message":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "createdAt":newMessage.createdAt, "sender":newMessage.sender, "replyToMessage":newMessage.replyToMessage}}, "success")
     
-
-@flask_login.login_required
 @message_bp.route("/message/delete", methods = ["DELETE"])
+@flask_login.login_required
 def delete():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
@@ -112,8 +111,8 @@ def delete():
 
     return send_response(200, 88121, {"message": "Message deleted successfuly"}, "success")
     
-@flask_login.login_required
 @message_bp.route("/message/get", methods = ["GET"])
+@flask_login.login_required
 def get_messages():
     idConversation = request.args.get("idConversation", None)
     amountForPaging = request.args.get("amountForPaging", None)
@@ -164,12 +163,14 @@ def get_messages():
     if not conversation:
         return send_response(404, 60120, {"message": "conversation not found"}, "error")
     
-    messages = Message.query.filter_by(idConversation = idConversation).order_by(Message.idMessage.asc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    messages = Message.query.filter_by(idConversation = idConversation).order_by(Message.idMessage.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging).all()
     count =  Message.query.filter_by(idConversation = idConversation).count()
 
-    for message in messages:
+    for i in range(len(messages), 0, -1):
+        message = messages[i-1]
         replyMessageData = None
         user = User.query.filter_by(id = message.sender).first()
+
         if message.replyToMessage:
             replyMessage = Message.query.filter_by(idMessage = message.replyToMessage, idConversation = idConversation).first()
             sender = User.query.filter_by(id = replyMessage.sender).first()

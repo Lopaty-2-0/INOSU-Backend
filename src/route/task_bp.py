@@ -22,8 +22,8 @@ from src.utils.reminder import cancel_reminder
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
-@flask_login.login_required
 @task_bp.route("/task/add", methods = ["POST"])
+@flask_login.login_required
 def add():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
@@ -103,8 +103,8 @@ def add():
 
     return send_response(201, 26141, {"message":"Task created successfuly", "task":{"id": id, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl": uploadUrl}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/add/maturita/guarantor", methods = ["POST"])
+@flask_login.login_required
 def add_maturita_guarantor():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
@@ -202,8 +202,8 @@ def add_maturita_guarantor():
 
     return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/add/maturita/student", methods = ["POST"])
+@flask_login.login_required
 def add_maturita_student():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
@@ -290,8 +290,8 @@ def add_maturita_student():
 
     return send_response(201, 62171, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/id", methods=["GET"]) 
+@flask_login.login_required
 def get_by_id():
     idTask = request.args.get("id", None)
     guarantor = request.args.get("guarantor", None)
@@ -387,8 +387,8 @@ def get_by_id():
     
     return send_response(200, 30101, {"message": "Task found", "task": taskData}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/delete", methods=["DELETE"])
+@flask_login.login_required
 def delete():
     data = request.get_json(force=True)
     idTask = data.get("id", None)
@@ -431,8 +431,8 @@ def delete():
 
     return send_response(200, 28031, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/task", methods=["GET"])
+@flask_login.login_required
 def get_task():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -489,8 +489,8 @@ def get_task():
         
     return send_response(200, 55091, {"message": "Found tasks for guarantor", "tasks": allTasks, "count": count}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/update", methods=["PUT"])
+@flask_login.login_required
 def update():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
@@ -607,8 +607,8 @@ def update():
 
     return send_response(201, 74201, {"message":"Task updated successfuly", "task": {"id": idTask, "name": actualTask.name, "startDate": actualTask.startDate, "endDate": actualTask.endDate, "task": task, "guarantor": guarantor, "deadline": actualTask.deadline, "points": actualTask.points}, "uploadUrl":uploadUrl}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/maturita/guarantor/approved", methods=["GET"])
+@flask_login.login_required
 def get_maturita_guarantor_approved():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -707,8 +707,8 @@ def get_maturita_guarantor_approved():
         
     return send_response(200, 75091, {"message": "Found approved maturitas for guarantor", "tasks": allTasks, "count": count}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/maturita/guarantor/pending", methods=["GET"])
+@flask_login.login_required
 def get_maturita_guarantor_pending():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -865,8 +865,8 @@ def get_maturita_student_approved():
 
     return send_response(200, 78031, {"message": "Found approved maturita for user", "task": actualTask}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/maturita/student/pending", methods=["GET"])
+@flask_login.login_required
 def get_maturita_student_pending():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -963,8 +963,8 @@ def get_maturita_student_pending():
         
     return send_response(200, 79091, {"message": "Found pending maturitas for student", "tasks": allTasks, "count": count}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/update/maturita/student", methods=["PUT"])
+@flask_login.login_required
 def update_maturita_student():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
@@ -1038,9 +1038,8 @@ def update_maturita_student():
 
     return send_response(201, 80121, {"message":"Task updated successfuly", "task": {"id": idTask, "name": actualTask.name, "startDate": actualTask.startDate, "endDate": actualTask.endDate, "task": task, "guarantor": guarantorData, "deadline": actualTask.deadline, "points": actualTask.points}, "uploadUrl":uploadUrl}, "success")
 
-
-@flask_login.login_required
 @task_bp.route("/task/delete/student", methods=["DELETE"])
+@flask_login.login_required
 def delete_student():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -1105,8 +1104,8 @@ def delete_student():
 
     return send_response(200, 81051, {"message":"Tasks deleted", "goodIds":goodIds, "badIds":badIds}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/maturita/student/rejected", methods=["GET"])
+@flask_login.login_required
 def get_maturita_student_rejected():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -1203,9 +1202,8 @@ def get_maturita_student_rejected():
         
     return send_response(200, 82091, {"message": "Found rejected maturitas for student", "tasks": allTasks, "count": count}, "success")
 
-
-@flask_login.login_required
 @task_bp.route("/task/get/maturita/student/not_approved", methods=["GET"])
+@flask_login.login_required
 def get_maturita_student_not_approved():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -1304,9 +1302,8 @@ def get_maturita_student_not_approved():
         
     return send_response(200, 40091, {"message": "Found not approved maturitas for guarantor", "tasks": allTasks, "count": count}, "success")
 
-
-@flask_login.login_required
 @task_bp.route("/task/put/task", methods=["PUT"])
+@flask_login.login_required
 def put_task_to_database():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
@@ -1356,8 +1353,8 @@ def put_task_to_database():
 
     return send_response(201, 84121, {"message":"Task changed successfuly"}, "success")
 
-@flask_login.login_required
 @task_bp.route("/task/get/maturita/objector", methods=["GET"])
+@flask_login.login_required
 def get_maturita_objector():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)

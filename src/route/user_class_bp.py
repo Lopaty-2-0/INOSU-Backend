@@ -99,8 +99,8 @@ def delete():
 
     return send_response(200, 34091, {"message": "User deleted from this class"}, "success")
 
-@flask_login.login_required
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
+@flask_login.login_required
 def get_users():
     idClass = request.args.get("idClass", None)
     amountForPaging = request.args.get("amountForPaging", None)

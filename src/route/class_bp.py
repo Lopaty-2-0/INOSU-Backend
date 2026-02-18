@@ -114,8 +114,8 @@ def get_by_id():
 
     return send_response(200, 22051, {"message": "Class found", "class": {"id": allClass.id, "grade": allClass.grade, "group": allClass.group, "name":allClass.name, "specialization": specialization.abbreviation}}, "success")
 
-@flask_login.login_required
 @class_bp.route("/class/get", methods=["GET"])
+@flask_login.login_required
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)

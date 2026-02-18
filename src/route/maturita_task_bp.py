@@ -15,8 +15,8 @@ from src.utils.enums import Status
 
 maturita_task_bp = Blueprint("maturita_task", __name__)
 
-@flask_login.login_required
 @maturita_task_bp.route("/maturita_task/get/table", methods = ["GET"])
+@flask_login.login_required
 def get_table():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
