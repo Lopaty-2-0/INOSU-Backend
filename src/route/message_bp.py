@@ -21,6 +21,7 @@ def add():
     idConversation = data.get("idConversation", None)
     message = data.get("message", None)
     replyToMessage = data.get("replyToMessage", None)
+    replyToMessageData = None
 
     if not idConversation:
         return send_response(400, 87010, {"message": "idConversation missing"}, "error")
@@ -50,9 +51,15 @@ def add():
             return send_response(400, 87070, {"message": "replyToMessage not integer"}, "error")
         if replyToMessage > max_INT or replyToMessage <= 0:
             return send_response(400, 87080, {"message": "replyToMessage not valid"}, "error")
-        if not Message.query.filter_by(idConversation = idConversation, idMessage = replyToMessage).first():
+        
+        replyMessage = Message.query.filter_by(idConversation = idConversation, idMessage = replyToMessage).first()
+
+        if not replyMessage:
             return send_response(404, 87090, {"message": "nonexistent message"}, "error")
-    
+        
+        sender = User.query.filter_by(id = replyMessage.sender).first()
+        replyToMessageData = {"idMessage":replyMessage.idMessage, "message":replyMessage.message, "createdAt":replyMessage.createdAt, "replyToMessage":replyMessage.replyToMessage, "sender":{"id": sender.id, "name": sender.name, "surname": sender.surname, "abbreviation": sender.abbreviation, "role": sender.role.value, "profilePicture": sender.profilePicture, "email": sender.email, "idClass": all_user_classes(sender.id), "createdAt":sender.createdAt, "updatedAt":sender.updatedAt, "reminders":sender.reminders}}
+        
     if conversation.isArchived:
         return send_response(400, 87100, {"message": "Can not write to this conversation"}, "error")
     
@@ -69,7 +76,7 @@ def add():
 
     newMessage = create_message(idConversation, flask_login.current_user.id, message, replyToMessage)
 
-    sender = {
+    senderData = {
         "id": flask_login.current_user.id, 
         "name": flask_login.current_user.name, 
         "surname": flask_login.current_user.surname, 
@@ -83,7 +90,7 @@ def add():
         "reminders": flask_login.current_user.reminders
     }
 
-    return send_response(200, 87111, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "message": newMessage.message, "createdAt":newMessage.createdAt, "sender": sender, "replyToMessage":newMessage.replyToMessage}}, "success")
+    return send_response(200, 87111, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "message": newMessage.message, "createdAt":newMessage.createdAt, "sender": senderData, "replyToMessage":replyToMessageData}}, "success")
     
 @message_bp.route("/message/delete", methods = ["DELETE"])
 @flask_login.login_required
