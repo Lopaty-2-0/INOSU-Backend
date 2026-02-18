@@ -29,6 +29,7 @@ hmac_ip = os.getenv("HMAC_IP")
 max_INT = 4294967295
 max_FLOAT = 3.40e+38
 
+#TODO: přidat dělání těch jobs při každém startu
 try:
     app = Flask(__name__)
 

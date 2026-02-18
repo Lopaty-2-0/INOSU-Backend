@@ -10,13 +10,13 @@ from app import max_INT, db
 from sqlalchemy import or_, and_
 from src.utils.conversation import create_conversation
 from src.utils.all_user_classes import all_user_classes
-from src.utils.enums import Type
+from src.utils.enums import Type, Role
 from src.models.Maturita_Task import Maturita_Task
 from src.models.Maturita import Maturita
 import datetime
+from src.utils.archive_conversation import create_rarchive_conversation
 
 conversation_bp = Blueprint("conversation_bp", __name__)
-#TODO: přidat job kterej změní chat na archivní pokud se jedná o maturitní chat
 
 @conversation_bp.route("/conversation/add", methods = ["POST"])
 @flask_login.login_required
@@ -78,6 +78,9 @@ def add():
     
     conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
 
+    if idTask and guarantor and user.role == Role.Student:
+        create_rarchive_conversation(conversation.idConversation, idTask, guarantor)
+
     return send_response(201, 86151, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
 
 @conversation_bp.route("/conversation/delete", methods = ["DELETE"])
@@ -115,7 +118,7 @@ def delete():
         db.session.delete(conversation)
         db.session.commit()
 
-    return send_response(200, 87051, {"message": "Conversation deleted successfully for current user"}, "success")
+    return send_response(200, 87051, {"message": "Conversation deleted successfuly for current user"}, "success")
 
 @conversation_bp.route("/conversation/get", methods = ["GET"])
 @flask_login.login_required
@@ -291,3 +294,44 @@ def get_participant():
     conversationData = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
 
     return send_response(200, 27111, {"message": "Conversations found successfuly", "conversation":conversationData}, "success")
+
+@conversation_bp.route("/conversation/get/id", methods = ["GET"])
+@flask_login.login_required
+def get_id():
+    idConversation = request.args.get("idConversation", None)
+    task = None
+
+    if not idConversation:
+        return send_response(400, 91010, {"message": "idConversation missing"}, "error")
+    try:
+        idConversation = int(idConversation)
+    except:
+        return send_response(400, 91020, {"message": "idConversation not integer"}, "error")
+    if idConversation > max_INT or idConversation <= 0:
+        return send_response(400, 91030, {"message": "idConversation not valid"}, "error")
+    
+    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id)).first()
+    
+    if not conversation:
+        return send_response(404, 91040, {"message": "Conversation not found"}, "error")
+    
+    if conversation.idUser1 == flask_login.current_user.id:
+        user = User.query.filter_by(id = conversation.idUser2).first()
+    else:
+        user = User.query.filter_by(id = conversation.idUser1).first()
+
+    foundTask = Task.query.filter_by(id = conversation.idTask, guarantor = conversation.guarantor).first()
+    
+    if foundTask:
+        task = {
+            "id": foundTask.id,
+            "name": foundTask.name,
+            "startDate": foundTask.startDate,
+            "endDate": foundTask.endDate,
+            "task": foundTask.task,
+            "deadline": foundTask.deadline,
+        }
+    
+    conversationData = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
+
+    return send_response(200, 91051, {"message": "Conversation found successfuly", "conversation": conversationData}, "success")

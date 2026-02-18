@@ -16,6 +16,7 @@ from src.utils.paging import user_team_paging
 from sqlalchemy import and_, or_
 from src.utils.version import delete_upload_version
 from src.models.Conversation import Conversation
+from src.utils.archive_conversation import cancel_archive_conversation
 
 user_team_bp = Blueprint("user_team", __name__)
 
@@ -208,6 +209,7 @@ def delete():
         conversation = Conversation.query.filter(or_(Conversation.idUser1 == idUser, Conversation.idUser2 == idUser), Conversation.idTask == idTask, Conversation.guarantor == flask_login.current_user.id).first()
 
         if conversation:
+            cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarantor)
             db.session.delete(conversation)
 
     db.session.delete(userTeam)

@@ -7,7 +7,10 @@ from src.models.User_Team import User_Team
 from src.models.Topic import Topic
 from src.utils.paging import topic_paging
 from src.utils.response import send_response
-from src.utils.enums import Role
+from src.utils.enums import Role, Type
+from src.models.Conversation import Conversation
+from src.utils.archive_conversation import cancel_archive_conversation
+from src.models.User import User
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
 from flask import request, Blueprint
@@ -90,6 +93,20 @@ def delete():
                 for version in versions:
                     if version.elaboration:
                         delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
+
+            if task.type == Type.Maturita:
+                conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
+
+                for conversation in conversations:
+                    if conversation.idUser1 == conversation.guarantor:
+                        user = User.query.filter_by(id = conversation.idUser2).first()
+                    else:
+                        user = User.query.filter_by(id = conversation.idUser1).first()
+
+                    if user.role != Role.Student:
+                        continue
+
+                    cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
 
             delete_upload_task(task.task, task.guarantor, task.id)
 

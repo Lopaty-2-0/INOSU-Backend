@@ -15,13 +15,14 @@ from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
 from src.models.Conversation import Conversation
+from src.utils.archive_conversation import cancel_archive_conversation
 from src.models.Message import Message
 from src.models.Task import Task
 from src.models.Maturita_Task import Maturita_Task
 from src.utils.task import delete_upload_task
 from src.utils.check_file import check_file_size
 from src.utils.team import delete_teams_for_task
-from src.utils.enums import Role
+from src.utils.enums import Role, Type
 from src.utils.paging import user_paging
 from sqlalchemy import or_
 
@@ -388,6 +389,18 @@ def delete():
                     message.sender = None
 
                 if not conversation.idUser1 and not conversation.idUser2:
+                    
+                    if task.type == Type.Maturita:
+                        if conversation.idUser1 == conversation.guarantor:
+                            user = User.query.filter_by(id = conversation.idUser2).first()
+                        else:
+                            user = User.query.filter_by(id = conversation.idUser1).first()
+
+                        if user.role != Role.Student:
+                            continue
+
+                        cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
+
                     db.session.delete(conversation)
 
                 db.session.commit()

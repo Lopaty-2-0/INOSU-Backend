@@ -8,9 +8,10 @@ from src.models.User_Team import User_Team
 from src.models.Version_Team import Version_Team
 from src.utils.team import make_team
 from src.utils.response import send_response
-from src.utils.enums import Status, Type
+from src.utils.enums import Status, Type, Role
 from src.utils.paging import team_paging
-from sqlalchemy import or_
+from src.utils.archive_conversation import cancel_archive_conversation
+from src.models.Conversation import Conversation
 from src.utils.all_user_classes import all_user_classes
 from src.utils.reminder import cancel_reminder
 from src.utils.maturita_task import maturita_task_delete
@@ -75,7 +76,10 @@ def delete():
         return send_response(400, 31030, {"message": "idTask not integer"}, "error")
     if idTask > max_INT or idTask <=0:
         return send_response(400, 31040, {"message": "idTask not valid"}, "error")
-    if not Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first():
+    
+    task = Task.query.filter_by(id = idTask, guarantor = flask_login.current_user.id).first()
+
+    if not task:
         return send_response(404, 31050, {"message": "Nonexistent task"}, "error")
     if not isinstance(idTeam, list):
         idTeam = [idTeam]
@@ -100,6 +104,20 @@ def delete():
 
         for user in users:
             cancel_reminder(idUser = user.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
+
+        if task.type == Type.Maturita:
+            conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
+
+            for conversation in conversations:
+                if conversation.idUser1 == conversation.guarantor:
+                    user = User.query.filter_by(id = conversation.idUser2).first()
+                else:
+                    user = User.query.filter_by(id = conversation.idUser1).first()
+
+                if user.role != Role.Student:
+                    continue
+
+                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
              
         for version in versions:
             if version.elaboration:

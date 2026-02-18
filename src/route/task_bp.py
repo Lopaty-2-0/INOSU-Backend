@@ -13,6 +13,8 @@ from src.models.Evaluator import Evaluator
 from src.models.Topic import Topic
 from src.utils.enums import Status, Type, Role
 from src.utils.maturita_task import maturita_task_delete
+from src.utils.archive_conversation import cancel_archive_conversation
+from src.models.Conversation import Conversation
 import datetime
 from src.utils.paging import task_paging, maturita_task_paging
 from src.utils.team import make_team, delete_teams_for_task
@@ -422,6 +424,20 @@ def delete():
             continue
 
         delete_teams_for_task(idTask = taskId, guarantor = flask_login.current_user.id)
+
+        if task.type == Type.Maturita:
+            conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
+
+            for conversation in conversations:
+                if conversation.idUser1 == conversation.guarantor:
+                    user = User.query.filter_by(id = conversation.idUser2).first()
+                else:
+                    user = User.query.filter_by(id = conversation.idUser1).first()
+
+                if user.role != Role.Student:
+                    continue
+
+                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
 
         delete_upload_task(id = taskId, guarantor = flask_login.current_user.id, task = task.task)
         db.session.delete(task)
@@ -1093,6 +1109,18 @@ def delete_student():
             badIds.append(taskId)
             continue
         
+        conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
+
+        for conversation in conversations:
+            if conversation.idUser1 == conversation.guarantor:
+                user = User.query.filter_by(id = conversation.idUser2).first()
+            else:
+                user = User.query.filter_by(id = conversation.idUser1).first()
+
+            if user.role != Role.Student:
+                continue
+
+            cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
 
         cancel_reminder(idUser = flask_login.current_user.id, idTask = taskId, guarantor = guarantorId)
         

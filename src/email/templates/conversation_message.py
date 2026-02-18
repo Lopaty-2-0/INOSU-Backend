@@ -31,7 +31,7 @@ def email_conversation_message(name, sender_name, task_name):
             </div>
 
             <p style="margin: 15px 0 0 0; font-size: 14px;">
-            Pro zobrazení celé zprávy se přihlaste do systému.
+            Pro zobrazení zprávy se přihlaste do systému.
             </p>
             </div>
 

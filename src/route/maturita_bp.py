@@ -4,8 +4,11 @@ from src.models.Maturita_Task import Maturita_Task
 from src.models.Evaluator import Evaluator
 from src.models.Task import Task
 from src.models.Team import Team
+from src.utils.reminder import cancel_reminder
+from src.utils.archive_conversation import cancel_archive_conversation
 from src.models.User_Team import User_Team
 from src.models.Version_Team import Version_Team
+from src.models.Conversation import Conversation
 from src.models.User import User
 import flask_login
 from src.utils.enums import Role
@@ -318,6 +321,8 @@ def delete():
             task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
             team = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
             versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
+            user_teams= User_Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarnator)
+            conversations = Conversation.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor)
 
             for version in versions:
                 if version.elaboration:
@@ -325,6 +330,12 @@ def delete():
 
             if task:
                 delete_upload_task(task.task, task.guarantor, task.id)
+            
+            for user_team in user_teams:
+                cancel_reminder(user_team.idUser, user_team.idTask, user_team.guarantor)
+            
+            for conversation in conversations:
+                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarantor)
             
         db.session.delete(maturita)
         goodIds.append(id)
