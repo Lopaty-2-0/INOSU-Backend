@@ -158,7 +158,7 @@ def get():
     if pageNumber < 0:
         return send_response(400, 89080, {"message": "pageNumber must be bigger than 0"}, "error")
     
-    conversations = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == None).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    conversations = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == None).order_by(Conversation.idConversation.desc()).offset(pageNumber * amountForPaging).limit(amountForPaging)
     count = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == None).count()
     
     for conversation in conversations:
@@ -218,7 +218,7 @@ def get_guarantor():
         "task": foundTask.task,
         "deadline": foundTask.deadline,
         }
-    conversations = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == idTask, Conversation.guarantor == flask_login.current_user.id)
+    conversations = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == idTask, Conversation.guarantor == flask_login.current_user.id).order_by(Conversation.idConversation.desc())
     
     for conversation in conversations:
         objectorConversation = None
