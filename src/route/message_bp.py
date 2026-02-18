@@ -36,7 +36,7 @@ def add():
     
     message = str(message)
 
-    if message >= max_TEXT:
+    if len(message) >= max_TEXT:
         return send_response(400, 87050, {"message": "message too long"}, "error")
     
     conversation = Conversation.query.filter_by(idConversation = idConversation).first()
