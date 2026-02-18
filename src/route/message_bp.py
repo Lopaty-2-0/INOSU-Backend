@@ -9,7 +9,7 @@ from src.models.User import User
 from sqlalchemy import or_
 from src.utils.all_user_classes import all_user_classes
 from src.models.Task import Task
-from email.templates.conversation_message import email_conversation_message
+from src.email.templates.conversation_message import email_conversation_message
 from src.utils.send_email import send_email
 
 message_bp = Blueprint("message_bp", __name__)
