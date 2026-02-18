@@ -69,7 +69,21 @@ def add():
 
     newMessage = create_message(idConversation, flask_login.current_user.id, message, replyToMessage)
 
-    return send_response(200, 87111, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "createdAt":newMessage.createdAt, "sender":newMessage.sender, "replyToMessage":newMessage.replyToMessage}}, "success")
+    sender = {
+        "id": flask_login.current_user.id, 
+        "name": flask_login.current_user.name, 
+        "surname": flask_login.current_user.surname, 
+        "abbreviation": flask_login.current_user.abbreviation, 
+        "role": flask_login.current_user.role.value, 
+        "profilePicture": flask_login.current_user.profilePicture, 
+        "email": flask_login.current_user.email, 
+        "idClass": all_user_classes(flask_login.current_user.id), 
+        "createdAt": flask_login.current_user.createdAt, 
+        "updatedAt": flask_login.current_user.updatedAt, 
+        "reminders": flask_login.current_user.reminders
+    }
+
+    return send_response(200, 87111, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "message": newMessage.message, "createdAt":newMessage.createdAt, "sender": sender, "replyToMessage":newMessage.replyToMessage}}, "success")
     
 @message_bp.route("/message/delete", methods = ["DELETE"])
 @flask_login.login_required
