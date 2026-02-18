@@ -127,6 +127,7 @@ def get():
     pageNumber = request.args.get("pageNumber", None)
 
     allConversations = []
+    userData = None
 
     if not amountForPaging:
         return send_response(400, 89010, {"message": "amountForPaging not entered"}, "error")
@@ -167,6 +168,9 @@ def get():
         else:
             user = User.query.filter_by(id = conversation.idUser1).first()
 
+        if user:
+            userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
+
         if conversation.idTask:
             foundTask = Task.query.filter(id = conversation.idTask, guarantor = conversation.guarantor).first()
             guarantorUser = User.query.filter(id = conversation.guarantor).first()
@@ -182,7 +186,7 @@ def get():
                 "guarantor":guarantor,
             }
 
-        allConversations.append({"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived})
+        allConversations.append({"idConversation":conversation.idConversation, "user":userData, "task":task, "isArchived":conversation.isArchived})
 
     return send_response(200, 89091, {"message": "Conversations found successfuly", "conversations":allConversations, "count":count}, "success")
 
@@ -190,6 +194,7 @@ def get():
 @flask_login.login_required
 def get_guarantor():
     idTask = request.args.get("idTask", None)
+    userData = None
     
     if not idTask:
        return send_response(400, 90010, {"message": "idTask not entered"}, "error")
@@ -218,11 +223,15 @@ def get_guarantor():
     for conversation in conversations:
         objectorConversation = None
         studentConversation = None
+        userData = None
 
         if conversation.idUser1 == flask_login.current_user.id:
             user = User.query.filter_by(id = conversation.idUser2).first()
         else:
             user = User.query.filter_by(id = conversation.idUser1).first()
+
+        if user:
+            userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
 
         maturita = Maturita_Task.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first()
 
@@ -230,9 +239,9 @@ def get_guarantor():
             return send_response(400, 90050, {"message": "For this type of task can not exist conversations"}, "error")
         
         if user.id == maturita.objector:
-            objectorConversation = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
+            objectorConversation = {"idConversation":conversation.idConversation, "user":userData, "task":task, "isArchived":conversation.isArchived}
         else:
-            studentConversation = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
+            studentConversation = {"idConversation":conversation.idConversation, "user":userData, "task":task, "isArchived":conversation.isArchived}
 
     return send_response(200, 90061, {"message": "Conversations found successfuly", "objectorConversation":objectorConversation, "studentConversation":studentConversation}, "success")
 
@@ -241,6 +250,7 @@ def get_guarantor():
 def get_participant():
     idTask = request.args.get("idTask", None)
     guarantor = request.args.get("guarantor", None)
+    userData = None
     
     if not idTask:
        return send_response(400, 27010, {"message": "idTask not entered"}, "error")
@@ -286,12 +296,15 @@ def get_participant():
     else:
         user = User.query.filter_by(id = conversation.idUser1).first()
 
+    if user:
+        userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
+
     maturita = Maturita_Task.query.filter_by(idTask = idTask, guarantor = guarantor).first()
 
     if not maturita:
         return send_response(400, 27100, {"message": "For this type of task can not exist conversations"}, "error")
     
-    conversationData = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
+    conversationData = {"idConversation":conversation.idConversation, "user":userData, "task":task, "isArchived":conversation.isArchived}
 
     return send_response(200, 27111, {"message": "Conversations found successfuly", "conversation":conversationData}, "success")
 
@@ -300,6 +313,7 @@ def get_participant():
 def get_id():
     idConversation = request.args.get("idConversation", None)
     task = None
+    userData = None
 
     if not idConversation:
         return send_response(400, 91010, {"message": "idConversation missing"}, "error")
@@ -319,6 +333,10 @@ def get_id():
         user = User.query.filter_by(id = conversation.idUser2).first()
     else:
         user = User.query.filter_by(id = conversation.idUser1).first()
+    
+    if user:
+        userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
+
 
     foundTask = Task.query.filter_by(id = conversation.idTask, guarantor = conversation.guarantor).first()
 
@@ -332,6 +350,6 @@ def get_id():
             "deadline": foundTask.deadline,
         }
     
-    conversationData = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
+    conversationData = {"idConversation":conversation.idConversation, "user":userData, "task":task, "isArchived":conversation.isArchived}
 
     return send_response(200, 91051, {"message": "Conversation found successfuly", "conversation": conversationData}, "success")

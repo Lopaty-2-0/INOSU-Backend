@@ -156,6 +156,7 @@ def get_messages():
     pageNumber = request.args.get("pageNumber", None)
 
     allMessages = []
+    userData = None
 
     if not amountForPaging:
         return send_response(400, 60010, {"message": "amountForPaging not entered"}, "error")
@@ -208,12 +209,20 @@ def get_messages():
         replyMessageData = None
         user = User.query.filter_by(id = message.sender).first()
 
+        if user:
+            userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
+
         if message.replyToMessage:
             replyMessage = Message.query.filter_by(idMessage = message.replyToMessage, idConversation = idConversation).first()
             sender = User.query.filter_by(id = replyMessage.sender).first()
-            replyMessageData = {"idMessage":replyMessage.idMessage, "message":replyMessage.message, "createdAt":replyMessage.createdAt, "replyToMessage":replyMessage.replyToMessage, "sender":{"id": sender.id, "name": sender.name, "surname": sender.surname, "abbreviation": sender.abbreviation, "role": sender.role.value, "profilePicture": sender.profilePicture, "email": sender.email, "idClass": all_user_classes(sender.id), "createdAt":sender.createdAt, "updatedAt":sender.updatedAt, "reminders":sender.reminders}}
+            senderData = None
+            
+            if sender:
+                senderData = {"id": sender.id, "name": sender.name, "surname": sender.surname, "abbreviation": sender.abbreviation, "role": sender.role.value, "profilePicture": sender.profilePicture, "email": sender.email, "idClass": all_user_classes(sender.id), "createdAt":sender.createdAt, "updatedAt":sender.updatedAt, "reminders":sender.reminders}
+            
+            replyMessageData = {"idMessage":replyMessage.idMessage, "message":replyMessage.message, "createdAt":replyMessage.createdAt, "replyToMessage":replyMessage.replyToMessage, "sender":senderData}
 
-        allMessages.append({"idMessage":message.idMessage, "message":message.message, "createdAt":message.createdAt, "replyToMessage":replyMessageData, "sender":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}})
+        allMessages.append({"idMessage":message.idMessage, "message":message.message, "createdAt":message.createdAt, "replyToMessage":replyMessageData, "sender":userData})
 
     return send_response(200, 60131, {"message": "Messages for conversation found successfuly", "messages":allMessages, "count":count}, "success")
 
