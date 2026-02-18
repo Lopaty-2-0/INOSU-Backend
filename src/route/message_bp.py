@@ -164,7 +164,7 @@ def get_messages():
     if not conversation:
         return send_response(404, 60120, {"message": "conversation not found"}, "error")
     
-    messages = Message.query.filter_by(idConversation = idConversation).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    messages = Message.query.filter_by(idConversation = idConversation).order_by(Message.idMessage.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
     count =  Message.query.filter_by(idConversation = idConversation).count()
 
     for message in messages:
