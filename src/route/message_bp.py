@@ -8,6 +8,9 @@ from src.utils.message import create_message
 from src.models.User import User
 from sqlalchemy import or_
 from src.utils.all_user_classes import all_user_classes
+from src.models.Task import Task
+from email.templates.conversation_message import email_conversation_message
+from src.utils.send_email import send_email
 
 message_bp = Blueprint("message_bp", __name__)
 
@@ -49,14 +52,24 @@ def add():
             return send_response(400, 87080, {"message": "replyToMessage not valid"}, "error")
         if not Message.query.filter_by(idConversation = idConversation, idMessage = replyToMessage).first():
             return send_response(404, 87090, {"message": "nonexistent message"}, "error")
-        
     
     if conversation.isArchived:
         return send_response(400, 87100, {"message": "Can not write to this conversation"}, "error")
+    
+    if conversation.idTask:
+        if conversation.idUser1 == flask_login.current_user.id:
+            user = User.query.filter_by(id = conversation.idUser2).first()
+        else:
+            user = User.query.filter_by(id = conversation.idUser1).first()
+        
+        task = Task.query.filter_by(id = conversation.idTask, guarantor = conversation.guarantor).first()
+        html = email_conversation_message(user.name + " " + user.surname, flask_login.current_user.name + " " + flask_login.current_user.surname, task.name)
+        text = f"Došla zpráva od uživatele: {flask_login.current_user.name + " " + flask_login.current_user.surname}. Pro úkol: {task.name}"
+        send_email(user.email, "Incoming message", html, text)
 
     newMessage = create_message(idConversation, flask_login.current_user.id, message, replyToMessage)
 
-    return send_response(200, 87111, {"message": "Message sent successfuly", "message":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "createdAt":newMessage.createdAt, "sender":newMessage.sender, "replyToMessage":newMessage.replyToMessage}}, "success")
+    return send_response(200, 87111, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "createdAt":newMessage.createdAt, "sender":newMessage.sender, "replyToMessage":newMessage.replyToMessage}}, "success")
     
 @message_bp.route("/message/delete", methods = ["DELETE"])
 @flask_login.login_required

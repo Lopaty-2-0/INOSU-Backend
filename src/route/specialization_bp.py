@@ -1,12 +1,10 @@
 import flask_login
 from src.models.Specialization import Specialization
-from src.models.Class import Class
 from src.utils.paging import specialization_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db, max_INT
-from src.models.User_Class import User_Class
 
 specialization_bp = Blueprint("specialization", __name__)
 

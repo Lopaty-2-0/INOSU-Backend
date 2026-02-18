@@ -12,6 +12,8 @@ from src.utils.conversation import create_conversation
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Type
 from src.models.Maturita_Task import Maturita_Task
+from src.models.Maturita import Maturita
+import datetime
 
 conversation_bp = Blueprint("conversation_bp", __name__)
 #TODO: přidat job kterej změní chat na archivní pokud se jedná o maturitní chat
@@ -43,6 +45,7 @@ def add():
         return send_response(400, 86050, {"message": "Can not make a conversation with this user"}, "error")
     
     if idTask and guarantor:
+        now = datetime.datetime.now(datetime.timezone.utc)
         try:
             idTask = int(idTask)
         except:
@@ -62,18 +65,20 @@ def add():
             return send_response(404, 86100, {"message": "Nonexistent task"}, "error")
         if task.type != Type.Maturita:
             return send_response(400, 86110, {"message": "Can not add conversation for non maturita task"}, "error")
+        if Maturita_Task.query.join(Maturita, (Maturita.id == Maturita_Task.idMaturita)).filter(Maturita_Task.idTask == idTask, Maturita_Task.guarantor == guarantor, Maturita.startDate <= now, now <= Maturita.endDate).first():
+            return send_response(400, 86120, {"message": "Can not add conversation for a task that is past endDate"}, "error")
         if (flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first()):
-            return send_response(400, 86120, {"message": "these users can not make conversation for this task"}, "error")
+            return send_response(400, 86130, {"message": "these users can not make conversation for this task"}, "error")
     else:
         idTask = None
         guarantor = None
 
     if Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.idUser1 == idUser)), Conversation.idTask == idTask, Conversation.guarantor == guarantor).first():
-        return send_response(400, 86130, {"message": "these users already have conversation"}, "error")
+        return send_response(400, 86140, {"message": "these users already have conversation"}, "error")
     
     conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
 
-    return send_response(201, 86141, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
+    return send_response(201, 86151, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
 
 @conversation_bp.route("/conversation/delete", methods = ["DELETE"])
 @flask_login.login_required

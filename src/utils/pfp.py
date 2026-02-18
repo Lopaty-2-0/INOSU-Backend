@@ -21,7 +21,7 @@ def pfp_check(pfp):
     safePath = shlex.quote(relPath)
 
     stdin, stdout, stderr = ssh.exec_command(
-        f"/home/assembler/check_final.sh {safePath}" #TODO: změnit jakmile to udělá
+        f"/home/assembler/check_final.sh {safePath}"
     )
 
     exit_status = stdout.channel.recv_exit_status()
