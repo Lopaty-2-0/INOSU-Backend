@@ -155,9 +155,9 @@ def get():
     for conversation in conversations:
         task = None
         if conversation.idUser1 == flask_login.current_user.id:
-            user = User.query.filter_by(conversation.idUser2)
+            user = User.query.filter_by(id = conversation.idUser2).first()
         else:
-            user = User.query.filter_by(conversation.idUser1)
+            user = User.query.filter_by(id = conversation.idUser1).first()
 
         if conversation.idTask:
             foundTask = Task.query.filter(id = conversation.idTask, guarantor = conversation.guarantor).first()
@@ -208,10 +208,13 @@ def get_guarantor():
     conversations = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == idTask, Conversation.guarantor == flask_login.current_user.id)
     
     for conversation in conversations:
+        objectorConversation = None
+        studentConversation = None
+
         if conversation.idUser1 == flask_login.current_user.id:
-            user = User.query.filter_by(conversation.idUser2)
+            user = User.query.filter_by(id = conversation.idUser2).first()
         else:
-            user = User.query.filter_by(conversation.idUser1)
+            user = User.query.filter_by(id = conversation.idUser1).first()
 
         maturita = Maturita_Task.query.filter_by(idTask = idTask, guarantor = flask_login.current_user.id).first()
 
@@ -219,9 +222,9 @@ def get_guarantor():
             return send_response(400, 90050, {"message": "For this type of task can not exist conversations"}, "error")
         
         if user.id == maturita.objector:
-            objectorConversation = {{"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}}
+            objectorConversation = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
         else:
-            studentConversation = {{"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}}
+            studentConversation = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
 
     return send_response(200, 90061, {"message": "Conversations found successfuly", "objectorConversation":objectorConversation, "studentConversation":studentConversation}, "success")
 
@@ -268,15 +271,15 @@ def get_participant():
         return send_response(404, 27080, {"message": "conversation not found"}, "error")
     
     if conversation.idUser1 == flask_login.current_user.id:
-        user = User.query.filter_by(conversation.idUser2)
+        user = User.query.filter_by(id = conversation.idUser2).first()
     else:
-        user = User.query.filter_by(conversation.idUser1)
+        user = User.query.filter_by(id = conversation.idUser1).first()
 
     maturita = Maturita_Task.query.filter_by(idTask = idTask, guarantor = guarantor).first()
 
     if not maturita:
         return send_response(400, 27090, {"message": "For this type of task can not exist conversations"}, "error")
     
-    conversationData = {{"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}}
+    conversationData = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
 
     return send_response(200, 27111, {"message": "Conversations found successfuly", "conversation":conversationData}, "success")

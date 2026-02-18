@@ -14,6 +14,8 @@ from src.route.topic_bp import topic_bp
 from src.route.maturita_bp import maturita_bp
 from src.route.maturita_task_bp import maturita_task_bp
 from src.route.evaluator_bp import evaluator_bp
+from src.route.message_bp import message_bp
+from src.route.conversation_bp import conversation_bp
 
 routes_bp = Blueprint("routes", __name__)
 routes_bp.register_blueprint(auth_bp)
@@ -31,3 +33,5 @@ routes_bp.register_blueprint(topic_bp)
 routes_bp.register_blueprint(maturita_bp)
 routes_bp.register_blueprint(maturita_task_bp)
 routes_bp.register_blueprint(evaluator_bp)
+routes_bp.register_blueprint(message_bp)
+routes_bp.register_blueprint(conversation_bp)

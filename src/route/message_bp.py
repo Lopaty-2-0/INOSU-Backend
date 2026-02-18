@@ -110,7 +110,7 @@ def delete():
     db.session.delete(message)
     db.session.commit()
 
-    return send_response(200, 88121, {"message": "Message sent successfuly"}, "success")
+    return send_response(200, 88121, {"message": "Message deleted successfuly"}, "success")
     
 @flask_login.login_required
 @message_bp.route("/message/get", methods = ["GET"])
@@ -165,8 +165,10 @@ def get_messages():
         return send_response(404, 60120, {"message": "conversation not found"}, "error")
     
     messages = Message.query.filter_by(idConversation = idConversation).offset(amountForPaging * pageNumber).limit(amountForPaging)
+    count =  Message.query.filter_by(idConversation = idConversation).count()
 
     for message in messages:
+        replyMessageData = None
         user = User.query.filter_by(id = message.sender).first()
         if message.replyToMessage:
             replyMessage = Message.query.filter_by(idMessage = message.replyToMessage, idConversation = idConversation).first()
@@ -175,5 +177,5 @@ def get_messages():
 
         allMessages.append({"idMessage":message.idMessage, "message":message.message, "createdAt":message.createdAt, "replyToMessage":replyMessageData, "sender":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}})
 
-    return send_response(200, 60131, {"message": "Messages for conversation found successfuly", "messages":allMessages}, "success")
+    return send_response(200, 60131, {"message": "Messages for conversation found successfuly", "messages":allMessages, "count":count}, "success")
 

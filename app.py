@@ -91,6 +91,8 @@ try:
         from src.models.Maturita import Maturita
         from src.models.Maturita_Task import Maturita_Task
         from src.models.Evaluator import Evaluator
+        from src.models.Conversation import Conversation
+        from src.models.Message import Message
 
         db.create_all()
 
