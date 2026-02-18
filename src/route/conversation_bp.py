@@ -256,6 +256,9 @@ def get_participant():
     if not foundTask:
        return send_response(404, 27070, {"message": "task not found"}, "error")
     
+    if guarantor == flask_login.current_user.id:
+        return send_response(400, 27080, {"message": "This route is not for this user"}, "error")
+    
     task = {
         "id": foundTask.id,
         "name": foundTask.name,
@@ -268,7 +271,7 @@ def get_participant():
     conversation = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == idTask, Conversation.guarantor == guarantor).first()
     
     if not conversation:
-        return send_response(404, 27080, {"message": "conversation not found"}, "error")
+        return send_response(404, 27090, {"message": "conversation not found"}, "error")
     
     if conversation.idUser1 == flask_login.current_user.id:
         user = User.query.filter_by(id = conversation.idUser2).first()
@@ -278,7 +281,7 @@ def get_participant():
     maturita = Maturita_Task.query.filter_by(idTask = idTask, guarantor = guarantor).first()
 
     if not maturita:
-        return send_response(400, 27090, {"message": "For this type of task can not exist conversations"}, "error")
+        return send_response(400, 27100, {"message": "For this type of task can not exist conversations"}, "error")
     
     conversationData = {"idConversation":conversation.idConversation, "user":{"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}, "task":task, "isArchived":conversation.isArchived}
 
