@@ -74,7 +74,7 @@ def add():
         
         task = Task.query.filter_by(id = conversation.idTask, guarantor = conversation.guarantor).first()
         html = email_conversation_message(user.name + " " + user.surname, flask_login.current_user.name + " " + flask_login.current_user.surname, task.name)
-        text = f"Došla zpráva od uživatele: {flask_login.current_user.name + " " + flask_login.current_user.surname}. Pro úkol: {task.name}"
+        text = f"Došla zpráva od uživatele: {flask_login.current_user.name + ' ' + flask_login.current_user.surname}. Pro úkol: {task.name}"
         send_email(user.email, "Incoming message", html, text)
 
     newMessage = create_message(idConversation, flask_login.current_user.id, message, replyToMessage)
