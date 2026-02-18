@@ -25,7 +25,7 @@ def cancel_archive_conversation(idConversation, idTask, guarantor):
         except:
             pass
 
-def create_rarchive_conversation(idConversation, idTask, guarantor):
+def create_archive_conversation(idConversation, idTask, guarantor):
     task = Task.query.filter_by(id = idTask, guarantor = guarantor).first()
 
     if not task or task.type != Type.Maturita:

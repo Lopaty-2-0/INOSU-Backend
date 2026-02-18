@@ -19,7 +19,7 @@ import datetime
 from src.utils.paging import task_paging, maturita_task_paging
 from src.utils.team import make_team, delete_teams_for_task
 from app import db, max_INT, max_FLOAT
-from src.utils.reminder import cancel_reminder
+from src.utils.reminder import cancel_reminder, create_reminder
 
 task_bp = Blueprint("task", __name__)
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
@@ -190,6 +190,9 @@ def add_maturita_guarantor():
     db.session.add(Maturita_Task(idTopic = idTopic, idTask = idTask, guarantor = user.id, objector = None, idMaturita = maturita.id, variant = chr(variant)))
 
     db.session.commit()
+
+    if User.query.filter_by(id = idUser).first().reminders:
+        create_reminder(idUser, newTask.id, flask_login.current_user.id)
 
     guarantor = {
                 "id":user.id,
@@ -1108,7 +1111,7 @@ def delete_student():
         if not task:
             badIds.append(taskId)
             continue
-        
+
         conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
 
         for conversation in conversations:

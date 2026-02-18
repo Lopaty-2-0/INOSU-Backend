@@ -12,8 +12,11 @@ from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_migrate import Migrate
-from src.utils.enums import Role
+from src.utils.enums import Role, Type
 from apscheduler.schedulers.background import BackgroundScheduler
+from src.utils.reminder import create_reminder
+from src.utils.archive_conversation import create_archive_conversation
+import datetime
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -28,8 +31,8 @@ url = os.getenv("URL")
 hmac_ip = os.getenv("HMAC_IP")
 max_INT = 4294967295
 max_FLOAT = 3.40e+38
+max_TEXT = 65535
 
-#TODO: přidat dělání těch jobs při každém startu
 try:
     app = Flask(__name__)
 
@@ -101,6 +104,32 @@ try:
             newUser = User(name = "admin", surname = "admin", abbreviation = None, role = Role.Admin, password = generate_password_hash("admin"), profilePicture = None, email = "admin@admin.cz")
             db.session.add(newUser)
             db.session.commit()
+    
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    tasks = Task.query.filter(now <= Task.endDate)
+
+    for task in tasks:
+        user_teams = User_Team.query.filter_by(idTask = task.id, guarantor = task.guarantor)
+
+        for user_team in user_teams:
+            student = User.query.filter_by(id = user_team.idUser).first()
+
+            if student and student.reminder:
+                create_reminder(student.id, task.id, task.guarantor)
+
+        if task.type == Type.Maturita:
+            conversations = Conversation.query.filter_by(idTask = task.id, guarantor = task.guarantor)
+            
+            for conversation in conversations:
+                if conversation.idUser1 == task.guarantor:
+                    user = User.query.filter_by(id = conversation.idUser2).first()
+                else:
+                    user = User.query.filter_by(id = conversation.idUser1).first()
+                if user.role != Role.Student:
+                    continue
+                
+                create_archive_conversation(conversation.idConversation, task.id, task.guarantor)
         
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)

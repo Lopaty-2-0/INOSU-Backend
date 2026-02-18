@@ -14,7 +14,7 @@ from src.utils.enums import Type, Role
 from src.models.Maturita_Task import Maturita_Task
 from src.models.Maturita import Maturita
 import datetime
-from src.utils.archive_conversation import create_rarchive_conversation
+from src.utils.archive_conversation import create_archive_conversation
 
 conversation_bp = Blueprint("conversation_bp", __name__)
 
@@ -79,7 +79,7 @@ def add():
     conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
 
     if idTask and guarantor and user.role == Role.Student:
-        create_rarchive_conversation(conversation.idConversation, idTask, guarantor)
+        create_archive_conversation(conversation.idConversation, idTask, guarantor)
 
     return send_response(201, 86151, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
 
@@ -321,7 +321,7 @@ def get_id():
         user = User.query.filter_by(id = conversation.idUser1).first()
 
     foundTask = Task.query.filter_by(id = conversation.idTask, guarantor = conversation.guarantor).first()
-    
+
     if foundTask:
         task = {
             "id": foundTask.id,

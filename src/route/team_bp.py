@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db, max_FLOAT, max_INT
+from app import db, max_FLOAT, max_INT, max_TEXT
 from src.models.Team import Team
 from src.models.User import User
 from src.models.Task import Task
@@ -13,7 +13,7 @@ from src.utils.paging import team_paging
 from src.utils.archive_conversation import cancel_archive_conversation
 from src.models.Conversation import Conversation
 from src.utils.all_user_classes import all_user_classes
-from src.utils.reminder import cancel_reminder
+from src.utils.reminder import cancel_reminder, create_reminder
 from src.utils.maturita_task import maturita_task_delete
 from src.models.Maturita import Maturita
 from src.models.Maturita_Task import Maturita_Task
@@ -190,11 +190,13 @@ def update():
                         
                         maturitaTask.variant = chr(variant)
                         maturita_task_delete(user.idUser, maturita.id)
+
+                        if User.query.filter_by(id = user.idUser).first().reminders:
+                            create_reminder(user.idUser, idTask, flask_login.current_user.id)
                 else:
                     team.status = Status(status)
                     db.session.commit()
-
-            
+   
     if points or points == 0:
         try:
             points = float(points)
@@ -207,7 +209,7 @@ def update():
         team.points = points
     if isinstance(review, str):
         review = str(review)
-        if len(review) > 65535:
+        if len(review) > max_TEXT:
             return send_response(400, 32140, {"message": "Review too long"}, "error")
         team.review = review
         team.reviewUpdatedAt = datetime.datetime.now(datetime.timezone.utc)

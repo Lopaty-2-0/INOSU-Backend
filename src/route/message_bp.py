@@ -3,7 +3,7 @@ from src.models.Conversation import Conversation
 from src.models.Message import Message
 import flask_login
 from src.utils.response import send_response
-from app import max_INT, db
+from app import max_INT, db, max_TEXT
 from src.utils.message import create_message
 from src.models.User import User
 from sqlalchemy import or_
@@ -35,33 +35,36 @@ def add():
         return send_response(400, 87040, {"message": "message missing"}, "error")
     
     message = str(message)
+
+    if message >= max_TEXT:
+        return send_response(400, 87050, {"message": "message too long"}, "error")
     
     conversation = Conversation.query.filter_by(idConversation = idConversation).first()
 
     if not conversation:
-        return send_response(404, 87050, {"message": "conversation not found"}, "error")
+        return send_response(404, 87060, {"message": "conversation not found"}, "error")
     
     if conversation.idUser1 != flask_login.current_user.id and conversation.idUser2 != flask_login.current_user.id:
-        return send_response(400, 87060, {"message": "this user does not have access to this conversation"}, "error")
+        return send_response(400, 87070, {"message": "this user does not have access to this conversation"}, "error")
     
     if replyToMessage:
         try:
             replyToMessage = int(replyToMessage)
         except:
-            return send_response(400, 87070, {"message": "replyToMessage not integer"}, "error")
+            return send_response(400, 87080, {"message": "replyToMessage not integer"}, "error")
         if replyToMessage > max_INT or replyToMessage <= 0:
-            return send_response(400, 87080, {"message": "replyToMessage not valid"}, "error")
+            return send_response(400, 87090, {"message": "replyToMessage not valid"}, "error")
         
         replyMessage = Message.query.filter_by(idConversation = idConversation, idMessage = replyToMessage).first()
 
         if not replyMessage:
-            return send_response(404, 87090, {"message": "nonexistent message"}, "error")
+            return send_response(404, 87100, {"message": "nonexistent message"}, "error")
         
         sender = User.query.filter_by(id = replyMessage.sender).first()
         replyToMessageData = {"idMessage":replyMessage.idMessage, "message":replyMessage.message, "createdAt":replyMessage.createdAt, "replyToMessage":replyMessage.replyToMessage, "sender":{"id": sender.id, "name": sender.name, "surname": sender.surname, "abbreviation": sender.abbreviation, "role": sender.role.value, "profilePicture": sender.profilePicture, "email": sender.email, "idClass": all_user_classes(sender.id), "createdAt":sender.createdAt, "updatedAt":sender.updatedAt, "reminders":sender.reminders}}
         
     if conversation.isArchived:
-        return send_response(400, 87100, {"message": "Can not write to this conversation"}, "error")
+        return send_response(400, 87110, {"message": "Can not write to this conversation"}, "error")
     
     if conversation.idTask:
         if conversation.idUser1 == flask_login.current_user.id:
@@ -90,7 +93,7 @@ def add():
         "reminders": flask_login.current_user.reminders
     }
 
-    return send_response(200, 87111, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "message": newMessage.message, "createdAt":newMessage.createdAt, "sender": senderData, "replyToMessage":replyToMessageData}}, "success")
+    return send_response(200, 87121, {"message": "Message sent successfuly", "newMessage":{"idMessage":newMessage.idMessage, "idConversation":newMessage.idConversation, "message": newMessage.message, "createdAt":newMessage.createdAt, "sender": senderData, "replyToMessage":replyToMessageData}}, "success")
     
 @message_bp.route("/message/delete", methods = ["DELETE"])
 @flask_login.login_required
