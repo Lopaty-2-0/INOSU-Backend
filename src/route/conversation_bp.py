@@ -214,6 +214,8 @@ def get():
 @flask_login.login_required
 def get_guarantor():
     idTask = request.args.get("idTask", None)
+    objectorConversation = None
+    studentConversation = None
     userData = None
     
     if not idTask:
