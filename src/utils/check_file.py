@@ -8,6 +8,7 @@ from src.models.User import User
 from src.models.User_Team import User_Team
 from src.models.Team import Team
 from src.models.Version_Team import Version_Team
+from src.models.Maturita_Task import Maturita_Task
 
 def check_file_size(maxLength, size):
         if size is None:
@@ -15,7 +16,6 @@ def check_file_size(maxLength, size):
 
         if size > maxLength:
             return send_response(413, "F15020", {"message": "File exceeded max size"}, "error")
-
 
 def check_file_access(folder_type):
     def decorator(func):
@@ -87,8 +87,9 @@ def has_access_to_tasks(idUser, idTask, idTeam, idVersion, filename, guarantor):
         return False
 
     userTeam = User_Team.query.filter_by(idTask = idTask, idUser = idUser, guarantor = guarantor).first()
+    maturitaTask = Maturita_Task.query.filter_by(idTask = idTask, guarantor = guarantor, objector = idUser).first()
 
-    if not userTeam and task.guarantor != idUser:
+    if not userTeam and task.guarantor != idUser and not maturitaTask:
         return False
     
     if not idTeam and not idVersion:
