@@ -450,7 +450,7 @@ def get_team_info():
     if not team:
         return send_response(404, 45120, {"message": "Nonexistent team"}, "error")
     
-    if not User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor, idUser = flask_login.current_user.id).first() and flask_login.current_user.id != guarantor and Maturita_Task.query.filter_by(guarantor = guarantor, idTask = idTask, objector = flask_login.current_user.id).first():
+    if not User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor, idUser = flask_login.current_user.id).first() and flask_login.current_user.id != guarantor and not Maturita_Task.query.filter_by(guarantor = guarantor, idTask = idTask, objector = flask_login.current_user.id).first():
         return send_response(400, 45130, {"message": "No permission for that"}, "error")
 
     userTeams = User_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).order_by(User_Team.idUser.desc())
