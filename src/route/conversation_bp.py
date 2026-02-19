@@ -70,7 +70,7 @@ def add():
 
         if not maturitaTask:
             return send_response(400, 86120, {"message": "Can not add conversation for a task that is past endDate"}, "error")
-        if ((flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first())) and (maturitaTask.objector != idUser and maturitaTask.objector != flask_login.current_user.id) or (flask_login.current_user.id == maturitaTask.objector and user.role == Role.Student):
+        if (flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first() and (flask_login.current_user.id != maturitaTask.objector and user.id != maturitaTask.objector)):
             return send_response(400, 86130, {"message": "these users can not make conversation for this task"}, "error")
     else:
         idTask = None
