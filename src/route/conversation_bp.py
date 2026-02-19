@@ -170,8 +170,8 @@ def get():
     if pageNumber < 0:
         return send_response(400, 89080, {"message": "pageNumber must be bigger than 0"}, "error")
     
-    conversations = Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.deletedUser1 == False), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.idUser2 == False)), Conversation.idTask == None).order_by(Conversation.idConversation.desc()).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count = Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.deletedUser1 == False), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.idUser2 == False)), Conversation.idTask == None).count()
+    conversations = Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.deletedUser1 == False), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.deletedUser2 == False)), Conversation.idTask == None).order_by(Conversation.idConversation.desc()).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count = Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.deletedUser1 == False), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.deletedUser2 == False)), Conversation.idTask == None).count()
     
     for conversation in conversations:
         task = None
