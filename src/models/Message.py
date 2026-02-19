@@ -6,9 +6,9 @@ class Message(db.Model):
     __tablename__ = "message"
 
     idMessage = db.Column(INTEGER(unsigned=True), primary_key = True)
-    idConversation = db.Column(INTEGER(unsigned=True), nullable = False)
-    idUser1 = db.Column(INTEGER(unsigned=True), nullable = False)
-    idUser2 = db.Column(INTEGER(unsigned=True), nullable = False)
+    idConversation = db.Column(INTEGER(unsigned=True), primary_key = True)
+    idUser1 = db.Column(INTEGER(unsigned=True), primary_key = True)
+    idUser2 = db.Column(INTEGER(unsigned=True), primary_key = True)
     sender = db.Column(INTEGER(unsigned=True), nullable = False)
     message = db.Column(TEXT, nullable = False)
     createdAt = db.Column(db.DateTime(timezone=True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
