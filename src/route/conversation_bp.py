@@ -65,9 +65,12 @@ def add():
             return send_response(404, 86100, {"message": "Nonexistent task"}, "error")
         if task.type != Type.Maturita:
             return send_response(400, 86110, {"message": "Can not add conversation for non maturita task"}, "error")
-        if not  Maturita_Task.query.join(Maturita, (Maturita.id == Maturita_Task.idMaturita)).filter(Maturita_Task.idTask == idTask, Maturita_Task.guarantor == guarantor, Maturita.startDate <= now, now <= Maturita.endDate).first():
+        
+        maturitaTask = Maturita_Task.query.join(Maturita, (Maturita.id == Maturita_Task.idMaturita)).filter(Maturita_Task.idTask == idTask, Maturita_Task.guarantor == guarantor, Maturita.startDate <= now, now <= Maturita.endDate).first()
+        
+        if not maturitaTask:
             return send_response(400, 86120, {"message": "Can not add conversation for a task that is past endDate"}, "error")
-        if (flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first()):
+        if ((flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first())) and (maturitaTask.objector != idUser and maturitaTask.objector != flask_login.current_user.id):
             return send_response(400, 86130, {"message": "these users can not make conversation for this task"}, "error")
     else:
         idTask = None
