@@ -79,16 +79,16 @@ def add():
         if (oldConversation.idUser1 == flask_login.current_user.id and not oldConversation.deletedUser1) or (oldConversation.idUser2 == flask_login.current_user.id and not oldConversation.deletedUser2):
             return send_response(400, 86140, {"message": "these users already have conversation"}, "error")
     
-    if oldConversation.idUser1 == flask_login.current_user.id and oldConversation.deletedUser1:
-        oldConversation.deletedUser1 = False
-        conversation = oldConversation
-        db.session.commit()
-    elif oldConversation.idUser2 == flask_login.current_user.id and oldConversation.deletedUser2:
-        oldConversation.deletedUser2 = False
-        conversation = oldConversation
-        db.session.commit()
-    else:
-        conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
+        if oldConversation.idUser1 == flask_login.current_user.id and oldConversation.deletedUser1:
+            oldConversation.deletedUser1 = False
+            conversation = oldConversation
+            db.session.commit()
+        elif oldConversation.idUser2 == flask_login.current_user.id and oldConversation.deletedUser2:
+            oldConversation.deletedUser2 = False
+            conversation = oldConversation
+            db.session.commit()
+        else:
+            conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
     
 
     userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
