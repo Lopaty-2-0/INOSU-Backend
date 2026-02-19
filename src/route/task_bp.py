@@ -1474,7 +1474,7 @@ def get_maturita_objector():
             "points": points,
             "deadline": task.deadline,
             "guarantor":guarantor,
-            "user":userData,
+            "userData":userData,
             "idTeam":idTeam,
             "topic":topicName,
             "maxPoints":maxPoints,
