@@ -87,8 +87,8 @@ def add():
             oldConversation.deletedUser2 = False
             conversation = oldConversation
             db.session.commit()
-        else:
-            conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
+    else:
+        conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
     
 
     userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
