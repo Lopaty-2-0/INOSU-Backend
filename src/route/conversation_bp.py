@@ -88,11 +88,15 @@ def add():
         db.session.commit()
     else:
         conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
+    
+
+    userData = {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}
+
 
     if idTask and guarantor and user.role == Role.Student:
         create_archive_conversation(conversation.idConversation, idTask, guarantor, flask_login.current_user.id, idUser)
 
-    return send_response(201, 86151, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
+    return send_response(201, 86151, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "user":userData}}, "success")
 
 @conversation_bp.route("/conversation/delete", methods = ["DELETE"])
 @flask_login.login_required
