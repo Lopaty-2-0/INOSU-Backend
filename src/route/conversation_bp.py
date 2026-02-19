@@ -75,8 +75,9 @@ def add():
 
     oldConversation = Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.idUser1 == idUser)), Conversation.idTask == idTask, Conversation.guarantor == guarantor).first()
 
-    if oldConversation and (oldConversation.idUser1 == flask_login.current_user.id and not oldConversation.deletedUser1) or (oldConversation.idUser2 == flask_login.current_user.id and not oldConversation.deletedUser2):
-        return send_response(400, 86140, {"message": "these users already have conversation"}, "error")
+    if oldConversation:
+        if (oldConversation.idUser1 == flask_login.current_user.id and not oldConversation.deletedUser1) or (oldConversation.idUser2 == flask_login.current_user.id and not oldConversation.deletedUser2):
+            return send_response(400, 86140, {"message": "these users already have conversation"}, "error")
     
     if oldConversation.idUser1 == flask_login.current_user.id and oldConversation.deletedUser1:
         oldConversation.deletedUser1 = False
