@@ -79,7 +79,7 @@ def add():
     conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
 
     if idTask and guarantor and user.role == Role.Student:
-        create_archive_conversation(conversation.idConversation, idTask, guarantor)
+        create_archive_conversation(conversation.idConversation, idTask, guarantor, flask_login.current_user.id, idUser)
 
     return send_response(201, 86151, {"message": "Conversation created successfuly", "conversation":{"idConversation": conversation.idConversation, "idTask":conversation.idTask, "guarantor":conversation.guarantor, "idUser1":conversation.idUser1, "idUser2":conversation.idUser2}}, "success")
 
@@ -88,6 +88,7 @@ def add():
 def delete():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
+    idUser = data.get("idUser", None)
 
     if not idConversation:
         return send_response(400, 87010, {"message": "idConversation missing"}, "error")
@@ -97,28 +98,28 @@ def delete():
         return send_response(400, 87020, {"message": "idConversation not integer"}, "error")
     if idConversation > max_INT or idConversation <= 0:
         return send_response(400, 87030, {"message": "idConversation not valid"}, "error")
+    if not idUser:
+        return send_response(400, 87040, {"message": "idUser missing"}, "error")
+    try:
+        idUser = int(idUser)
+    except:
+        return send_response(400, 87050, {"message": "idUser not integer"}, "error")
+    if idUser > max_INT or idUser <= 0:
+        return send_response(400, 87060, {"message": "idUser not valid"}, "error")
     
-    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id)).first()
+    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser1 == idUser, Conversation.idUser2 == flask_login.current_user.id))).first()
     
     if not conversation or conversation.idTask:
-        return send_response(400, 87040, {"message": "Conversation not found or can not be deleted"}, "error")
+        return send_response(400, 87070, {"message": "Conversation not found or can not be deleted"}, "error")
     
     if conversation.idUser1 == flask_login.current_user.id:
-        conversation.idUser1 = None
+        conversation.deletedUser1 = True
     else:
-        conversation.idUser2 = None
+        conversation.deletedUser2 = True
 
-    senderMessages = Message.query.filter_by(idConversation = idConversation, sender = flask_login.current_user.id)
-
-    for senderMessage in senderMessages:
-        senderMessage.sender = None
     db.session.commit()
 
-    if not conversation.idUser1 and not conversation.idUser2:
-        db.session.delete(conversation)
-        db.session.commit()
-
-    return send_response(200, 87051, {"message": "Conversation deleted successfuly for current user"}, "success")
+    return send_response(200, 87081, {"message": "Conversation deleted successfuly for current user"}, "success")
 
 @conversation_bp.route("/conversation/get", methods = ["GET"])
 @flask_login.login_required
@@ -312,6 +313,7 @@ def get_participant():
 @flask_login.login_required
 def get_id():
     idConversation = request.args.get("idConversation", None)
+    idUser = request.args.get("idUser", None)
     task = None
     userData = None
 
@@ -323,11 +325,19 @@ def get_id():
         return send_response(400, 91020, {"message": "idConversation not integer"}, "error")
     if idConversation > max_INT or idConversation <= 0:
         return send_response(400, 91030, {"message": "idConversation not valid"}, "error")
+    if not idUser:
+        return send_response(400, 91040, {"message": "idUser missing"}, "error")
+    try:
+        idUser = int(idUser)
+    except:
+        return send_response(400, 91050, {"message": "idUser not integer"}, "error")
+    if idUser > max_INT or idUser <= 0:
+        return send_response(400, 91060, {"message": "idUser not valid"}, "error")
     
-    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id)).first()
+    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser1 == idUser, Conversation.idUser2 == flask_login.current_user.id))).first()
     
     if not conversation:
-        return send_response(404, 91040, {"message": "Conversation not found"}, "error")
+        return send_response(404, 91070, {"message": "Conversation not found"}, "error")
     
     if conversation.idUser1 == flask_login.current_user.id:
         user = User.query.filter_by(id = conversation.idUser2).first()
@@ -352,4 +362,4 @@ def get_id():
     
     conversationData = {"idConversation":conversation.idConversation, "user":userData, "task":task, "isArchived":conversation.isArchived}
 
-    return send_response(200, 91051, {"message": "Conversation found successfuly", "conversation": conversationData}, "success")
+    return send_response(200, 91081, {"message": "Conversation found successfuly", "conversation": conversationData}, "success")

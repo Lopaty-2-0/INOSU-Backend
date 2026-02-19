@@ -209,7 +209,7 @@ def delete():
         conversation = Conversation.query.filter(or_(Conversation.idUser1 == idUser, Conversation.idUser2 == idUser), Conversation.idTask == idTask, Conversation.guarantor == flask_login.current_user.id).first()
 
         if conversation:
-            cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarantor)
+            cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarantor, conversation.idUser1, conversation.idUser2)
             db.session.delete(conversation)
 
     db.session.delete(userTeam)

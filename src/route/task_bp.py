@@ -440,7 +440,7 @@ def delete():
                 if user.role != Role.Student:
                     continue
 
-                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
+                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator, conversation.idUser1, conversation.idUser2)
 
         delete_upload_task(id = taskId, guarantor = flask_login.current_user.id, task = task.task)
         db.session.delete(task)
@@ -1123,7 +1123,7 @@ def delete_student():
             if user.role != Role.Student:
                 continue
 
-            cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
+            cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator, conversation.idUser1, conversation.idUser2)
 
         cancel_reminder(idUser = flask_login.current_user.id, idTask = taskId, guarantor = guarantorId)
         

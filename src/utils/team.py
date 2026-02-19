@@ -4,6 +4,8 @@ from src.models.Version_Team import Version_Team
 from app import db
 from src.utils.version import delete_upload_version
 from src.utils.reminder import cancel_reminder
+from src.utils.archive_conversation import cancel_archive_conversation
+from src.models.Conversation import Conversation
 
 def make_team(idTask, status, name, isTeam, guarantor):
     if not Team.query.filter_by(idTask = idTask, guarantor = guarantor).first():
@@ -19,6 +21,10 @@ def make_team(idTask, status, name, isTeam, guarantor):
 
 def delete_teams_for_task(idTask, guarantor):
     teams = Team.query.filter_by(idTask = idTask, guarantor = guarantor)
+    conversations = Conversation.query.filter_by(idTask = idTask, guarantor = guarantor)
+
+    for conversation in conversations:
+        cancel_archive_conversation(conversation.idConversation, idTask, guarantor, conversation.idUser1, conversation.idUser2)
 
     for team in teams:
         users = User_Team.query.filter_by(idTask = idTask, idTeam = team.idTeam, guarantor = guarantor)

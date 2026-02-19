@@ -106,7 +106,7 @@ def delete():
                     if user.role != Role.Student:
                         continue
 
-                    cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
+                    cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator, conversation.idUser1, conversation.idUser2)
 
             delete_upload_task(task.task, task.guarantor, task.id)
 

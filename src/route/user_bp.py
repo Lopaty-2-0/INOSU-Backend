@@ -379,16 +379,11 @@ def delete():
 
             for conversation in conversations:
                 if conversation.idUser1 == id:
-                    conversation.idUser1 = None
+                    conversation.deletedUser1 = True
                 else:
-                    conversation.idUser2 = None
-                
-                messages = Message.query.filter_by(idConversation = conversation.idConversation, sender = id)
+                    conversation.deletedUser2 = True
 
-                for message in messages:
-                    message.sender = None
-
-                if not conversation.idUser1 and not conversation.idUser2:
+                if conversation.deletedUser1 and conversation.deletedUser2:
                     
                     if task.type == Type.Maturita:
                         if conversation.idUser1 == conversation.guarantor:
@@ -399,7 +394,7 @@ def delete():
                         if user.role != Role.Student:
                             continue
 
-                        cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator)
+                        cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarnator, conversation.idUser1, conversation.idUser2)
 
                     db.session.delete(conversation)
 

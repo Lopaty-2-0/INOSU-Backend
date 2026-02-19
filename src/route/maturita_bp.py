@@ -335,7 +335,7 @@ def delete():
                 cancel_reminder(user_team.idUser, user_team.idTask, user_team.guarantor)
             
             for conversation in conversations:
-                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarantor)
+                cancel_archive_conversation(conversation.idConversation, conversation.idTask, conversation.guarantor, conversation.idUser1, conversation.idUser2)
             
         db.session.delete(maturita)
         goodIds.append(id)
