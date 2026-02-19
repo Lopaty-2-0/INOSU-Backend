@@ -156,7 +156,7 @@ def get_messages():
     pageNumber = request.args.get("pageNumber", None)
 
     allMessages = []
-    userData = None
+    
 
     if not amountForPaging:
         return send_response(400, 60010, {"message": "amountForPaging not entered"}, "error")
@@ -207,6 +207,7 @@ def get_messages():
     for i in range(len(messages), 0, -1):
         message = messages[i-1]
         replyMessageData = None
+        userData = None
         user = User.query.filter_by(id = message.sender).first()
 
         if user:
