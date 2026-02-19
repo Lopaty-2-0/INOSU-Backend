@@ -217,7 +217,7 @@ def get_messages():
     if idUser > max_INT or idUser <= 0:
         return send_response(400, 60140, {"message": "idUser not valid"}, "error")
     
-    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser1 == idUser, Conversation.idUser2 == flask_login.current_user.id))).first()
+    conversation = Conversation.query.filter(Conversation.idConversation == idConversation, or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser, Conversation.deletedUser1 == False), and_(Conversation.idUser1 == idUser, Conversation.idUser2 == flask_login.current_user.id, Conversation.deletedUser2 == False))).first()
 
     if not conversation:
         return send_response(404, 60150, {"message": "conversation not found"}, "error")
