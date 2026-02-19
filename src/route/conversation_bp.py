@@ -73,10 +73,21 @@ def add():
         idTask = None
         guarantor = None
 
-    if Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.idUser1 == idUser)), Conversation.idTask == idTask, Conversation.guarantor == guarantor).first():
+    oldConversation = Conversation.query.filter(or_(and_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == idUser), and_(Conversation.idUser2 == flask_login.current_user.id, Conversation.idUser1 == idUser)), Conversation.idTask == idTask, Conversation.guarantor == guarantor).first()
+
+    if oldConversation and (oldConversation.idUser1 == flask_login.current_user.id and not oldConversation.deletedUser1) or (oldConversation.idUser2 == flask_login.current_user.id and not oldConversation.deletedUser2):
         return send_response(400, 86140, {"message": "these users already have conversation"}, "error")
     
-    conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
+    if oldConversation.idUser1 == flask_login.current_user.id and oldConversation.deletedUser1:
+        oldConversation.deletedUser1 = False
+        conversation = oldConversation
+        db.session.commit()
+    elif oldConversation.idUser2 == flask_login.current_user.id and oldConversation.deletedUser2:
+        oldConversation.deletedUser2 = False
+        conversation = oldConversation
+        db.session.commit()
+    else:
+        conversation = create_conversation(flask_login.current_user.id, idUser, idTask, guarantor)
 
     if idTask and guarantor and user.role == Role.Student:
         create_archive_conversation(conversation.idConversation, idTask, guarantor, flask_login.current_user.id, idUser)
