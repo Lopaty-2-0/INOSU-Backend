@@ -67,10 +67,10 @@ def add():
             return send_response(400, 86110, {"message": "Can not add conversation for non maturita task"}, "error")
         
         maturitaTask = Maturita_Task.query.join(Maturita, (Maturita.id == Maturita_Task.idMaturita)).filter(Maturita_Task.idTask == idTask, Maturita_Task.guarantor == guarantor, Maturita.startDate <= now, now <= Maturita.endDate).first()
-        
+
         if not maturitaTask:
             return send_response(400, 86120, {"message": "Can not add conversation for a task that is past endDate"}, "error")
-        if ((flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first())) and (maturitaTask.objector != idUser and maturitaTask.objector != flask_login.current_user.id):
+        if ((flask_login.current_user.id != guarantor and idUser != guarantor) or (not User_Team.query.filter(User_Team.idTask == idTask, User_Team.guarantor == guarantor, or_(User_Team.idUser == flask_login.current_user.id, User_Team.idUser == idUser)).first())) and (maturitaTask.objector != idUser and maturitaTask.objector != flask_login.current_user.id) or (flask_login.current_user.id == maturitaTask.objector and user.role == Role.Student):
             return send_response(400, 86130, {"message": "these users can not make conversation for this task"}, "error")
     else:
         idTask = None
