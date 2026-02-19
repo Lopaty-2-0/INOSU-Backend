@@ -243,8 +243,6 @@ def get_guarantor():
     conversations = Conversation.query.filter(or_(Conversation.idUser1 == flask_login.current_user.id, Conversation.idUser2 == flask_login.current_user.id), Conversation.idTask == idTask, Conversation.guarantor == flask_login.current_user.id).order_by(Conversation.idConversation.desc())
     
     for conversation in conversations:
-        objectorConversation = None
-        studentConversation = None
         userData = None
 
         if conversation.idUser1 == flask_login.current_user.id:
