@@ -132,6 +132,9 @@ def delete():
     else:
         conversation.deletedUser2 = True
 
+    if conversation.deletedUser1 and conversation.deletedUser2:
+        db.session.delete(conversation)
+
     db.session.commit()
 
     return send_response(200, 87081, {"message": "Conversation deleted successfuly for current user"}, "success")
