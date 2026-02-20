@@ -95,6 +95,7 @@ try:
         from src.models.Evaluator import Evaluator
         from src.models.Conversation import Conversation
         from src.models.Message import Message
+        from src.models.Event import Event
 
         db.create_all()
 
