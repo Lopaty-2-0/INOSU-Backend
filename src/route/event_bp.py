@@ -26,25 +26,23 @@ def add():
 
     now = datetime.datetime.now(tz = datetime.timezone.utc)
 
-    if not description:
-        return send_response(400, 92010, {"message": "description missing"}, "error")
     if not name:
-        return send_response(400, 92020, {"message": "name missing"}, "error")
+        return send_response(400, 92010, {"message": "name missing"}, "error")
     if not endDate:
-        return send_response(400, 92030, {"message": "endDate missing"}, "error")
+        return send_response(400, 92020, {"message": "endDate missing"}, "error")
     
     if idUser and flask_login.current_user.role != Role.Student:
         try:
             idUser = int(idUser)
         except:
-            return send_response(400, 92040, {"message": "idUser not integer"}, "error")
+            return send_response(400, 92030, {"message": "idUser not integer"}, "error")
         if idUser > max_INT or idUser <= 0:
-            return send_response(400, 92050, {"message": "idUser not valid"}, "error")
+            return send_response(400, 92040, {"message": "idUser not valid"}, "error")
         
         user = User.query.filter_by(id = idUser).first()
 
         if not user:
-            return send_response(404, 92060, {"message": "Nonexistent user"}, "error")
+            return send_response(404, 92050, {"message": "Nonexistent user"}, "error")
         
         type = Event_Type.ByTeacher
 
@@ -53,36 +51,37 @@ def add():
     try:
         endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
     except:
-        return send_response(400, 92070, {"message":"End date not integer or is too far"}, "error")
+        return send_response(400, 92060, {"message":"End date not integer or is too far"}, "error")
     if endDate < now:
-        return send_response(400, 92080, {"message":"End date before now"}, "error")
+        return send_response(400, 92070, {"message":"End date before now"}, "error")
     if startDate:
         try:
             startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
         except:
-            return send_response(400, 92090, {"message":"startDate not integer or is too far"}, "error")
+            return send_response(400, 92080, {"message":"startDate not integer or is too far"}, "error")
         if endDate.date() != startDate.date():
-            return send_response(400, 92100, {"message":"endDate and startDate not on the same date"}, "error")
+            return send_response(400, 92090, {"message":"endDate and startDate not on the same date"}, "error")
         if startDate < now:
-            return send_response(400, 92110, {"message":"startDate before now"}, "error")
+            return send_response(400, 92100, {"message":"startDate before now"}, "error")
         if endDate <= startDate:
-            return send_response(400, 92120, {"message":"endDate before startDate"}, "error")
+            return send_response(400, 92110, {"message":"endDate before startDate"}, "error")
     if type and not isinstance(type, Event_Type):
         if type not in [t.value for t in Event_Type]:
-            return send_response(400, 92130, {"message": "Type not our type"}, "error")
+            return send_response(400, 92120, {"message": "Type not our type"}, "error")
         type = Event_Type(type)
     
     name = str(name)
-    description = str(description)
 
     if len(name) > 255:
-        return send_response(400, 92140, {"message": "Name too long"}, "error")
-    if len(description) > 255:
-        return send_response(400, 92150, {"message": "Description too long"}, "error")
+        return send_response(400, 92130, {"message": "Name too long"}, "error")
+    if description:
+        description = str(description)
+        if len(description) > 255:
+            return send_response(400, 92140, {"message": "Description too long"}, "error")
     
     event = create_event(idUser, flask_login.current_user.id, name, description, startDate, endDate, type)
 
-    return send_response(201, 92161, {"message": "event created successfuly", "event":{"idEvent": event.idEvent, "idUser":event.idUser, "maker":event.maker, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type.value if isinstance(type, Event_Type) else type}}, "success")
+    return send_response(201, 92151, {"message": "event created successfuly", "event":{"idEvent": event.idEvent, "idUser":event.idUser, "maker":event.maker, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type.value if isinstance(type, Event_Type) else type}}, "success")
 
 @event_bp.route("/event/delete", methods = ["DELETE"])
 @flask_login.login_required

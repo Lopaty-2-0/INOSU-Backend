@@ -9,7 +9,7 @@ class Event(db.Model):
     idUser = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id", ondelete = "CASCADE"), nullable = False)
     maker = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id", ondelete = "CASCADE"), primary_key = True)
     name = db.Column(db.VARCHAR(255), nullable = False)
-    description = db.Column(db.VARCHAR(500), nullable = False)
+    description = db.Column(db.VARCHAR(500), nullable = True)
     startDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=True)
     endDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
     type = db.Column(db.Enum(Event_Type), nullable = True)
