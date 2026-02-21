@@ -10,7 +10,6 @@ from src.utils.event import create_event
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Event_Type, Role
 import datetime
-from sqlalchemy import func
 
 event_bp = Blueprint("event_bp", __name__)
 
@@ -172,7 +171,7 @@ def get():
         return send_response(400, 94090, {"message":"date not integer or is too far"}, "error")
     
     start = date.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1)
-    end = start + datetime.timedelta(days=1)
+    end = start.replace(hour=23, minute=0, second=0, microsecond=0)
 
     events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
     count += Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).count()
@@ -321,9 +320,8 @@ def get_maker():
     except:
         return send_response(400, 97090, {"message":"date not integer or is too far"}, "error")
     
-    start = date.replace(hour=0, minute=0, second=0, microsecond=0)
-    end = start + datetime.timedelta(days=1)
-    
+    start = date.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1)
+    end = start.replace(hour=23, minute=0, second=0, microsecond=0)
     
     events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
     count = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).count()
