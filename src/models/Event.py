@@ -1,7 +1,6 @@
 from app import db
 from sqlalchemy.dialects.mysql import INTEGER
 from src.utils.enums import Event_Type
-import datetime
 
 class Event(db.Model):
     __tablename__ = "event"
@@ -10,8 +9,8 @@ class Event(db.Model):
     maker = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id", ondelete = "CASCADE"), primary_key = True)
     name = db.Column(db.VARCHAR(255), nullable = False)
     description = db.Column(db.VARCHAR(500), nullable = True)
-    startDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=True)
-    endDate = db.Column(db.DateTime(timezone = True), default=lambda:datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    startDate = db.Column(db.DateTime(timezone = True), nullable=True)
+    endDate = db.Column(db.DateTime(timezone = True), nullable=False)
     type = db.Column(db.Enum(Event_Type), nullable = True)
     
     def __init__(self, idEvent, idUser, maker, name, description, startDate, endDate, type):

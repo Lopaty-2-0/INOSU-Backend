@@ -86,7 +86,7 @@ def add():
     
     event = create_event(idUser, flask_login.current_user.id, name, description, startDate, endDate, type)
 
-    return send_response(201, 92161, {"message": "event created successfuly", "event":{"idEvent": event.idEvent, "idUser":event.idUser, "maker":event.maker, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type.value if isinstance(type, Event_Type) else type}}, "success")
+    return send_response(201, 92161, {"message": "event created successfuly", "event":{"idEvent": event.idEvent, "idUser":event.idUser, "maker":event.maker, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "name":event.name, "type":type.value if isinstance(type, Event_Type) else type}}, "success")
 
 @event_bp.route("/event/delete", methods = ["DELETE"])
 @flask_login.login_required
@@ -136,8 +136,7 @@ def get():
     count = 0
 
     allEvents = []
-    allTasks = []
-    tasks = None
+    tasks = []
 
     if not amountForPaging:
         return send_response(400, 94010, {"message": "amountForPaging not entered"}, "error")
@@ -173,23 +172,17 @@ def get():
         return send_response(400, 94090, {"message":"date not integer or is too far"}, "error")
     
     
-    events = Event.query.filter(Event.idUser == flask_login.current_user.id, func.date(Event.endDate) == date.date()).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    events = Event.query.filter(Event.idUser == flask_login.current_user.id, func.date(Event.endDate) == date.date()).offset(pageNumber * amountForPaging).limit(amountForPaging).all()
     count += Event.query.filter(Event.idUser == flask_login.current_user.id, func.date(Event.endDate) == date.date()).count()
 
     pageNumber -= int(events.count()/amountForPaging)
     amountForPaging -= events.count()
     
     if amountForPaging:
-        tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(func.date(Task.endDate) == date.date(), User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging) 
+        tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(func.date(Task.endDate) == date.date(), User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging).all()
 
     count += Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(func.date(Task.endDate) == date.date(), User_Team.idUser == flask_login.current_user.id).count()
     
-    for task in tasks:
-        guarantorUser = User.query.filter_by(id = event.guarantor).first()
-
-        guarantor = {"id": guarantorUser.id, "name": guarantorUser.name, "surname": guarantorUser.surname, "abbreviation": guarantorUser.abbreviation, "role": guarantorUser.role.value, "profilePicture": guarantorUser.profilePicture, "email": guarantorUser.email, "idClass": all_user_classes(guarantorUser.id), "createdAt":guarantorUser.createdAt, "updatedAt":guarantorUser.updatedAt, "reminders":guarantorUser.reminders}
-        allTasks.append({"id": task.id, "name": task.name, "startDate": task.startDate, "endDate": task.endDate, "task": task.task, "deadline": task.deadline, "guarantor":guarantor, "type":task.type.value})
-
     for event in events:
         user = User.query.filter_by(id = event.maker).first()
 
@@ -202,7 +195,13 @@ def get():
 
         allEvents.append({"idEvent":event.idEvent, "user":userData, "name":event.name, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type})
 
-    return send_response(200, 94101, {"message": "events found successfuly", "events":allEvents, "count":count, "tasks":allTasks}, "success")
+    for task in tasks:
+        guarantorUser = User.query.filter_by(id = event.guarantor).first()
+
+        guarantor = {"id": guarantorUser.id, "name": guarantorUser.name, "surname": guarantorUser.surname, "abbreviation": guarantorUser.abbreviation, "role": guarantorUser.role.value, "profilePicture": guarantorUser.profilePicture, "email": guarantorUser.email, "idClass": all_user_classes(guarantorUser.id), "createdAt":guarantorUser.createdAt, "updatedAt":guarantorUser.updatedAt, "reminders":guarantorUser.reminders}
+        allEvents.append({"name": task.name, "endDate": task.endDate, "guarantor":guarantor, "type":task.type.value})
+
+    return send_response(200, 94101, {"message": "events found successfuly", "events":allEvents, "count":count}, "success")
 
 @event_bp.route("/event/get/id", methods = ["GET"])
 @flask_login.login_required
@@ -321,7 +320,7 @@ def get_maker():
         return send_response(400, 97090, {"message":"date not integer or is too far"}, "error")
     
     
-    events = Event.query.filter(Event.maker == flask_login.current_user.id, func.date(Event.endDate) == date.date()).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    events = Event.query.filter(Event.maker == flask_login.current_user.id, func.date(Event.endDate) == date.date()).offset(pageNumber * amountForPaging).limit(amountForPaging).all()
     count = Event.query.filter(Event.maker == flask_login.current_user.id, func.date(Event.endDate) == date.date()).count()
 
     for event in events:
@@ -361,8 +360,8 @@ def get_week():
     if endDate <= startDate:
         return send_response(400, 98030, {"message":"endDate before startDate"}, "error")
     
-    events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate)
-    tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= startDate, Task.endDate <= endDate, User_Team.idUser == flask_login.current_user.id)
+    events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate).all()
+    tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= startDate, Task.endDate <= endDate, User_Team.idUser == flask_login.current_user.id).all()
 
     for task in tasks:
         allTasks.append({"endDate": task.endDate, "type":task.type.value})
@@ -387,7 +386,7 @@ def get_maker_week():
 
     try:
         endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
-    except:
+    except: 
         return send_response(400, 99010, {"message":"End date not integer or is too far"}, "error")
     try:
         startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
@@ -397,7 +396,7 @@ def get_maker_week():
     if endDate <= startDate:
         return send_response(400, 99030, {"message":"endDate before startDate"}, "error")
     
-    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate)
+    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate).all()
 
     for event in events:
         if event.type:
