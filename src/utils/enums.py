@@ -15,6 +15,6 @@ class Role(enum.Enum):
     Admin = "admin"
 
 class Event_Type(enum.Enum):
-    ByTeacher = "byTeacher"
+    ByOther = "byOther"
     Own = "own"
     Task = "task"

@@ -44,7 +44,7 @@ def add():
         if not user:
             return send_response(404, 92050, {"message": "Nonexistent user"}, "error")
         
-        type = Event_Type.ByTeacher
+        type = Event_Type.ByOther
 
     else:
         idUser = flask_login.current_user.id
@@ -68,20 +68,24 @@ def add():
     if type and not isinstance(type, Event_Type):
         if type not in [t.value for t in Event_Type]:
             return send_response(400, 92120, {"message": "Type not our type"}, "error")
+
         type = Event_Type(type)
+
+        if type == Event_Type.ByOther and flask_login.current_user.role == Role.Student:
+            return send_response(400, 92130, {"message": "Can not use this type"}, "error")
     
     name = str(name)
 
     if len(name) > 255:
-        return send_response(400, 92130, {"message": "Name too long"}, "error")
+        return send_response(400, 92140, {"message": "Name too long"}, "error")
     if description:
         description = str(description)
         if len(description) > 255:
-            return send_response(400, 92140, {"message": "Description too long"}, "error")
+            return send_response(400, 92150, {"message": "Description too long"}, "error")
     
     event = create_event(idUser, flask_login.current_user.id, name, description, startDate, endDate, type)
 
-    return send_response(201, 92151, {"message": "event created successfuly", "event":{"idEvent": event.idEvent, "idUser":event.idUser, "maker":event.maker, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type.value if isinstance(type, Event_Type) else type}}, "success")
+    return send_response(201, 92161, {"message": "event created successfuly", "event":{"idEvent": event.idEvent, "idUser":event.idUser, "maker":event.maker, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type.value if isinstance(type, Event_Type) else type}}, "success")
 
 @event_bp.route("/event/delete", methods = ["DELETE"])
 @flask_login.login_required
