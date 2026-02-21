@@ -349,7 +349,6 @@ def get_week():
     endDate = request.args.get("endDate", None)
 
     allEvents = []
-    allTasks = []
 
     try:
         endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
@@ -367,7 +366,7 @@ def get_week():
     tasks = Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= startDate, Task.endDate <= endDate, User_Team.idUser == flask_login.current_user.id)
 
     for task in tasks:
-        allTasks.append({"endDate": task.endDate, "type":task.type.value})
+        allEvents.append({"endDate": task.endDate, "type":task.type.value})
 
     for event in events:
         if event.type:
@@ -377,7 +376,7 @@ def get_week():
 
         allEvents.append({"endDate":event.endDate, "type":type})
 
-    return send_response(200, 98041, {"message": "events found successfuly", "events":allEvents, "tasks":allTasks}, "success")
+    return send_response(200, 98041, {"message": "events found successfuly", "events":allEvents}, "success")
 
 @event_bp.route("/event/get/maker/week", methods = ["GET"])
 @flask_login.login_required
