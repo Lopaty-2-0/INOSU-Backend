@@ -171,17 +171,20 @@ def get():
     except:
         return send_response(400, 94090, {"message":"date not integer or is too far"}, "error")
     
+    start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + datetime.timedelta(days=1)
     
-    events = Event.query.filter(Event.idUser == flask_login.current_user.id, func.date(Event.endDate) == date.date()).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count += Event.query.filter(Event.idUser == flask_login.current_user.id, func.date(Event.endDate) == date.date()).count()
+    
+    events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count += Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).count()
 
     pageNumber -= int(events.count()/amountForPaging)
     amountForPaging -= events.count()
     
     if amountForPaging:
-        tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(func.date(Task.endDate) == date.date(), User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
+        tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
 
-    count += Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(func.date(Task.endDate) == date.date(), User_Team.idUser == flask_login.current_user.id).count()
+    count += Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).count()
     
     for event in events:
         user = User.query.filter_by(id = event.maker).first()
@@ -319,9 +322,12 @@ def get_maker():
     except:
         return send_response(400, 97090, {"message":"date not integer or is too far"}, "error")
     
+    start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + datetime.timedelta(days=1)
     
-    events = Event.query.filter(Event.maker == flask_login.current_user.id, func.date(Event.endDate) == date.date()).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count = Event.query.filter(Event.maker == flask_login.current_user.id, func.date(Event.endDate) == date.date()).count()
+    
+    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).count()
 
     for event in events:
 
