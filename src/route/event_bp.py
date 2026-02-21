@@ -180,9 +180,9 @@ def get():
     amountForPaging -= events.count()
     
     if amountForPaging:
-        tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
+        tasks = Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
 
-    count += Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).count()
+    count += Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).count()
     
     for event in events:
         user = User.query.filter_by(id = event.maker).first()
@@ -200,7 +200,7 @@ def get():
         guarantorUser = User.query.filter_by(id = task.guarantor).first()
 
         guarantor = {"id": guarantorUser.id, "name": guarantorUser.name, "surname": guarantorUser.surname, "abbreviation": guarantorUser.abbreviation, "role": guarantorUser.role.value, "profilePicture": guarantorUser.profilePicture, "email": guarantorUser.email, "idClass": all_user_classes(guarantorUser.id), "createdAt":guarantorUser.createdAt, "updatedAt":guarantorUser.updatedAt, "reminders":guarantorUser.reminders}
-        allEvents.append({"name": task.name, "endDate": task.endDate, "guarantor":guarantor, "type":task.type.value})
+        allEvents.append({"name": task.name, "endDate": task.endDate, "user":guarantor, "type":task.type.value})
 
     return send_response(200, 94101, {"message": "events found successfuly", "events":allEvents, "count":count}, "success")
 
@@ -364,7 +364,7 @@ def get_week():
         return send_response(400, 98030, {"message":"endDate before startDate"}, "error")
     
     events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate)
-    tasks = Task.query.join(User_Team, User_Team.idTask == Task.id & User_Team.guarantor == Task.guarantor).filter(Task.endDate >= startDate, Task.endDate <= endDate, User_Team.idUser == flask_login.current_user.id)
+    tasks = Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= startDate, Task.endDate <= endDate, User_Team.idUser == flask_login.current_user.id)
 
     for task in tasks:
         allTasks.append({"endDate": task.endDate, "type":task.type.value})
