@@ -259,7 +259,7 @@ def get_id_maker():
     if idEvent > max_INT or idEvent <= 0:
         return send_response(400, 96030, {"message": "idEvent not valid"}, "error")
     
-    event = Event.query.filter_by(idEvent = idEvent, maker = flask_login.current_user.id).first()
+    event = Event.query.filter(Event.idEvent == idEvent, Event.maker == flask_login.current_user.id, Event.idUser != flask_login.current_user.id).first()
     
     if not event:
         return send_response(404, 96040, {"message": "Event not found"}, "error")
@@ -323,8 +323,8 @@ def get_maker():
     start = date.replace(hour=23, minute=0, second=0, microsecond=0) 
     end = start + datetime.timedelta(days=1)
     
-    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).count()
+    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end, Event.idUser != flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end, Event.idUser != flask_login.current_user.id).count()
 
     for event in events:
 
@@ -399,7 +399,7 @@ def get_maker_week():
     if endDate <= startDate:
         return send_response(400, 99030, {"message":"endDate before startDate"}, "error")
     
-    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate)
+    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate <= endDate, Event.endDate >= startDate, Event.idUser != flask_login.current_user.id)
 
     for event in events:
         if event.type:
