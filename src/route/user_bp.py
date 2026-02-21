@@ -373,7 +373,9 @@ def delete():
                 object.objector = None
             for task in tas:
                 delete_teams_for_task(task.id, id)
-                delete_upload_task(task.task, task.id, id)
+                
+                if task.task:
+                    delete_upload_task(task.task, task.id, id)
 
             conversations = Conversation.query.filter(or_(Conversation.idUser1 == id, Conversation.idUser2 == id))
 

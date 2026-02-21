@@ -328,7 +328,7 @@ def delete():
                 if version.elaboration:
                     delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
 
-            if task:
+            if task.task:
                 delete_upload_task(task.task, task.guarantor, task.id)
             
             for user_team in user_teams:

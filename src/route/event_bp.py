@@ -197,7 +197,7 @@ def get():
         allEvents.append({"idEvent":event.idEvent, "user":userData, "name":event.name, "description":event.description, "startDate":event.startDate, "endDate":event.endDate, "type":type})
 
     for task in tasks:
-        guarantorUser = User.query.filter_by(id = event.guarantor).first()
+        guarantorUser = User.query.filter_by(id = task.guarantor).first()
 
         guarantor = {"id": guarantorUser.id, "name": guarantorUser.name, "surname": guarantorUser.surname, "abbreviation": guarantorUser.abbreviation, "role": guarantorUser.role.value, "profilePicture": guarantorUser.profilePicture, "email": guarantorUser.email, "idClass": all_user_classes(guarantorUser.id), "createdAt":guarantorUser.createdAt, "updatedAt":guarantorUser.updatedAt, "reminders":guarantorUser.reminders}
         allEvents.append({"name": task.name, "endDate": task.endDate, "guarantor":guarantor, "type":task.type.value})
