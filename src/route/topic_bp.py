@@ -17,6 +17,7 @@ from flask import request, Blueprint
 from app import db, max_INT
 from src.utils.reminder import cancel_reminder
 
+#TODO: přidat export + import (json)
 
 topic_bp = Blueprint("topic", __name__)
 

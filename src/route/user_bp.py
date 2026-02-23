@@ -26,6 +26,8 @@ from src.utils.enums import Role, Type
 from src.utils.paging import user_paging
 from sqlalchemy import or_
 
+#TODO: přidat export (json)
+
 user_bp = Blueprint("user", __name__)
 
 email_regex = r"^\S+@\S+\.\S+$"

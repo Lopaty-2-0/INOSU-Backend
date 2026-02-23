@@ -6,6 +6,10 @@ from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db, max_INT
+from src.utils.check_file import check_file_size
+import json
+
+#TODO: přidat export (json)
 
 class_bp = Blueprint("class", __name__)
 
@@ -62,6 +66,88 @@ def add():
     db.session.commit()
 
     return send_response (201, 8151, {"message": "Class created succesfuly", "class": {"id": newClass.id, "grade": newClass.grade, "group": newClass.group, "name":newClass.name, "specialization": specialization.abbreviation}}, "success")
+
+
+@class_bp.route("/class/add/file", methods = ["POST"])
+@flask_login.login_required
+def add_file():
+    badClasses = 0
+    allClasses = 0
+
+    classes = request.files.get("jsonFile", None)
+    size = request.form.get("size", None)
+
+    response = check_file_size(4*1024*1024, size)
+
+    if response:
+        return response
+    
+    file_content = classes.read().decode("utf-8").strip()
+
+    if not file_content:
+        return send_response(400, 100010, {"message": "File is empty"}, "error")
+
+    try:
+        data = json.loads(file_content)
+    except json.JSONDecodeError:
+        return send_response(400, 100020, {"message": "Invalid JSON format"}, "error")
+    
+    for classData in data.get("classes", []):
+        name = classData.get("name", None)
+        grade = classData.get("grade", None)
+        group = classData.get("group", None)
+        idSpecialization = classData.get("idSpecialization", None)
+
+        if not grade and not group and not idSpecialization and not name:
+            badClasses += 1
+            continue
+        
+        group = str(group)
+        name = str(name)
+        
+        try:
+            grade = int(grade)
+        except:
+            badClasses += 1
+            continue
+
+        if grade > max_INT or grade <= 0:
+            badClasses += 1
+            continue
+
+        if len(group) > 1:
+            badClasses += 1
+            continue
+
+        try:
+            idSpecialization = int(idSpecialization)
+        except:
+            badClasses += 1
+            continue
+
+        if idSpecialization > max_INT or idSpecialization <= 0:
+            badClasses += 1
+            continue
+
+        specialization = Specialization.query.filter_by(id = idSpecialization).first()
+
+        if not specialization or int(specialization.lengthOfStudy) < grade:
+            badClasses += 1
+            continue
+
+        if len(name)>255 or Class.query.filter_by(name = name).first():
+            badClasses += 1
+            continue
+
+        newClass = Class(grade = grade, group = group, idSpecialization = idSpecialization, name=name)
+        db.session.add(newClass)
+
+    db.session.commit()
+    
+    if allClasses <= badClasses:
+        return send_response (400, 100030, {"message": "No classes created"}, "error") 
+            
+    return send_response (201, 100041, {"message": "All classes created successfuly"}, "success")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required

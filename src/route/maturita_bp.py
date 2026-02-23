@@ -20,6 +20,8 @@ import datetime
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
 
+#TODO: přidat export + import (json)
+
 maturita_bp = Blueprint("maturita", __name__)
 
 

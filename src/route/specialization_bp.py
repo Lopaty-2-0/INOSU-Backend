@@ -6,6 +6,8 @@ from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db, max_INT
 
+#TODO: přidat export + import (json)
+
 specialization_bp = Blueprint("specialization", __name__)
 
 @specialization_bp.route("/specialization/add", methods = ["POST"])

@@ -13,6 +13,8 @@ from app import max_INT
 from flask import request
 from src.utils.enums import Status
 
+#TODO: přidat export té tabulky, nejlíp excel tabulka
+
 maturita_task_bp = Blueprint("maturita_task", __name__)
 
 @maturita_task_bp.route("/maturita_task/get/table", methods = ["GET"])
