@@ -125,14 +125,22 @@ def add():
 @user_bp.route("/user/add/file", methods = ["POST"])
 @flask_login.login_required
 def add_file():
-    badUsers = 0
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 50010, {"message": "No permission for that"}, "error")
+    
     allUsers = 0
-    badIds = []
-    goodIds = []
-    users = request.files.get("jsonFile", None)
-    size = request.form.get("size", None)
+    goodUsers = 0
+    badUsers = []
 
-    response = check_file_size(4*1024*1024, size)
+    users = request.files.get("jsonFile", None)
+
+    if not users:
+        return send_response(400, 50020, {"message": "File is missing"}, "error")
+    
+    if len(users.filename.rsplit(".", 1)) < 2 or users.filename.rsplit(".", 1)[1].lower() != "json":
+        return send_response(400, 50030, {"message": "Wrong file format"}, "error")
+    
+    response = check_file_size(4*1024*1024, users.tell())
 
     if response:
         return response
@@ -140,12 +148,12 @@ def add_file():
     file_content = users.read().decode("utf-8").strip()
 
     if not file_content:
-        return send_response(400, 50010, {"message": "File is empty"}, "error")
+        return send_response(400, 50040, {"message": "File is empty"}, "error")
 
     try:
         data = json.loads(file_content)
     except json.JSONDecodeError:
-        return send_response(400, 50020, {"message": "Invalid JSON format"}, "error")
+        return send_response(400, 50050, {"message": "Invalid JSON format"}, "error")
     
     for userData in data.get("users", []):
         name = userData.get("name", None)
@@ -156,8 +164,11 @@ def add_file():
         password = (userData.get("password", None))
         idClass = userData.get("classes", None)
 
+        allUsers += 1
+
         if not name or not surname or not role or not password or not email:
-            badUsers += 1
+            userResponse, status = send_response(400, 50060, {"message": "Nothing entered", "userNumber":allUsers}, "error")
+            badUsers.append(userResponse)
             continue
 
         password = str(password)
@@ -165,27 +176,53 @@ def add_file():
         name = str(name)
         surname = str(surname)   
 
-        if len(name) > 100 or len(surname) > 100 or role not in [r.value for r in Role] or len(password) < 5 or len(email) > 255 or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
-            badUsers += 1
+        if len(name) > 100:
+            userResponse, status = send_response(400, 50070, {"message": "Name too long", "userNumber":allUsers}, "error")
+            badUsers.append(userResponse)
             continue
+        if len(surname) > 100:
+            userResponse, status = send_response(400, 50080, {"message": "Surname too long", "userNumber":allUsers}, "error")
+            badUsers.append(userResponse)
+            continue
+        if role not in [r.value for r in Role]:
+            userResponse, status = send_response(400, 50090, {"message": "Role not our role", "userNumber":allUsers}, "error")
+            badUsers.append(userResponse)
+            continue
+        if len(password) < 5:
+            userResponse, status = send_response(400, 50100, {"message": "Password too short", "userNumber":allUsers}, "error")
+            badUsers.append(userResponse)
+            continue
+        if len(email) > 255 or not re.match(email_regex, email) or User.query.filter_by(email = email).first():
+            userResponse, status = send_response(400, 50110, {"message": "Wrong email format or too long or email already in use", "userNumber":allUsers}, "error")
+            badUsers.append(userResponse)
+            continue
+
         if abbreviation:
             abbreviation = str(abbreviation)
             abbreviation = (abbreviation).upper()
-            if User.query.filter_by(abbreviation = abbreviation).first():
-                badUsers += 1
-                continue
+
             if len(abbreviation) > 4:
-                badUsers += 1
+                userResponse, status = send_response(400, 50120, {"message": "Abbreviation too long", "userNumber":allUsers}, "error")
+                badUsers.append(userResponse)
+                continue
+            if User.query.filter_by(abbreviation = abbreviation).first():
+                userResponse, status = send_response(400, 50130, {"message": "Abbreviation already in use", "userNumber":allUsers}, "error")
+                badUsers.append(userResponse)
                 continue
         else:
             abbreviation = None
-        allUsers += 1
+        
+        goodUsers += 1
 
         newUser = User(name = name, surname = surname, abbreviation = abbreviation, role = Role(role), password = generate_password_hash(password), profilePicture = None, email = email)
         db.session.add(newUser)
         db.session.commit()
 
         if idClass:
+            goodIds = []
+            badIds = []
+            if not isinstance(idClass, list):
+                idClass = [idClass]
             if newUser.role == Role.Student:
                 for id in idClass:
                     try:
@@ -196,16 +233,22 @@ def add_file():
                     if id > max_INT or id <= 0 or not Class.query.filter_by(id=id).first():
                         badIds.append(id)
                         continue
+                    
+                    goodIds.append(id)
 
                     newUserClass = User_Class(newUser.id, id)
-                    goodIds.append(id)
                     db.session.add(newUserClass)
+                
+                if badIds:
+                    userResponse, status = send_response(400, 50140, {"message": "Wrong idClass", "userNumber":allUsers, "badIds":badIds, "goodIds":goodIds}, "error")
+                    badUsers.append(userResponse)
+
             db.session.commit()
     
-    if allUsers <= badUsers:
-        return send_response (400, 50030, {"message": "No users created"}, "error") 
+    if goodUsers == 0:
+        return send_response (400, 50150, {"message": "No users created", "badUsers":badUsers}, "error") 
             
-    return send_response (201, 50041, {"message": "All users created successfuly"}, "success")
+    return send_response (201, 50161, {"message": "Users created successfuly", "badUsers":badUsers}, "success")
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required

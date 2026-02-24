@@ -16,6 +16,8 @@ from src.utils.version import delete_upload_version
 from flask import request, Blueprint
 from app import db, max_INT
 from src.utils.reminder import cancel_reminder
+from src.utils.check_file import check_file_size
+import json
 
 #TODO: přidat export + import (json)
 
@@ -45,6 +47,68 @@ def add():
     db.session.commit()
 
     return send_response (201, 63051, {"message": "topic created successfuly", "topic":{"name":newtopic.name, "id":newtopic.id}}, "success")
+
+@topic_bp.route("/topic/add/file", methods = ["POST"])
+@flask_login.login_required
+def add_file():
+    if flask_login.current_user.role == Role.Student:
+        return send_response(403, 102010, {"message": "No permission for that"}, "error")
+    
+    allTopics = 0
+    goodTopics = 0
+    badTopics = []
+
+    topics = request.files.get("jsonFile", None)
+
+    if not topics:
+        return send_response(400, 102020, {"message": "File is missing"}, "error")
+    
+    if len(topics.filename.rsplit(".", 1)) < 2 or topics.filename.rsplit(".", 1)[1].lower() != "json":
+        return send_response(400, 102030, {"message": "Wrong file format"}, "error")
+    
+    response = check_file_size(4*1024*1024, topics.tell())
+
+    if response:
+        return response
+    
+    file_content = topics.read().decode("utf-8").strip()
+
+    if not file_content:
+        return send_response(400, 102040, {"message": "File is empty"}, "error")
+
+    try:
+        data = json.loads(file_content)
+    except json.JSONDecodeError:
+        return send_response(400, 102050, {"message": "Invalid JSON format"}, "error")
+    
+    for topicData in data.get("topics", []):
+        allTopics += 1
+
+        name = topicData.get("name", None)
+
+        if not name:
+            topicResponse, status = send_response(400, 102060, {"topicNumber": allTopics, "message":"Name not entered"}, "error")
+            badTopics.append(topicResponse)
+            continue
+        
+        name = str(name)
+        
+        if len(name)>255 or Topic.query.filter_by(name = name).first():
+            topicResponse, status = send_response(400, 102070, {"topicNumber": allTopics, "message":"Name too long or name in use"}, "error")
+            badTopics.append(topicResponse)
+            continue
+
+        newTopic = Topic(name=name)
+        db.session.add(newTopic)
+
+        goodTopics += 1
+
+    db.session.commit()
+    
+    if goodTopics == 0:
+        return send_response(400, 102080, {"message": "No topics created", "badTopics":badTopics}, "error") 
+            
+    return send_response(201, 102091, {"message": "Topics created successfuly", "badTopics":badTopics}, "success")
 
 @topic_bp.route("/topic/delete", methods = ["DELETE"])
 @flask_login.login_required

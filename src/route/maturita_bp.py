@@ -19,11 +19,12 @@ from app import db, max_FLOAT, max_INT
 import datetime
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
+from src.utils.check_file import check_file_size
+import json
 
 #TODO: přidat export + import (json)
 
 maturita_bp = Blueprint("maturita", __name__)
-
 
 @maturita_bp.route("/maturita/add", methods = ["POST"])
 @flask_login.login_required
@@ -106,6 +107,134 @@ def add():
 
     return send_response (201, 67131, {"message": "maturita created successfuly", "maturita":{"grade":newMaturita.grade, "id":newMaturita.id, "maxPoints":newMaturita.maxPoints, "startDate":newMaturita.startDate, "endDate":newMaturita.endDate}, "goodIds":goodIds, "badIds":badIds}, "success")
 
+@maturita_bp.route("/maturita/add/file", methods = ["POST"])
+@flask_login.login_required
+def add_file():
+    if flask_login.current_user.role == Role.Student:
+        return send_response(403, 103010, {"message": "No permission for that"}, "error")
+    
+    allMaturitas = 0
+    goodMaturitas = 0
+    badMaturitas = []
+
+    maturitas = request.files.get("jsonFile", None)
+
+    if not maturitas:
+        return send_response(400, 103020, {"message": "File is missing"}, "error")
+    
+    if len(maturitas.filename.rsplit(".", 1)) < 2 or maturitas.filename.rsplit(".", 1)[1].lower() != "json":
+        return send_response(400, 103030, {"message": "Wrong file format"}, "error")
+    
+    response = check_file_size(4*1024*1024, maturitas.tell())
+
+    if response:
+        return response
+    
+    file_content = maturitas.read().decode("utf-8").strip()
+
+    if not file_content:
+        return send_response(400, 103040, {"message": "File is empty"}, "error")
+
+    try:
+        data = json.loads(file_content)
+    except json.JSONDecodeError:
+        return send_response(400, 103050, {"message": "Invalid JSON format"}, "error")
+    
+    for maturitaData in data.get("maturitas", []):
+        grade = maturitaData.get("grade", None)
+        maxPoints = maturitaData.get("maxPoints", None)
+        startDate = maturitaData.get("startDate", None)
+        endDate = maturitaData.get("endDate", None)
+        evaluators = maturitaData.get("evaluators", None)
+
+        if not grade or not maxPoints or not startDate or not endDate:
+            maturitaResponse, status = send_response(400, 103060, {"message": "Nothing entered", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+
+        grade = str(grade)
+
+        if len(grade) > 9 or Maturita.query.filter_by(grade = grade).first():
+            maturitaResponse, status = send_response(400, 103070, {"message": "grade too long or already in use", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+
+        try:
+            maxPoints = float(maxPoints)
+        except:
+            maturitaResponse, status = send_response(400, 103080, {"message": "maxPoints not float", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+
+        if maxPoints > max_FLOAT or maxPoints <= 0:
+            maturitaResponse, status = send_response(400, 103090, {"message": "maxPoints not valid", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+
+        try:
+            endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        except:
+            maturitaResponse, status = send_response(400, 103100, {"message": "End date not integer or is too far", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+
+        try:
+            startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+        except:
+            maturitaResponse, status = send_response(400, 103110, {"message": "startDate not integer or is too far", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+
+        if endDate <= startDate:
+            maturitaResponse, status = send_response(400, 103120, {"message": "Ending before begining", "maturitaNumber":allMaturitas}, "error")
+            badMaturitas.append(maturitaResponse)
+            continue
+        
+        newMaturita = Maturita(grade = grade, maxPoints = maxPoints, startDate = startDate, endDate = endDate)
+        db.session.add(newMaturita)
+        db.session.commit()
+
+        goodMaturitas += 1
+
+        if evaluators:
+            goodIds = []
+            badIds = []
+            if not isinstance(evaluators, list):
+                evaluators = [evaluators]
+            
+            for evaluator in evaluators:
+                try:
+                    evaluator = int(evaluator)
+                except:
+                    badIds.append(evaluator)
+                    continue
+
+                if evaluator > max_INT or evaluator <= 0:
+                    badIds.append(evaluator)
+                    continue
+
+                user = User.query.filter_by(id = evaluator).first()
+
+                if not user or user.role == Role.Student:
+                    badIds.append(evaluator)
+                    continue
+
+                db.session.add(Evaluator(idUser = evaluator, idMaturita = newMaturita.id))
+                goodIds.append(evaluator)
+
+            db.session.commit()
+
+            if badIds:
+                maturitaResponse, status = send_response(400, 103130, {"message": "Wrong evaluators", "maturitaNumber":allMaturitas, "badIds":badIds, "goodIds":goodIds}, "error")
+                badMaturitas.append(maturitaResponse)
+                continue
+
+    db.session.commit()
+    
+    if goodMaturitas == 0:
+        return send_response (400, 103140, {"message": "No maturitas created", "badMaturitas":badMaturitas}, "error") 
+            
+    return send_response (201, 103151, {"message": "maturitas created successfuly", "badMaturitas":badMaturitas}, "success")
 
 @maturita_bp.route("/maturita/update", methods = ["PUT"])
 @flask_login.login_required

@@ -5,6 +5,8 @@ from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint
 from app import db, max_INT
+from src.utils.check_file import check_file_size
+import json
 
 #TODO: přidat export + import (json)
 
@@ -50,6 +52,88 @@ def add():
     db.session.commit()
 
     return send_response (201, 4111, {"message": "Specialization created successfuly", "specialization":{"lengthOfStudy":newSpecialization.lengthOfStudy, "abbreviation":newSpecialization.abbreviation, "name":newSpecialization.name, "id":newSpecialization.id}}, "success")
+
+@specialization_bp.route("/specialization/add/file", methods = ["POST"])
+@flask_login.login_required
+def add_file():
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 101010, {"message": "No permission for that"}, "error")
+    
+    allSpecializations = 0
+    goodSpecializations = 0
+    badSpecializations = []
+
+    specializations = request.files.get("jsonFile", None)
+
+    if not specializations:
+        return send_response(400, 101020, {"message": "File is missing"}, "error")
+    
+    if len(specializations.filename.rsplit(".", 1)) < 2 or specializations.filename.rsplit(".", 1)[1].lower() != "json":
+        return send_response(400, 101030, {"message": "Wrong file format"}, "error")
+    
+    response = check_file_size(4*1024*1024, specializations.tell())
+
+    if response:
+        return response
+    
+    file_content = specializations.read().decode("utf-8").strip()
+
+    if not file_content:
+        return send_response(400, 101040, {"message": "File is empty"}, "error")
+
+    try:
+        data = json.loads(file_content)
+    except json.JSONDecodeError:
+        return send_response(400, 101050, {"message": "Invalid JSON format"}, "error")
+    
+    for specializationData in data.get("specializations", []):
+        name = specializationData.get("name", None)
+        lengthOfStudy = specializationData.get("lengthOfStudy", None)
+        abbreviation = specializationData.get("abbreviation", None)
+
+        allSpecializations += 1
+
+        if not lengthOfStudy and not abbreviation and not name:
+            specializationResponse, status = send_response(400, 101060, {"message": "Nothing entered", "specializationNumber":allSpecializations}, "error")
+            badSpecializations.append(specializationResponse)
+            continue
+        
+        abbreviation = str(abbreviation)
+        name = str(name)
+        
+        try:
+            lengthOfStudy = int(lengthOfStudy)
+        except:
+            specializationResponse, status = send_response(400, 101070, {"message": "lengthOfStudy not integer", "specializationNumber":allSpecializations}, "error")
+            badSpecializations.append(specializationResponse)
+            continue
+
+        if lengthOfStudy > max_INT or lengthOfStudy <= 0:
+            specializationResponse, status = send_response(400, 101080, {"message": "lengthOfStudy not valid", "specializationNumber":allSpecializations}, "error")
+            badSpecializations.append(specializationResponse)
+            continue
+
+        if len(abbreviation) > 1 or Specialization.query.filter_by(abbreviation = abbreviation).first():
+            specializationResponse, status =send_response(400, 101090, {"message": "Abbreviation too long or already in use", "specializationNumber":allSpecializations}, "error")
+            badSpecializations.append(specializationResponse)
+            continue
+
+        if len(name)>45 or Specialization.query.filter_by(name = name).first():
+            specializationResponse, status =send_response(400, 101110, {"message": "name too long or already in use", "specializationNumber":allSpecializations}, "error")
+            badSpecializations.append(specializationResponse)
+            continue
+
+        newSpecialization = Specialization(lengthOfStudy = lengthOfStudy, abbreviation = abbreviation, name=name)
+        db.session.add(newSpecialization)
+
+        goodSpecializations += 1
+
+    db.session.commit()
+    
+    if goodSpecializations == 0:
+        return send_response (400, 101120, {"message": "No specializations created", "badSpecializations":badSpecializations}, "error") 
+            
+    return send_response (201, 101131, {"message": "Specializations created successfuly", "badSpecializations":badSpecializations}, "success")
 
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required

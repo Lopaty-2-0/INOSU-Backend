@@ -71,13 +71,22 @@ def add():
 @class_bp.route("/class/add/file", methods = ["POST"])
 @flask_login.login_required
 def add_file():
-    badClasses = 0
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 100010, {"message": "No permission for that"}, "error")
+    
     allClasses = 0
+    goodClasses = 0
+    badClasses = []
 
     classes = request.files.get("jsonFile", None)
-    size = request.form.get("size", None)
 
-    response = check_file_size(4*1024*1024, size)
+    if not classes:
+        return send_response(400, 100020, {"message": "File is missing"}, "error")
+    
+    if len(classes.filename.rsplit(".", 1)) < 2 or classes.filename.rsplit(".", 1)[1].lower() != "json":
+        return send_response(400, 100030, {"message": "Wrong file format"}, "error")
+    
+    response = check_file_size(4*1024*1024, classes.tell())
 
     if response:
         return response
@@ -85,21 +94,23 @@ def add_file():
     file_content = classes.read().decode("utf-8").strip()
 
     if not file_content:
-        return send_response(400, 100010, {"message": "File is empty"}, "error")
+        return send_response(400, 100040, {"message": "File is empty"}, "error")
 
     try:
         data = json.loads(file_content)
     except json.JSONDecodeError:
-        return send_response(400, 100020, {"message": "Invalid JSON format"}, "error")
+        return send_response(400, 100050, {"message": "Invalid JSON format"}, "error")
     
     for classData in data.get("classes", []):
         name = classData.get("name", None)
         grade = classData.get("grade", None)
         group = classData.get("group", None)
         idSpecialization = classData.get("idSpecialization", None)
+        allClasses += 1
 
         if not grade and not group and not idSpecialization and not name:
-            badClasses += 1
+            classResponse, status = send_response(400, 100060, {"message": "Nothing entered", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
         
         group = str(group)
@@ -108,46 +119,60 @@ def add_file():
         try:
             grade = int(grade)
         except:
-            badClasses += 1
+            classResponse, status = send_response(400, 100070, {"message": "Grade not integer", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         if grade > max_INT or grade <= 0:
-            badClasses += 1
+            classResponse, status = send_response(400, 100080, {"message": "Grade not valid", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         if len(group) > 1:
-            badClasses += 1
+            classResponse, status = send_response(400, 100090, {"message": "Group too long", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         try:
             idSpecialization = int(idSpecialization)
         except:
-            badClasses += 1
+            classResponse, status = send_response(400, 100100, {"message": "idSpecialization not integer", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         if idSpecialization > max_INT or idSpecialization <= 0:
-            badClasses += 1
+            classResponse, status = send_response(400, 100110, {"message": "idSpecialization not valid", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         specialization = Specialization.query.filter_by(id = idSpecialization).first()
 
-        if not specialization or int(specialization.lengthOfStudy) < grade:
-            badClasses += 1
+        if not specialization:
+            classResponse, status = send_response(400, 100120, {"message": "Specialization not found", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
+            continue
+
+        if int(specialization.lengthOfStudy) < grade:
+            classResponse, status = send_response(400, 100130, {"message": "Grade too large", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         if len(name)>255 or Class.query.filter_by(name = name).first():
-            badClasses += 1
+            classResponse, status = send_response(400, 100140, {"message": "Name too long or already in use", "classNumber":allClasses}, "error")
+            badClasses.append(classResponse)
             continue
 
         newClass = Class(grade = grade, group = group, idSpecialization = idSpecialization, name=name)
         db.session.add(newClass)
 
+        goodClasses += 1
+
     db.session.commit()
     
-    if allClasses <= badClasses:
-        return send_response (400, 100030, {"message": "No classes created"}, "error") 
+    if goodClasses == 0:
+        return send_response (400, 100150, {"message": "No classes created", "badClasses":badClasses}, "error") 
             
-    return send_response (201, 100041, {"message": "All classes created successfuly"}, "success")
+    return send_response (201, 100161, {"message": "Classes created successfuly", "badClasses":badClasses}, "success")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
