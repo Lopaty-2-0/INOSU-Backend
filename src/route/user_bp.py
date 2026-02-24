@@ -218,7 +218,7 @@ def add_file():
         db.session.add(newUser)
         db.session.commit()
 
-        if idClass:
+        if idClass and newUser.role == Role.Student:
             goodIds = []
             badIds = []
             if not isinstance(idClass, list):
