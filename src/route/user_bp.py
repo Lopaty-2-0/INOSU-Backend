@@ -9,7 +9,7 @@ from src.utils.all_user_classes import all_user_classes
 from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import request, Blueprint
+from flask import request, Blueprint, send_file
 from app import db, url, max_INT
 from src.models.User import User
 from src.models.Class import Class
@@ -25,6 +25,7 @@ from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role, Type
 from src.utils.paging import user_paging
 from sqlalchemy import or_
+import io
 
 #TODO: přidat export (json)
 
@@ -249,6 +250,32 @@ def add_file():
         return send_response (400, 50150, {"message": "No users created", "badUsers":badUsers}, "error") 
             
     return send_response (201, 50161, {"message": "Users created successfuly", "badUsers":badUsers}, "success")
+
+
+@user_bp.route("/user/get/file", methods = ["GET"])
+@flask_login.login_required
+def get_file():
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 105010, {"message": "No permission for that"}, "error")
+
+    users = User.query.all()
+
+    data = {"users":[]}
+    
+    for user in users:
+        idClass = []
+        classes = User_Class.query.filter_by(idUser = user.id).all()
+
+        for id in classes:
+            idClass.append(id.idClass)
+        
+        data["users"].append({"name":user.name, "surname":user.surname, "abbreviation":user.abbreviation, "role":user.role.value, "email":user.email, "classes":idClass})
+
+    buffer = io.BytesIO()
+    buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment = True, download_name = "users.json", mimetype = "application/json")
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required

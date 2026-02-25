@@ -3,10 +3,11 @@ from src.models.Specialization import Specialization
 from src.utils.paging import specialization_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
-from flask import request, Blueprint
+from flask import request, Blueprint, send_file
 from app import db, max_INT
 from src.utils.check_file import check_file_size
 import json
+import io
 
 #TODO: přidat export + import (json)
 
@@ -134,6 +135,27 @@ def add_file():
         return send_response (400, 101120, {"message": "No specializations created", "badSpecializations":badSpecializations}, "error") 
             
     return send_response (201, 101131, {"message": "Specializations created successfuly", "badSpecializations":badSpecializations}, "success")
+
+@specialization_bp.route("/specialization/get/file", methods = ["GET"])
+@flask_login.login_required
+def get_file():
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 104010, {"message": "No permission for that"}, "error")
+
+    specializations = Specialization.query.all()
+
+    data = {"specializations":[]}
+    
+    for specialization in specializations:
+        data["specializations"].append({"name":specialization.name, "lengthOfStudy":specialization.lengthOfStudy, "abbreviation":specialization.abbreviation})
+
+    buffer = io.BytesIO()
+    buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
+    buffer.seek(0)
+
+    # send_response(200, 104021, {"message": "Specializations found successfuly"}, "success")
+
+    return send_file(buffer, as_attachment = True, download_name = "specializations.json", mimetype = "application/json")
 
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
