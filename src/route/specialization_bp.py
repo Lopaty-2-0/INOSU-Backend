@@ -9,7 +9,7 @@ from src.utils.check_file import check_file_size
 import json
 import io
 
-#TODO: přidat export + import (json)
+#TODO: přidat headers do export (pokud bude Honza chtít) 
 
 specialization_bp = Blueprint("specialization", __name__)
 

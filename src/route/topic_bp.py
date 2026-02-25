@@ -13,13 +13,14 @@ from src.utils.archive_conversation import cancel_archive_conversation
 from src.models.User import User
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
-from flask import request, Blueprint
+from flask import request, Blueprint, send_file
 from app import db, max_INT
 from src.utils.reminder import cancel_reminder
 from src.utils.check_file import check_file_size
 import json
+import io
 
-#TODO: přidat export + import (json)
+#TODO: přidat headers do export (pokud bude Honza chtít) 
 
 topic_bp = Blueprint("topic", __name__)
 
@@ -109,6 +110,26 @@ def add_file():
         return send_response(400, 102080, {"message": "No topics created", "badTopics":badTopics}, "error") 
             
     return send_response(201, 102091, {"message": "Topics created successfuly", "badTopics":badTopics}, "success")
+
+@topic_bp.route("/topic/get/file", methods = ["GET"])
+@flask_login.login_required
+def get_file():
+    if flask_login.current_user.role == Role.Student:
+        return send_response(403, 107010, {"message": "No permission for that"}, "error")
+
+    topics = Topic.query.all()
+
+    data = {"topics":[]}
+    
+    for topic in topics:
+        
+        data["topics"].append({"name":topic.name})
+
+    buffer = io.BytesIO()
+    buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment = True, download_name = "topics.json", mimetype = "application/json")
 
 @topic_bp.route("/topic/delete", methods = ["DELETE"])
 @flask_login.login_required

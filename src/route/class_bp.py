@@ -4,10 +4,11 @@ from src.models.Specialization import Specialization
 from src.utils.paging import class_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
-from flask import request, Blueprint
+from flask import request, Blueprint, send_file
 from app import db, max_INT
 from src.utils.check_file import check_file_size
 import json
+import io
 
 #TODO: přidat export (json)
 
@@ -173,6 +174,26 @@ def add_file():
         return send_response (400, 100150, {"message": "No classes created", "badClasses":badClasses}, "error") 
             
     return send_response (201, 100161, {"message": "Classes created successfuly", "badClasses":badClasses}, "success")
+
+@class_bp.route("/class/get/file", methods = ["GET"])
+@flask_login.login_required
+def get_file():
+    if flask_login.current_user.role != Role.Admin:
+        return send_response(403, 106010, {"message": "No permission for that"}, "error")
+
+    classes = Class.query.all()
+
+    data = {"classes":[]}
+    
+    for classe in classes:
+        
+        data["classes"].append({"name":classe.name, "group":classe.group, "grade":classe.grade, "idSpecialization":classe.idSpecialization})
+
+    buffer = io.BytesIO()
+    buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment = True, download_name = "classes.json", mimetype = "application/json")
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required

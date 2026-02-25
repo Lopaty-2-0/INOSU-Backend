@@ -269,13 +269,20 @@ def get_file():
         for id in classes:
             idClass.append(id.idClass)
         
-        data["users"].append({"name":user.name, "surname":user.surname, "abbreviation":user.abbreviation, "role":user.role.value, "email":user.email, "classes":idClass})
+        data["users"].append({"name":user.name, "surname":user.surname, "abbreviation":user.abbreviation, "role":user.role.value, "email":user.email, "classes":idClass, "password":None})
 
     buffer = io.BytesIO()
     buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
     buffer.seek(0)
 
-    return send_file(buffer, as_attachment = True, download_name = "users.json", mimetype = "application/json")
+    response = send_file(buffer, as_attachment = True, download_name = "users.json", mimetype = "application/json")
+    response.status_code = 200
+    response.headers["statuscode"] = 200
+    response.headers["resCode"] = 105021
+    response.headers["message"] = "File has been sent"
+    response.headers["resType"] = "success"
+
+    return response
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required

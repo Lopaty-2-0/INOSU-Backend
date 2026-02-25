@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request, send_file
 from src.models.Maturita import Maturita
 from src.models.Maturita_Task import Maturita_Task
 from src.models.Evaluator import Evaluator
@@ -14,13 +14,13 @@ import flask_login
 from src.utils.enums import Role
 from src.utils.response import send_response
 from src.utils.paging import maturita_paging
-from flask import request
 from app import db, max_FLOAT, max_INT
 import datetime
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
 from src.utils.check_file import check_file_size
 import json
+import io
 
 #TODO: přidat export + import (json)
 
@@ -235,6 +235,31 @@ def add_file():
         return send_response (400, 103140, {"message": "No maturitas created", "badMaturitas":badMaturitas}, "error") 
             
     return send_response (201, 103151, {"message": "maturitas created successfuly", "badMaturitas":badMaturitas}, "success")
+
+@maturita_bp.route("/maturita/get/file", methods = ["GET"])
+@flask_login.login_required
+def get_file():
+    if flask_login.current_user.role == Role.Student:
+        return send_response(403, 108010, {"message": "No permission for that"}, "error")
+
+    maturitas = Maturita.query.all()
+
+    data = {"maturitas":[]}
+    
+    for maturita in maturitas:
+        idEvaluator = []
+        evaluators = Evaluator.query.filter_by(idMaturita = maturita.id).all()
+
+        for evaluator in evaluators:
+            idEvaluator.append(evaluator.idUser)
+        
+        data["maturitas"].append({"grade":maturita.grade, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate.timestamp(), "endDate":maturita.endDate.timestamp(), "evaluators":idEvaluator})
+
+    buffer = io.BytesIO()
+    buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment = True, download_name = "maturitas.json", mimetype = "application/json")
 
 @maturita_bp.route("/maturita/update", methods = ["PUT"])
 @flask_login.login_required

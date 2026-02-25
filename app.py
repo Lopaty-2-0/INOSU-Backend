@@ -47,7 +47,7 @@ try:
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days = 30)
     app.config["REMEMBER_COOKIE_REFRESH_EACH_REQUEST"] = True
-    app.config["MAX_CONTENT_LENGTH"] = 32*1024*1024
+    app.config["MAX_CONTENT_LENGTH"] = 5*1024*1024*1024
 
     ssh = ssh_connect()
     app.ssh = ssh
