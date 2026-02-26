@@ -22,7 +22,6 @@ from src.utils.check_file import check_file_size
 import json
 import io
 
-#TODO: přidat export + import (json)
 
 maturita_bp = Blueprint("maturita", __name__)
 

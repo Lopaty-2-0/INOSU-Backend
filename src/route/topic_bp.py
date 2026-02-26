@@ -20,8 +20,6 @@ from src.utils.check_file import check_file_size
 import json
 import io
 
-#TODO: přidat headers do export (pokud bude Honza chtít) 
-
 topic_bp = Blueprint("topic", __name__)
 
 @topic_bp.route("/topic/add", methods = ["POST"])

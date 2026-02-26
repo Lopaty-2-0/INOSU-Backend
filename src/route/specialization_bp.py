@@ -9,8 +9,6 @@ from src.utils.check_file import check_file_size
 import json
 import io
 
-#TODO: přidat headers do export (pokud bude Honza chtít) 
-
 specialization_bp = Blueprint("specialization", __name__)
 
 @specialization_bp.route("/specialization/add", methods = ["POST"])
@@ -152,8 +150,6 @@ def get_file():
     buffer = io.BytesIO()
     buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
     buffer.seek(0)
-
-    # send_response(200, 104021, {"message": "Specializations found successfuly"}, "success")
 
     return send_file(buffer, as_attachment = True, download_name = "specializations.json", mimetype = "application/json")
 

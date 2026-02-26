@@ -27,7 +27,6 @@ from src.utils.paging import user_paging
 from sqlalchemy import or_
 import io
 
-#TODO: přidat export (json)
 
 user_bp = Blueprint("user", __name__)
 
@@ -275,14 +274,7 @@ def get_file():
     buffer.write(json.dumps(data, indent=4, ensure_ascii=False).encode("utf-8"))
     buffer.seek(0)
 
-    response = send_file(buffer, as_attachment = True, download_name = "users.json", mimetype = "application/json")
-    response.status_code = 200
-    response.headers["statuscode"] = 200
-    response.headers["resCode"] = 105021
-    response.headers["message"] = "File has been sent"
-    response.headers["resType"] = "success"
-
-    return response
+    return send_file(buffer, as_attachment = True, download_name = "users.json", mimetype = "application/json")
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required

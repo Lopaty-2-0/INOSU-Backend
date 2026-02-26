@@ -10,7 +10,6 @@ from src.utils.check_file import check_file_size
 import json
 import io
 
-#TODO: přidat export (json)
 
 class_bp = Blueprint("class", __name__)
 
