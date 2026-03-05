@@ -85,7 +85,11 @@ def add_file():
     except json.JSONDecodeError:
         return send_response(400, 101050, {"message": "Invalid JSON format"}, "error")
     
-    for specializationData in data.get("specializations", []):
+    for specializationData in data.get("specializations") or []:
+
+        if not isinstance(specializationData, dict):
+            continue
+
         name = specializationData.get("name", None)
         lengthOfStudy = specializationData.get("lengthOfStudy", None)
         abbreviation = specializationData.get("abbreviation", None)

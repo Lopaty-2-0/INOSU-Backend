@@ -101,7 +101,11 @@ def add_file():
     except json.JSONDecodeError:
         return send_response(400, 100050, {"message": "Invalid JSON format"}, "error")
     
-    for classData in data.get("classes", []):
+    for classData in data.get("classes") or []:
+
+        if not isinstance(classData, dict):
+            continue
+
         name = classData.get("name", None)
         grade = classData.get("grade", None)
         group = classData.get("group", None)

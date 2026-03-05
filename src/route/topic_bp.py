@@ -80,7 +80,11 @@ def add_file():
     except json.JSONDecodeError:
         return send_response(400, 102050, {"message": "Invalid JSON format"}, "error")
     
-    for topicData in data.get("topics", []):
+    for topicData in data.get("topics") or []:
+
+        if not isinstance(topicData, dict):
+            continue
+
         allTopics += 1
 
         name = topicData.get("name", None)

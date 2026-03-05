@@ -139,12 +139,18 @@ def add_file():
     except json.JSONDecodeError:
         return send_response(400, 103050, {"message": "Invalid JSON format"}, "error")
     
-    for maturitaData in data.get("maturitas", []):
+    for maturitaData in data.get("maturitas") or []:
+
+        if not isinstance(maturitaData, dict):
+            continue
+
         grade = maturitaData.get("grade", None)
         maxPoints = maturitaData.get("maxPoints", None)
         startDate = maturitaData.get("startDate", None)
         endDate = maturitaData.get("endDate", None)
         evaluators = maturitaData.get("evaluators", None)
+
+        allMaturitas += 1
 
         if not grade or not maxPoints or not startDate or not endDate:
             maturitaResponse, status = send_response(400, 103060, {"message": "Nothing entered", "maturitaNumber":allMaturitas}, "error")

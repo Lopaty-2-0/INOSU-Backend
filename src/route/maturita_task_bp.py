@@ -209,4 +209,4 @@ def get_excel():
     wb.save(buffer)
     buffer.seek(0)
 
-    return send_file(buffer, as_attachment=True, download_name=f"{now.strftime("%y%m%d")}_seznam_zaku.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    return send_file(buffer, as_attachment=True, download_name=f"{now.strftime('%y%m%d')}_seznam_zaku.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

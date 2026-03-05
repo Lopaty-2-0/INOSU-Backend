@@ -155,7 +155,11 @@ def add_file():
     except json.JSONDecodeError:
         return send_response(400, 50050, {"message": "Invalid JSON format"}, "error")
     
-    for userData in data.get("users", []):
+    for userData in data.get("users") or []:
+
+        if not isinstance(userData, dict):
+            continue
+
         name = userData.get("name", None)
         surname = userData.get("surname", None)
         abbreviation = userData.get("abbreviation", None)
