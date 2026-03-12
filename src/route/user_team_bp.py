@@ -7,7 +7,7 @@ from src.models.Task import Task
 from src.models.User_Class import User_Class
 from src.models.User import User
 from src.models.Team import Team
-from src.utils.enums import Status, Type
+from src.utils.enums import Status, Type, Role
 from src.utils.team import make_team
 from src.utils.response import send_response
 from src.models.Version_Team import Version_Team
@@ -70,7 +70,7 @@ def add():
                     badIds.append(idU)
                     continue
 
-                if not User.query.filter_by(id=idU).first():
+                if not User.query.filter_by(id=idU).first() or User.query.filter_by(id = id).role != Role.Student:
                     badIds.append(idU)
                     continue
 
@@ -365,14 +365,14 @@ def change():
         cancel_reminder(idUser = user_team.idUser, idTask = idTask, guarantor = flask_login.current_user.id)
 
     for id in idUser:
-        if task.type == Type.Maturita and goodIds:
+        if task.type == Type.Maturita and id in goodIds:
             break
         try:
             id = int(id)
         except:
             badIds.append(id)
             continue
-        if id > max_INT or id <= 0 or not User.query.filter_by(id = id).first():
+        if id > max_INT or id <= 0 or not User.query.filter_by(id = id).first() or User.query.filter_by(id = id).first().role != Role.Student:
             badIds.append(id)
             continue
         if User_Team.query.filter_by(idUser = id, idTask = idTask, guarantor = flask_login.current_user.id).first():
@@ -381,7 +381,9 @@ def change():
 
         db.session.add(User_Team(idUser = id, idTeam = idTeam, idTask = idTask, guarantor = flask_login.current_user.id))
         goodIds.append(id)
-        ids.pop(ids.index(id))
+
+        if id in ids:
+            ids.pop(ids.index(id))
 
         if User.query.filter_by(id = id).first().reminders:
             create_reminder(idUser = id, idTask = idTask, guarantor = flask_login.current_user.id)
