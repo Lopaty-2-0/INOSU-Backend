@@ -70,7 +70,7 @@ def add():
                     badIds.append(idU)
                     continue
 
-                if not User.query.filter_by(id=idU).first() or User.query.filter_by(id = id).role != Role.Student:
+                if not User.query.filter_by(id=idU).first() or User.query.filter_by(id = id).first().role != Role.Student:
                     badIds.append(idU)
                     continue
 
