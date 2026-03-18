@@ -1,34 +1,56 @@
-import os
-from src.utils.sftp_utils import sftp_put_async, sftp_stat_async, sftp_removeDir_async, sftp_remove_async
+
 from app import ssh, task_path
+from src.models.Task import Task
+from app import db, hmac_ip
+from src.utils.token import generate_hmac_token
+import shlex
 
-async def task_save_sftp(file, id):
-    state = True
+def make_task(file, name, guarantor, deadline, points, endDate, startDate, type):
+    task = Task.query.filter_by(guarantor = guarantor).order_by(Task.id.desc()).first()
+    id = task.id + 1 if task else 1
 
-    if not await sftp_stat_async(ssh, task_path):
-        ssh.open_sftp().mkdir(task_path)
+    newTask = Task(name=name, startDate=startDate, endDate=endDate,guarantor=guarantor, task = None, type = type, points = points, deadline = deadline, id = id)
+    db.session.add(newTask)
+    db.session.commit()
 
-    file_path = task_path + str(id)
+    uploadUrl = upload_task(file, guarantor, id)
 
-    if not await sftp_stat_async(ssh, file_path):
-        ssh.open_sftp().mkdir(file_path)
+    return newTask, id, uploadUrl
 
-    fileName = file.filename
-    filePath = file_path + "/" + fileName
+def delete_upload_task(task, guarantor, id):
+    relPath = task_path + str(guarantor) + "/" + str(id) + "/" + task
+    safePath = shlex.quote(relPath)
 
-    if await sftp_stat_async(ssh, filePath):
-        await sftp_remove_async(ssh, file_path)
-        
-    file.save("files/" + fileName)
-    await sftp_put_async(ssh, "files/" + fileName, filePath)
-    os.remove("files/" + fileName)
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/remove_final.sh {safePath}"
+    )
 
-    
-    return fileName
+    exit_status = stdout.channel.recv_exit_status()
 
-async def task_delete_sftp(id):
-    file_path = task_path + str(id)
-    if not await sftp_stat_async(ssh, file_path):
+    if exit_status != 0:
         return False
-    await sftp_removeDir_async(ssh, file_path)
+
+    return True
+
+def upload_task(task, guarantor, id):
+    relPath = task_path + str(guarantor) + "/" + str(id)
+
+    message = f"/uploads/{relPath}/{task}"
+    token = generate_hmac_token(message, max_size=32 * 1024 * 1024)
+
+    return hmac_ip + message + "?token=" + token
+
+def check_upload_task(task, guarantor, id):
+    relPath = task_path + str(guarantor) + "/" + str(id) + "/" + task
+    safePath = shlex.quote(relPath)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/check_final.sh {safePath}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
+        return False
+
     return True

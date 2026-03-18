@@ -2,3 +2,6 @@ __pycache__
 2025*
 .env
 .env.hmac
+.vscode
+.idea
+.DS_Store

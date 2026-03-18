@@ -1,73 +1,54 @@
 from src.models.Version_Team import Version_Team
-from app import db, task_path, ssh
-from src.utils.sftp_utils import sftp_createDir_async, sftp_stat_async, sftp_removeDir_async, sftp_put_async, sftp_remove_async
-import os
+from app import db, task_path, hmac_ip, ssh
+from src.utils.token import generate_hmac_token
+import shlex
 
-async def make_version(idTask, idTeam, file):
-    if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam).first():
+
+def make_version(idTask, idTeam, file, guarantor):
+    if not Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam, guarantor = guarantor).first():
         id = 1
     else:
-        id = Version_Team.query.filter_by(idTask=idTask, idTeam = idTeam).order_by(Version_Team.idVersion.desc()).first().idVersion + 1
+        id = Version_Team.query.filter_by(idTask=idTask, idTeam = idTeam, guarantor = guarantor).order_by(Version_Team.idVersion.desc()).first().idVersion + 1
 
-    status = await version_save(idTeam, idTask, id, file)
-
-    if status:
-        new_version = Version_Team(idVersion = id, idTask = idTask, elaboration = file.filename, idTeam = idTeam)
-        
-        db.session.add(new_version)
-        db.session.commit()
-
-    return status
-
-async def delete_versions_for_team(idTask, idTeam):
-    versions = Version_Team.query.filter_by(idTask = idTask, idTeam = idTeam)
-
-    for version in versions:
-        db.session.delete(version)
-        await version_deleteDir(idTeam, idTask, version.idVersion)
-        
+    
+    newVersion = Version_Team(idVersion = id, idTask = idTask, elaboration = None, idTeam = idTeam, guarantor = guarantor)
+    
+    db.session.add(newVersion)
     db.session.commit()
 
-async def version_deleteDir(idTeam, idTask, idVersion):
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
-    if not await sftp_stat_async(ssh, file_path):
+    relPath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(id)
+
+    message = f"/uploads/{relPath}/{file}"
+    token = generate_hmac_token(message, max_size=5 * 1024 * 1024 * 1024)
+
+    return id, newVersion.createdAt ,hmac_ip + message + "?token=" + token
+
+def delete_upload_version(idTask, idTeam, file, guarantor, idVersion):
+    relPath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + file
+    safePath = shlex.quote(relPath)
+
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/remove_final.sh {safePath}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
         return False
-    
-    await sftp_removeDir_async(ssh, file_path)
 
     return True
 
-async def version_createDir(idTeam, idTask, idVersion):
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
+def check_upload_version(idTask, idTeam, file, guarantor, idVersion):
+    relPath = task_path + str(guarantor) + "/" + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + file
+    safePath = shlex.quote(relPath)
 
-    if await sftp_stat_async(ssh, file_path):
+    stdin, stdout, stderr = ssh.exec_command(
+        f"/home/assembler/check_final.sh {safePath}"
+    )
+
+    exit_status = stdout.channel.recv_exit_status()
+
+    if exit_status != 0:
         return False
-    
-    await sftp_createDir_async(ssh, file_path)
-
-    return True
-
-async def version_save(idTeam, idTask, idVersion, file):
-    fileName = file.filename
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion)
-
-    await version_createDir(idTeam, idTask, idVersion)
-
-    if await sftp_stat_async(ssh, file_path + "/" + fileName):
-        return False 
-        
-    file.save("files/" + fileName)
-    await sftp_put_async(ssh, "files/" + fileName, file_path + "/" + fileName)
-    os.remove("files/" + fileName)
-
-    return True
-
-async def version_delete(idTeam, idTask, idVersion, fileName):
-    file_path = task_path + str(idTask) + "/" + str(idTeam) + "/" + str(idVersion) + "/" + fileName
-
-    if not await sftp_stat_async(ssh, file_path):
-        return False 
-
-    await sftp_remove_async(ssh = ssh, file_path = file_path)
 
     return True

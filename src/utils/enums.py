@@ -13,3 +13,8 @@ class Role(enum.Enum):
     Student = "student"
     Teacher = "teacher"
     Admin = "admin"
+
+class Event_Type(enum.Enum):
+    ByOther = "byOther"
+    Own = "own"
+    Task = "task"

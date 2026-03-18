@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db, maxINT
+from app import db, max_INT
 from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User import User
@@ -30,12 +30,12 @@ def add():
         idUser = int(idUser)
     except:
         return send_response(400, 33040, {"message": "idUser not integer"}, "error")
-    if idUser > maxINT or idUser <=0:
+    if idUser > max_INT or idUser <=0:
         return send_response(400, 33050, {"message": "idUser not valid"}, "error")
     if not User.query.filter_by(id = idUser).first():
-        return send_response(400, 33060, {"message": "Nonexistent user"}, "error")
+        return send_response(404, 33060, {"message": "Nonexistent user"}, "error")
     if not Class.query.filter_by(id = idClass).first():
-        return send_response(400, 33070, {"message": "Nonexistent class"}, "error")
+        return send_response(404, 33070, {"message": "Nonexistent class"}, "error")
     if not isinstance(idClass, list):
         idClass = [idClass]
     
@@ -45,10 +45,10 @@ def add():
         except:
             badIds.append(id)
             continue
-        if id > maxINT or id <=0:
+        if id > max_INT or id <=0:
             badIds.append(id)
             continue
-        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = id).first() or User.query.filter_by(id = idUser).first().role:
+        if not Class.query.filter_by(id=id).first() or User_Class.query.filter_by(idUser = idUser, idClass = id).first() or User.query.filter_by(id = idUser).first().role != Role.Student:
             badIds.append(id)
             continue
 
@@ -65,7 +65,7 @@ def add():
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
-async def delete():
+def delete():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
     idClass = data.get("idClass", None)
@@ -80,34 +80,34 @@ async def delete():
         idUser = int(idUser)
     except:
         return send_response(400, 34040, {"message": "idUser not integer"}, "error")
-    if idUser > maxINT or idUser <=0:
+    if idUser > max_INT or idUser <=0:
         return send_response(400, 34050, {"message": "idUser not valid"}, "error")
     try:
         idClass = int(idClass)
     except:
         return send_response(400, 34060, {"message": "idClass not integer"}, "error")
-    if idClass > maxINT or idClass <=0:
+    if idClass > max_INT or idClass <=0:
         return send_response(400, 34070, {"message": "idClass not valid"}, "error")
     
-    user_cl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
+    userCl = User_Class.query.filter_by(idUser = idUser, idClass = idClass).first()
 
-    if not user_cl:
+    if not userCl:
         return send_response(400, 34080, {"message": "This user is not in this class"}, "error")
     
-    db.session.delete(user_cl)
+    db.session.delete(userCl)
     db.session.commit()
 
     return send_response(200, 34091, {"message": "User deleted from this class"}, "success")
 
-@flask_login.login_required
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
+@flask_login.login_required
 def get_users():
     idClass = request.args.get("idClass", None)
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
     
-    right_users = []
+    rightUsers = []
 
     if not amountForPaging:
         return send_response(400, 35010, {"message": "amountForPaging not entered"}, "error")
@@ -120,7 +120,7 @@ def get_users():
     if amountForPaging < 1:
         return send_response(400, 35030, {"message": "amountForPaging smaller than 1"}, "error")
     
-    if amountForPaging > maxINT:
+    if amountForPaging > max_INT:
         return send_response(400, 35040, {"message": "amountForPaging too big"}, "error")
     
     if not pageNumber:
@@ -130,7 +130,7 @@ def get_users():
         pageNumber = int(pageNumber)
     except:
         return send_response(400, 35060, {"message": "pageNumber not integer"}, "error")
-    if pageNumber > maxINT + 1:
+    if pageNumber > max_INT + 1:
         return send_response(400, 35070, {"message": "pageNumber too big"}, "error")
     
     pageNumber -= 1
@@ -144,19 +144,19 @@ def get_users():
         idClass = int(idClass)
     except:
         return send_response(400, 35100, {"message": "idClass not integer"}, "error")
-    if idClass > maxINT or idClass <=0:
+    if idClass > max_INT or idClass <=0:
         return send_response(400, 35110, {"message": "idClass not valid"}, "error")
 
     if not Class.query.filter_by(id = idClass).first():
-        return send_response(400, 35120, {"message":"Nonexistent class"}, "error")
+        return send_response(404, 35120, {"message":"Nonexistent class"}, "error")
     if not searchQuery:
-        users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).count()
+        users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).count()
     else:
         users, count = user_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idClass, typeOfSpecialSearch = "specialClass")
     
     for user in users:
-        right_users.append({
+        rightUsers.append({
                     "id": user.id,
                     "name": user.name,
                     "surname": user.surname,
@@ -169,4 +169,4 @@ def get_users():
                     "updatedAt":user.updatedAt
                     })
 
-    return send_response(200, 35131, {"message": "Users found", "users":right_users, "count":count}, "success")
+    return send_response(200, 35131, {"message": "Users found", "users":rightUsers, "count":count}, "success")
