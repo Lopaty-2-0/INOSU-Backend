@@ -183,7 +183,7 @@ def delete():
                         delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
 
             if task.type == Type.Maturita:
-                conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
+                conversations = Conversation.query.filter_by(idTask = task.id, guarantor = task.guarantor)
 
                 for conversation in conversations:
                     if conversation.idUser1 == conversation.guarantor:
