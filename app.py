@@ -151,4 +151,3 @@ except OperationalError as dbError:
             db.create_all()
 except Exception as e:
     print(f"Error while starting aplication: {e}")
-    exit()
