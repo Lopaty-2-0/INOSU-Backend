@@ -32,6 +32,9 @@ def pfp_check(pfp):
     return True
 
 def pfp_delete(pfp):
+    if pfp == "default.jpg":
+        return False
+
     relPath = pfp_path + pfp
 
     safePath = shlex.quote(relPath)
