@@ -71,6 +71,9 @@ def add():
             return send_response(400, 92100, {"message":"startDate before now"}, "error")
         if endDate < startDate:
             return send_response(400, 92110, {"message":"endDate before startDate"}, "error")
+    else:
+        startDate = None
+        
     if type and not isinstance(type, Event_Type):
         if type not in [t.value for t in Event_Type]:
             return send_response(400, 92120, {"message": "Type not our type"}, "error")
