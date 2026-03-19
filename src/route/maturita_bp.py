@@ -34,8 +34,8 @@ def add():
     data = request.get_json(force=True)
     grade = data.get("grade", None)
     maxPoints = data.get("maxPoints", None)
-    startDate = data.get("startDate", None)
-    endDate = data.get("endDate", None)
+    timeStampStartDate = data.get("startDate", None)
+    timeStampEndDate = data.get("endDate", None)
     evaluators = data.get("evaluators", None)
 
     goodIds = []
@@ -45,9 +45,9 @@ def add():
         return send_response(400, 67020, {"message": "grade missing"}, "error")
     if not maxPoints:
          return send_response(400, 67030, {"message": "maxPoints missing"}, "error")
-    if not startDate:
+    if not timeStampStartDate:
          return send_response(400, 67040, {"message": "startDate missing"}, "error")
-    if not endDate:
+    if not timeStampEndDate:
          return send_response(400, 67050, {"message": "endDate missing"}, "error")
     
     grade = str(grade)
@@ -64,11 +64,11 @@ def add():
     if maxPoints > max_FLOAT or maxPoints <= 0:
         return send_response(400, 67090, {"message": "maxPoints not valid"}, "error")  
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 67100, {"message":"End date not integer or is too far"}, "error")
     try:
-        startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+        startDate = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 67110, {"message":"startDate not integer or is too far"}, "error")
     if endDate <= startDate:
@@ -146,13 +146,13 @@ def add_file():
 
         grade = maturitaData.get("grade", None)
         maxPoints = maturitaData.get("maxPoints", None)
-        startDate = maturitaData.get("startDate", None)
-        endDate = maturitaData.get("endDate", None)
+        timeStampStartDate = maturitaData.get("startDate", None)
+        timeStampEndDate = maturitaData.get("endDate", None)
         evaluators = maturitaData.get("evaluators", None)
 
         allMaturitas += 1
 
-        if not grade or not maxPoints or not startDate or not endDate:
+        if not grade or not maxPoints or not timeStampStartDate or not timeStampEndDate:
             maturitaResponse, status = send_response(400, 103060, {"message": "Nothing entered", "maturitaNumber":allMaturitas}, "error")
             badMaturitas.append(maturitaResponse)
             continue
@@ -177,14 +177,14 @@ def add_file():
             continue
 
         try:
-            endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+            endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
         except:
             maturitaResponse, status = send_response(400, 103100, {"message": "End date not integer or is too far", "maturitaNumber":allMaturitas}, "error")
             badMaturitas.append(maturitaResponse)
             continue
 
         try:
-            startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+            startDate = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=datetime.timezone.utc)
         except:
             maturitaResponse, status = send_response(400, 103110, {"message": "startDate not integer or is too far", "maturitaNumber":allMaturitas}, "error")
             badMaturitas.append(maturitaResponse)
@@ -275,8 +275,8 @@ def update():
     data = request.get_json(force=True)
     grade = data.get("grade", None)
     maxPoints = data.get("maxPoints", None)
-    startDate = data.get("startDate", None)
-    endDate = data.get("endDate", None)
+    timeStampStartDate = data.get("startDate", None)
+    timeStampEndDate = data.get("endDate", None)
     evaluators = data.get("evaluators", None)
     idMaturita = data.get("idMaturita", None)
     badIds = []
@@ -285,7 +285,7 @@ def update():
 
     if not idMaturita:
         return send_response(400, 68020, {"message": "idMaturita missing"}, "error")
-    if not grade and not isinstance(evaluators, list) and not startDate and not endDate and not maxPoints:
+    if not grade and not isinstance(evaluators, list) and not timeStampStartDate and not timeStampEndDate and not maxPoints:
         return send_response(400, 68030, {"message": "nothing entered to change"}, "error")
     try:
         idMaturita = int(idMaturita)
@@ -324,18 +324,18 @@ def update():
         
         maturita.maxPoints = maxPoints
         
-    if startDate:
+    if timeStampStartDate:
         try:
-            startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+            startDate = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=datetime.timezone.utc)
         except:
             return send_response(400, 68110, {"message":"startDate not integer or is too far"}, "error")
         if maturita.endDate.replace(tzinfo = datetime.timezone.utc) <= startDate and not endDate:
             return send_response(400, 68120, {"message":"ending before beginning"}, "error")
         maturita.startDate = startDate
         
-    if endDate:
+    if timeStampEndDate:
         try:
-            endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+            endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
         except:
             return send_response(400, 68130, {"message":"End date not integer or is too far"}, "error")
        

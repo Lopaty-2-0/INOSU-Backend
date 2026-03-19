@@ -29,9 +29,9 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 def add():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
-    endDate = data.get("endDate", None)
+    timeStampEndDate = data.get("endDate", None)
     task = data.get("task", None)
-    deadline = data.get("deadline", None)
+    timeStampDeadline = data.get("deadline", None)
     points = data.get("points", None)
     size = data.get("size", None)
 
@@ -41,7 +41,7 @@ def add():
        return send_response(403, 26010, {"message": "This role can not make tasks"}, "error")
     if not taskName:
         return send_response(400, 26020, {"message": "Name not entered"}, "error")
-    if not endDate:
+    if not timeStampEndDate:
         return send_response(400, 26030, {"message": "endDate  not entered"}, "error")
     
     taskName = str(taskName)
@@ -49,7 +49,7 @@ def add():
     if len(taskName) > 255:
         return send_response(400, 26040, {"message":"Name too long"}, "error")
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 26050, {"message":"End date not integer or is too far"}, "error")
     if endDate <= startDate:
@@ -62,9 +62,9 @@ def add():
     type = Type.Task
     user = flask_login.current_user
 
-    if deadline:
+    if timeStampDeadline:
         try:
-            deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
+            deadline = datetime.datetime.fromtimestamp(int(timeStampDeadline)/1000, tz=datetime.timezone.utc)
 
             if deadline < startDate:
                 return send_response(400, 26090, {"message":"Deadline before startDate"}, "error")
@@ -514,9 +514,9 @@ def update():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
     taskName = data.get("name", None)
-    endDate = data.get("endDate", None)
+    timeStampEndDate = data.get("endDate", None)
     task = data.get("task", None)
-    deadline = data.get("deadline", None)
+    timeStampDeadline = data.get("deadline", None)
     points = data.get("points", None)
     objector = data.get("objector", None)
     size = data.get("size", None)
@@ -557,18 +557,18 @@ def update():
         uploadUrl = upload_task(task, flask_login.current_user.id, idTask)
 
     if actualTask.type == Type.Task:
-        if endDate:
+        if timeStampEndDate:
             try:
-                endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+                endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
             except:
                 return send_response(400, 74080, {"message":"End date not integer or is too far"}, "error")
             if endDate <= actualTask.startDate.replace(tzinfo = datetime.timezone.utc):
                 return send_response(400, 74090, {"message":"Ending before begining"}, "error")
             actualTask.endDate = endDate
 
-        if deadline:
+        if timeStampDeadline:
             try:
-                deadline = datetime.datetime.fromtimestamp(int(deadline)/1000, tz=datetime.timezone.utc)
+                deadline = datetime.datetime.fromtimestamp(int(timeStampDeadline)/1000, tz=datetime.timezone.utc)
 
                 if deadline < actualTask.startDate.replace(tzinfo = datetime.timezone.utc):
                     return send_response(400, 74100, {"message":"Deadline before startDate"}, "error")
