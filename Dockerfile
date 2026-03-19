@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "python wait_for_redis.py && gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app"]
+CMD ["sh", "-c", "gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app"]
