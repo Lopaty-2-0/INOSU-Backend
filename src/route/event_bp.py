@@ -10,6 +10,7 @@ from src.utils.event import create_event
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Event_Type, Role
 import datetime
+from zoneinfo import ZoneInfo
 
 event_bp = Blueprint("event_bp", __name__)
 
@@ -25,7 +26,7 @@ def add():
     type = data.get("type", None)
 
     now = datetime.datetime.now(tz = datetime.timezone.utc)
-    tzInfo = datetime.datetime.now().astimezone().tzinfo
+    tzInfo = ZoneInfo("Europe/Prague")
 
     if not name:
         return send_response(400, 92010, {"message": "name missing"}, "error")
