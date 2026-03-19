@@ -8,6 +8,7 @@ from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Role
 from src.utils.paging import user_paging
+from src.utils.redis_cache import set_cache, get_cache
 
 user_class_bp = Blueprint("user_class", __name__)
 
@@ -106,6 +107,7 @@ def get_users():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    cacheData = None
     
     rightUsers = []
 
@@ -149,24 +151,38 @@ def get_users():
 
     if not Class.query.filter_by(id = idClass).first():
         return send_response(404, 35120, {"message":"Nonexistent class"}, "error")
+    
+    cacheKey = f"user_class:get:users:{idClass}:{amountForPaging}:{pageNumber}"
+
     if not searchQuery:
-        users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).count()
+        cacheData = get_cache(cacheKey)
+        
+        if not cacheData:
+            users = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count =  User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User_Class.idClass == idClass).order_by(User_Class.idUser.desc()).count()
+        else:
+            rightUsers = cacheData["users"]
+            count = cacheData["count"]
+
     else:
         users, count = user_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber, specialSearch = idClass, typeOfSpecialSearch = "specialClass")
     
-    for user in users:
-        rightUsers.append({
-                    "id": user.id,
-                    "name": user.name,
-                    "surname": user.surname,
-                    "abbreviation": user.abbreviation,
-                    "role": user.role.value,
-                    "profilePicture": user.profilePicture,
-                    "email": user.email,
-                    "idClass": all_user_classes(user.id),
-                    "createdAt":user.createdAt,
-                    "updatedAt":user.updatedAt
-                    })
+    if not cacheData:
+        for user in users:
+            rightUsers.append({
+                        "id": user.id,
+                        "name": user.name,
+                        "surname": user.surname,
+                        "abbreviation": user.abbreviation,
+                        "role": user.role.value,
+                        "profilePicture": user.profilePicture,
+                        "email": user.email,
+                        "idClass": all_user_classes(user.id),
+                        "createdAt":user.createdAt,
+                        "updatedAt":user.updatedAt
+                        })
+            
+        if not searchQuery:
+            set_cache(cacheKey, {"users":rightUsers, "count":count})
 
     return send_response(200, 35131, {"message": "Users found", "users":rightUsers, "count":count}, "success")

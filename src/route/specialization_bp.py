@@ -6,6 +6,7 @@ from src.utils.enums import Role
 from flask import request, Blueprint, send_file
 from app import db, max_INT
 from src.utils.check_file import check_file_size
+from src.utils.redis_cache import get_cache, set_cache
 import json
 import io
 
@@ -236,15 +237,27 @@ def get():
 
     if pageNumber < 0:
         return send_response(400, 29080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    cacheKey = f"specialization:get:{amountForPaging}:{pageNumber}"
 
     if not searchQuery:
-        specialization = Specialization.query.order_by(Specialization.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Specialization.query.count()
+        cacheData = get_cache(cacheKey)
+
+        if not cacheData:
+            specialization = Specialization.query.order_by(Specialization.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = Specialization.query.count()
+        else:
+            specializations = cacheData["specializations"]
+            count = cacheData["count"]
     else:
         specialization, count = specialization_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)
 
-    for s in specialization:
-        specializations.append({"id":s.id,"name":s.name, "abbreviation":s.abbreviation, "lengthOfStudy":s.lengthOfStudy})
+    if not cacheData:
+        for s in specialization:
+            specializations.append({"id":s.id,"name":s.name, "abbreviation":s.abbreviation, "lengthOfStudy":s.lengthOfStudy})
+
+        if not searchQuery:
+            set_cache(cacheKey, {"specializations":specializations, "count":count})
 
     return send_response (200, 29091, {"message": "Specializations found", "specializations":specializations, "count":count}, "success")
 

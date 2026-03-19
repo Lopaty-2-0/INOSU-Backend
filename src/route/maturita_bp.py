@@ -21,6 +21,7 @@ from src.utils.version import delete_upload_version
 from src.utils.check_file import check_file_size
 import json
 import io
+from src.utils.redis_cache import get_cache, set_cache
 
 
 maturita_bp = Blueprint("maturita", __name__)
@@ -402,17 +403,28 @@ def update():
 @flask_login.login_required
 def get_current():
     now = datetime.datetime.now(tz=datetime.timezone.utc)
-    maturita = Maturita.query.filter((Maturita.endDate > now) & (Maturita.startDate < now)).order_by(Maturita.id.desc()).first()
+    evaluators = []
+    cacheKey = "maturita:get:current"
+
+    cacheData = get_cache(cacheKey)
+    if not cacheData:
+        maturita = Maturita.query.filter((Maturita.endDate > now) & (Maturita.startDate < now)).order_by(Maturita.id.desc()).first()
+    else:
+        actualMaturita = cacheData["maturita"]
 
     if not maturita:
         return send_response(400, 69010, {"message": "no maturita in current time range"}, "error")
     
-    evaluators = []
-    actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
-    for evaluator in actualEvaluators:
-        evaluators.append(evaluator.idUser)
+    if not cacheData:
+        actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+        for evaluator in actualEvaluators:
+            evaluators.append(evaluator.idUser)
 
-    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
+        actualMaturita = {"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}
+        
+        set_cache(cacheKey, actualMaturita)
+
+    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":actualMaturita}, "success")
 
 @maturita_bp.route("/maturita/get/id", methods = ["GET"])
 @flask_login.login_required
@@ -482,7 +494,7 @@ def delete():
             task = Task.query.filter_by(id = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
             team = Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor).first()
             versions = Version_Team.query.filter_by(idTeam = team.idTeam, idTask = team.idTask, guarantor = team.guarantor).all()
-            user_teams= User_Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarnator)
+            user_teams= User_Team.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor)
             conversations = Conversation.query.filter_by(idTask = maturitaTask.idTask, guarantor = maturitaTask.guarantor)
 
             for version in versions:
@@ -544,19 +556,31 @@ def get():
 
     if pageNumber < 0:
         return send_response(400, 72080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    cacheKey = f"maturita:get:{amountForPaging}:{pageNumber}"
 
     if not searchQuery:
-        maturitas = Maturita.query.order_by(Maturita.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Maturita.query.count()
+        cacheData = set_cache(cacheKey)
+
+        if not cacheData:
+            maturitas = Maturita.query.order_by(Maturita.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = Maturita.query.count()
+        else:
+            allMaturitas = cacheData["maturita"]
+            count = cacheData["count"]
     else:
         maturitas, count = maturita_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
-    for maturita in maturitas:
-        evaluators = []
-        actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
-        for evaluator in actualEvaluators:
-            evaluators.append(evaluator.idUser)
-        allMaturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
+    if not cacheData:
+        for maturita in maturitas:
+            evaluators = []
+            actualEvaluators = Evaluator.query.filter_by(idMaturita = maturita.id)
+            for evaluator in actualEvaluators:
+                evaluators.append(evaluator.idUser)
+            allMaturitas.append({"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators})
+
+        if not searchQuery:
+            set_cache(cacheKey, {"maturita":allMaturitas, "count":count})
 
     return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":allMaturitas, "count":count}, "success")
 

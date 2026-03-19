@@ -429,7 +429,7 @@ def delete():
         delete_teams_for_task(idTask = taskId, guarantor = flask_login.current_user.id)
 
         if task.type == Type.Maturita:
-            conversations = Conversation.query.filter_by(idTask = task.idTask, guarantor = task.guarantor)
+            conversations = Conversation.query.filter_by(idTask = task.id, guarantor = task.guarantor)
 
             for conversation in conversations:
                 if conversation.idUser1 == conversation.guarantor:

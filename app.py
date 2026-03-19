@@ -15,6 +15,7 @@ from flask_migrate import Migrate
 from src.utils.enums import Role, Type
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
+import redis
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -56,6 +57,8 @@ try:
     migration = Migrate(app, db)
     scheduler = BackgroundScheduler()
     scheduler.start()
+    redis_client = redis.Redis(host = "localhost", port = 6379, db = 0, decode_responses = True)
+
     CORS( 
         app,
         supports_credentials=True,

@@ -13,3 +13,4 @@ flask[async]
 Flask-Migrate
 APScheduler
 openpyxl
+redis
