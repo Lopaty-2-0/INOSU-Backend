@@ -15,6 +15,7 @@ from flask_migrate import Migrate
 from src.utils.enums import Role, Type
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
+import redis
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -27,9 +28,16 @@ task_path = os.getenv("TASK_PATH")
 pfp_path = os.getenv("PFP_PATH")
 url = os.getenv("URL")
 hmac_ip = os.getenv("HMAC_IP")
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = os.getenv("REDIS_PORT", 6379)
 max_INT = 4294967295
 max_FLOAT = 3.40e+38
 max_TEXT = 65535
+
+try:
+    redis_port = int(redis_port)
+except:
+    redis_port = 6379
 
 try:
     app = Flask(__name__)
@@ -56,6 +64,8 @@ try:
     migration = Migrate(app, db)
     scheduler = BackgroundScheduler()
     scheduler.start()
+    redis_client = redis.Redis(host = redis_host, port = redis_port, db = 0, decode_responses = True)
+
     CORS( 
         app,
         supports_credentials=True,
@@ -135,6 +145,11 @@ try:
     
     from src.route.routes_bp import routes_bp
     app.register_blueprint(routes_bp)
+
+    try:
+        redis_client.ping()
+    except redis.exceptions.ConnectionError as e:
+        print("Problem with redis:", e)
         
 except OperationalError as dbError:
     if dbError.orig.args[0] == 1049:

@@ -19,6 +19,7 @@ from src.utils.reminder import cancel_reminder
 from src.utils.check_file import check_file_size
 import json
 import io
+from src.utils.redis_cache import set_cache, get_cache
 
 topic_bp = Blueprint("topic", __name__)
 
@@ -215,6 +216,7 @@ def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    cacheData = None
 
     topics = []
 
@@ -246,15 +248,27 @@ def get():
 
     if pageNumber < 0:
         return send_response(400, 65080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    cacheKey = f"topic:get:{amountForPaging}:{pageNumber}"
 
     if not searchQuery:
-        topic = Topic.query.order_by(Topic.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Topic.query.count()
+        cacheData = get_cache(cacheKey)
+
+        if not cacheData:
+            topic = Topic.query.order_by(Topic.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = Topic.query.count()
+        else:
+            topics = cacheData["topics"]
+            count = cacheData["count"]
     else:
         topic, count = topic_paging(amountForPaging = amountForPaging, pageNumber = pageNumber, searchQuery = searchQuery)
 
-    for s in topic:
-        topics.append({"id":s.id,"name":s.name})
+    if not cacheData:
+        for s in topic:
+            topics.append({"id":s.id,"name":s.name})
+        
+        if not searchQuery:
+            set_cache(cacheKey, {"topics":topics, "count":count})
 
     return send_response (200, 65091, {"message": "topics found", "topics":topics, "count":count}, "success")
 

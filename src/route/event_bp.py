@@ -10,6 +10,7 @@ from src.utils.event import create_event
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Event_Type, Role
 import datetime
+from zoneinfo import ZoneInfo
 
 event_bp = Blueprint("event_bp", __name__)
 
@@ -20,15 +21,16 @@ def add():
     idUser = data.get("idUser", None)
     description = data.get("description", None)
     name = data.get("name", None)
-    startDate = data.get("startDate", None)
-    endDate = data.get("endDate", None)
+    timeStampStartDate = data.get("startDate", None)
+    timeStampEndDate = data.get("endDate", None)
     type = data.get("type", None)
 
     now = datetime.datetime.now(tz = datetime.timezone.utc)
+    tzInfo = ZoneInfo("Europe/Prague")
 
     if not name:
         return send_response(400, 92010, {"message": "name missing"}, "error")
-    if not endDate:
+    if not timeStampEndDate:
         return send_response(400, 92020, {"message": "endDate missing"}, "error")
     
     if idUser and flask_login.current_user.role != Role.Student:
@@ -49,22 +51,29 @@ def add():
     else:
         idUser = flask_login.current_user.id
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 92060, {"message":"End date not integer or is too far"}, "error")
     if endDate < now:
         return send_response(400, 92070, {"message":"End date before now"}, "error")
-    if startDate:
+    if timeStampStartDate:
         try:
-            startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+            startDate = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=datetime.timezone.utc)
         except:
             return send_response(400, 92080, {"message":"startDate not integer or is too far"}, "error")
-        if endDate.date() != startDate.date():
+        
+        endDateTz = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=tzInfo)
+        startDateTz = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=tzInfo)
+
+        if endDateTz.date() != startDateTz.date():
             return send_response(400, 92090, {"message":"endDate and startDate not on the same date"}, "error")
         if startDate < now:
             return send_response(400, 92100, {"message":"startDate before now"}, "error")
         if endDate < startDate:
             return send_response(400, 92110, {"message":"endDate before startDate"}, "error")
+    else:
+        startDate = None
+        
     if type and not isinstance(type, Event_Type):
         if type not in [t.value for t in Event_Type]:
             return send_response(400, 92120, {"message": "Type not our type"}, "error")
@@ -131,7 +140,7 @@ def delete():
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
-    date = request.args.get("date", None)
+    timeStampDate = request.args.get("date", None)
     count = 0
 
     allEvents = []
@@ -166,23 +175,22 @@ def get():
     if pageNumber < 0:
         return send_response(400, 94080, {"message": "pageNumber must be bigger than 0"}, "error")
     try:
-        date = datetime.datetime.fromtimestamp(int(date)/1000, tz=datetime.timezone.utc)
+        date = datetime.datetime.fromtimestamp(int(timeStampDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 94090, {"message":"date not integer or is too far"}, "error")
     
-    start = date.replace(hour=23, minute=0, second=0, microsecond=0) 
-    end = start + datetime.timedelta(days=1)
+    end = date + datetime.timedelta(days=1)
 
-    events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count += Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end).count()
+    events = Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= date, Event.endDate < end).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count += Event.query.filter(Event.idUser == flask_login.current_user.id, Event.endDate >= date, Event.endDate < end).count()
 
     pageNumber -= int(events.count()/amountForPaging)
     amountForPaging -= events.count()
     
     if amountForPaging:
-        tasks = Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
+        tasks = Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= date, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
 
-    count += Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= start, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).count()
+    count += Task.query.join(User_Team, (User_Team.idTask == Task.id) & (User_Team.guarantor == Task.guarantor)).filter(Task.endDate >= date, Task.endDate < end, User_Team.idUser == flask_login.current_user.id).count()
     
     for event in events:
         user = User.query.filter_by(id = event.maker).first()
@@ -282,7 +290,7 @@ def get_id_maker():
 def get_maker():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
-    date = request.args.get("date", None)
+    timeStampDate = request.args.get("date", None)
 
     allEvents = []
 
@@ -316,15 +324,14 @@ def get_maker():
         return send_response(400, 97080, {"message": "pageNumber must be bigger than 0"}, "error")
     
     try:
-        date = datetime.datetime.fromtimestamp(int(date)/1000, tz=datetime.timezone.utc)
+        date = datetime.datetime.fromtimestamp(int(timeStampDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 97090, {"message":"date not integer or is too far"}, "error")
     
-    start = date.replace(hour=23, minute=0, second=0, microsecond=0) 
-    end = start + datetime.timedelta(days=1)
+    end = date + datetime.timedelta(days=1)
     
-    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end, Event.idUser != flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
-    count = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= start, Event.endDate < end, Event.idUser != flask_login.current_user.id).count()
+    events = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= date, Event.endDate < end, Event.idUser != flask_login.current_user.id).offset(pageNumber * amountForPaging).limit(amountForPaging)
+    count = Event.query.filter(Event.maker == flask_login.current_user.id, Event.endDate >= date, Event.endDate < end, Event.idUser != flask_login.current_user.id).count()
 
     for event in events:
 
@@ -345,17 +352,17 @@ def get_maker():
 @event_bp.route("/event/get/week", methods = ["GET"])
 @flask_login.login_required
 def get_week():
-    startDate = request.args.get("startDate", None)
-    endDate = request.args.get("endDate", None)
+    timeStampStartDate = request.args.get("startDate", None)
+    timeStampEndDate = request.args.get("endDate", None)
 
     allEvents = []
 
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 98010, {"message":"End date not integer or is too far"}, "error")
     try:
-        startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+        startDate = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 98020, {"message":"startDate not integer or is too far"}, "error")
     
@@ -381,17 +388,17 @@ def get_week():
 @event_bp.route("/event/get/maker/week", methods = ["GET"])
 @flask_login.login_required
 def get_maker_week():
-    startDate = request.args.get("startDate", None)
-    endDate = request.args.get("endDate", None)
+    timeStampStartDate = request.args.get("startDate", None)
+    timeStampEndDate = request.args.get("endDate", None)
 
     allEvents = []
 
     try:
-        endDate = datetime.datetime.fromtimestamp(int(endDate)/1000, tz=datetime.timezone.utc)
+        endDate = datetime.datetime.fromtimestamp(int(timeStampEndDate)/1000, tz=datetime.timezone.utc)
     except: 
         return send_response(400, 99010, {"message":"End date not integer or is too far"}, "error")
     try:
-        startDate = datetime.datetime.fromtimestamp(int(startDate)/1000, tz=datetime.timezone.utc)
+        startDate = datetime.datetime.fromtimestamp(int(timeStampStartDate)/1000, tz=datetime.timezone.utc)
     except:
         return send_response(400, 99020, {"message":"startDate not integer or is too far"}, "error")
     

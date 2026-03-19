@@ -25,6 +25,7 @@ from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role, Type
 from src.utils.paging import user_paging
 from sqlalchemy import or_
+from src.utils.redis_cache import get_cache, set_cache
 import io
 
 
@@ -610,6 +611,7 @@ def get_by_role():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    cacheData = None
     
     users = []
 
@@ -648,46 +650,74 @@ def get_by_role():
     if role not in [r.value for r in Role]:
         return send_response(400, 20100, {"message": "Role not our type"}, "error")
     
+    cacheKey = f"user:get:role:{role}:{amountForPaging}:{pageNumber}"
+    
     if not searchQuery:
-        user = User.query.filter_by(role = Role(role)).order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.filter_by(role = Role(role)).order_by(User.id.desc()).count()
+        cacheData = get_cache(cacheKey)
+
+        if not cacheData:
+            user = User.query.filter_by(role = Role(role)).order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = User.query.filter_by(role = Role(role)).order_by(User.id.desc()).count()
+        else:
+            users = cacheData["users"]
+            count = cacheData["count"]
 
     else:
         user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, specialSearch = Role(role), typeOfSpecialSearch = "role")
+    
+    if not cacheData:
+        for u in user:
+            users.append({
+                            "id": u.id,
+                            "name": u.name,
+                            "surname": u.surname,
+                            "abbreviation": u.abbreviation,
+                            "role": u.role.value,
+                            "profilePicture": u.profilePicture,
+                            "email": u.email,
+                            "idClass": all_user_classes(u.id),
+                            "createdAt":u.createdAt,
+                            "updatedAt":u.updatedAt
+                            })
             
-    for u in user:
-        users.append({
-                        "id": u.id,
-                        "name": u.name,
-                        "surname": u.surname,
-                        "abbreviation": u.abbreviation,
-                        "role": u.role.value,
-                        "profilePicture": u.profilePicture,
-                        "email": u.email,
-                        "idClass": all_user_classes(u.id),
-                        "createdAt":u.createdAt,
-                        "updatedAt":u.updatedAt
-                        })
+        if not searchQuery:
+            set_cache(cacheKey, {"users": users, "count":count})
     
     return send_response(200, 20111, {"message": "Users found", "users": users, "count":count}, "success")
 
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
 def get_of_users():
-    count = User.query.count()
+    
+    cacheKey = "user:get:number"
+    cacheData = get_cache(cacheKey)
+
+    if not cacheData:
+        count = User.query.count()
+        set_cache(cacheKey, {"count":count})
+    else:
+        count = cacheData["count"]
 
     return send_response(200, 24011, {"message": "Count of users", "count": count}, "success")
 
 @user_bp.route("/user/get/roles", methods = ["GET"])
 @flask_login.login_required
 def get_roles():
-    roles = []
-    users = User.query.order_by(User.id.desc()).all()
+    cacheKey = "user:get:roles"
+    cacheData = get_cache(cacheKey)
 
-    for user in users:
-        role = user.role.value
-        if not role in roles:
-            roles.append(role)
+    if not cacheData:
+        roles = []
+        users = User.query.order_by(User.id.desc()).all()
+
+        for user in users:
+            role = user.role.value
+            if not role in roles:
+                roles.append(role)
+
+        set_cache(cacheKey, {"roles":roles})
+    else:
+        roles = cacheData["roles"]
 
     return send_response(200, 25011, {"message": "All roles", "roles": roles}, "success")
 
@@ -702,6 +732,7 @@ def get_no_class():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    cacheData = None
     
     users = []
 
@@ -734,27 +765,36 @@ def get_no_class():
     if pageNumber < 0:
         return send_response(400, 51080, {"message": "pageNumber must be bigger than 0"}, "error")
     
-    if not searchQuery:
-        user = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).order_by(User.id.desc()).count()
+    cacheKey = f"user:get:noClass:{amountForPaging}:{pageNumber}"
 
+    if not searchQuery:
+        cacheData = get_cache(cacheKey)
+
+        if not cacheData:
+            user = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = User.query.outerjoin(User_Class, User.id == User_Class.idUser).filter(User.role == Role.Student).filter(User_Class.idUser == None).order_by(User.id.desc()).count()
+        else:
+            users = cacheData["users"]
+            count = cacheData["count"]
     else:
         user, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging, typeOfSpecialSearch = "noClass")
 
-
-    for s in user:
-        if not User_Class.query.filter_by(idUser = s.id).first():
-            users.append({
-                        "id": s.id,
-                        "name": s.name,
-                        "surname": s.surname,
-                        "abbreviation": s.abbreviation,
-                        "role": s.role.value,
-                        "profilePicture": s.profilePicture,
-                        "email": s.email,
-                        "createdAt":s.createdAt,
-                        "updatedAt":s.updatedAt
-                        })
+    if not cacheData:
+        for s in user:
+            if not User_Class.query.filter_by(idUser = s.id).first():
+                users.append({
+                            "id": s.id,
+                            "name": s.name,
+                            "surname": s.surname,
+                            "abbreviation": s.abbreviation,
+                            "role": s.role.value,
+                            "profilePicture": s.profilePicture,
+                            "email": s.email,
+                            "createdAt":s.createdAt,
+                            "updatedAt":s.updatedAt
+                            })
+        if not searchQuery:
+            set_cache(cacheKey, {"users": users, "count": count})
 
     return send_response(200, 51091, {"message": "All students without class", "users": users, "count": count}, "success")
 
@@ -768,8 +808,16 @@ def get_count_by_role():
     
     if role not in [r.value for r in Role]:
         return send_response(400, 48020, {"message": "Role not our type"}, "error")
+    
+    cacheKey = f"user:get:count:byRole:{role}"
+    cacheData = get_cache(cacheKey)
 
-    count = User.query.filter_by(role=Role(role)).count()
+    if not cacheData:
+        count = User.query.filter_by(role=Role(role)).count()
+        set_cache(cacheKey, {"count": count})
+    else:
+        count = cacheData["count"]
+
 
     return send_response(200, 48031, {"message": "User count found", "count": count}, "success")
 
@@ -787,6 +835,7 @@ def get_user_page():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    cacheData = None
     
     rightUsers = []
 
@@ -819,26 +868,38 @@ def get_user_page():
     if pageNumber < 0:
         return send_response(400, 52080, {"message": "pageNumber must be bigger than 0"}, "error")
     
+    cacheKey = f"user:get:{amountForPaging}:{pageNumber}"
+
     if not searchQuery:
-        users = User.query.order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = User.query.count()
+        cacheData = get_cache(cacheKey)
+
+        if not cacheData:
+            users = User.query.order_by(User.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = User.query.count()
+        else:
+            rightUsers = cacheData["users"]
+            count = cacheData["count"]
     else:
         users, count = user_paging(searchQuery = searchQuery, pageNumber = pageNumber, amountForPaging = amountForPaging)
 
-    for user in users:
-        rightUsers.append({
-                            "id": user.id,
-                            "name": user.name,
-                            "surname": user.surname,
-                            "abbreviation": user.abbreviation,
-                            "role": user.role.value,
-                            "profilePicture": user.profilePicture,
-                            "email": user.email,
-                            "idClass": all_user_classes(user.id),
-                            "createdAt":user.createdAt,
-                            "updatedAt":user.updatedAt,
-                            "reminders":user.reminders
-                        })
+    if not cacheData:
+        for user in users:
+            rightUsers.append({
+                                "id": user.id,
+                                "name": user.name,
+                                "surname": user.surname,
+                                "abbreviation": user.abbreviation,
+                                "role": user.role.value,
+                                "profilePicture": user.profilePicture,
+                                "email": user.email,
+                                "idClass": all_user_classes(user.id),
+                                "createdAt":user.createdAt,
+                                "updatedAt":user.updatedAt,
+                                "reminders":user.reminders
+                            })
+        if not searchQuery:
+            set_cache(cacheKey, {"users":rightUsers, "count":count})
+
     return send_response(200, 52091, {"message": "Users found", "users":rightUsers, "count":count}, "success")
 
 @user_bp.route("/user/put/pfp", methods = ["PUT"])

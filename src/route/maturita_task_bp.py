@@ -16,6 +16,7 @@ from openpyxl.styles import Border, Side
 from src.models.Evaluator import Evaluator
 from src.utils.excel import make_borders, center
 import io
+from src.utils.redis_cache import get_cache, set_cache
 
 #TODO: přidat export té tabulky, nejlíp excel tabulka
 
@@ -63,62 +64,71 @@ def get_table():
     if pageNumber < 0:
         return send_response(400, 83090, {"message": "pageNumber must be bigger than 0"}, "error")
 
-    maturitaTask = Maturita_Task.query.join(Team, (Team.guarantor == Maturita_Task.guarantor) & (Team.idTask == Maturita_Task.idTask) & (Team.status == Status.Approved)).filter(Maturita_Task.idMaturita == maturita.id).offset(amountForPaging * pageNumber).limit(amountForPaging)
-    count = Maturita_Task.query.filter(Maturita_Task.idMaturita == maturita.id).count()
+    cacheKey = "maturita_task:table"
+    cacheData = get_cache(cacheKey)
 
-    for taskMaturita in maturitaTask:
-        task = Task.query.filter_by(id = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
-        guarantor = User.query.filter_by(id = taskMaturita.guarantor).first()
-        userTeam = User_Team.query.filter_by(idTask = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
-        student = User.query.filter_by(id = userTeam.idUser).first()
-        objector = User.query.filter_by(id = taskMaturita.objector).first()
-        topic = Topic.query.filter_by(id = taskMaturita.idTopic).first()
+    if not cacheData:
+        maturitaTask = Maturita_Task.query.join(Team, (Team.guarantor == Maturita_Task.guarantor) & (Team.idTask == Maturita_Task.idTask) & (Team.status == Status.Approved)).filter(Maturita_Task.idMaturita == maturita.id).offset(amountForPaging * pageNumber).limit(amountForPaging)
+        count = Maturita_Task.query.filter(Maturita_Task.idMaturita == maturita.id).count()
 
-        if not objector:
-            objectorData = {}
-        else:
-            objectorData = {
-                "id":objector.id,
-                "name":objector.name,
-                "surname": objector.surname,
-                "abbreviation": objector.abbreviation,
-                "createdAt": objector.createdAt,
-                "role": objector.role.value,
-                "profilePicture":objector.profilePicture,
-                "email":objector.email
+        for taskMaturita in maturitaTask:
+            task = Task.query.filter_by(id = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
+            guarantor = User.query.filter_by(id = taskMaturita.guarantor).first()
+            userTeam = User_Team.query.filter_by(idTask = taskMaturita.idTask, guarantor = taskMaturita.guarantor).first()
+            student = User.query.filter_by(id = userTeam.idUser).first()
+            objector = User.query.filter_by(id = taskMaturita.objector).first()
+            topic = Topic.query.filter_by(id = taskMaturita.idTopic).first()
+
+            if not objector:
+                objectorData = {}
+            else:
+                objectorData = {
+                    "id":objector.id,
+                    "name":objector.name,
+                    "surname": objector.surname,
+                    "abbreviation": objector.abbreviation,
+                    "createdAt": objector.createdAt,
+                    "role": objector.role.value,
+                    "profilePicture":objector.profilePicture,
+                    "email":objector.email
+                    }
+
+            guarantorData = {
+                "id":guarantor.id,
+                "name":guarantor.name,
+                "surname": guarantor.surname,
+                "abbreviation": guarantor.abbreviation,
+                "createdAt": guarantor.createdAt,
+                "role": guarantor.role.value,
+                "profilePicture":guarantor.profilePicture,
+                "email":guarantor.email
                 }
 
-        guarantorData = {
-            "id":guarantor.id,
-            "name":guarantor.name,
-            "surname": guarantor.surname,
-            "abbreviation": guarantor.abbreviation,
-            "createdAt": guarantor.createdAt,
-            "role": guarantor.role.value,
-            "profilePicture":guarantor.profilePicture,
-            "email":guarantor.email
-            }
+            allTasks.append({
+                "user":{
+                    "id":student.id,
+                    "name":student.name,
+                    "surname": student.surname,
+                    "abbreviation": student.abbreviation,
+                    "createdAt": student.createdAt,
+                    "role": student.role.value,
+                    "profilePicture":student.profilePicture,
+                    "email":student.email
+                },
+                "topic":{
+                    "id":topic.id,
+                    "name":topic.name,
+                },
+                "variant":taskMaturita.variant,
+                "task":task.name,
+                "guarantor":guarantorData,
+                "objector":objectorData
+            })
+        set_cache(cacheKey, {"tasks":allTasks, "count":count})
 
-        allTasks.append({
-            "user":{
-                "id":student.id,
-                "name":student.name,
-                "surname": student.surname,
-                "abbreviation": student.abbreviation,
-                "createdAt": student.createdAt,
-                "role": student.role.value,
-                "profilePicture":student.profilePicture,
-                "email":student.email
-            },
-            "topic":{
-                "id":topic.id,
-                "name":topic.name,
-            },
-            "variant":taskMaturita.variant,
-            "task":task.name,
-            "guarantor":guarantorData,
-            "objector":objectorData
-        })
+    else:
+        allTasks = cacheData["tasks"]
+        count = cacheData["count"]
 
     return send_response(200, 83101, {"message":"All tasks for current maturita", "tasks":allTasks, "count":count}, "success")
 

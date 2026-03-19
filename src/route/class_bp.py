@@ -9,7 +9,7 @@ from app import db, max_INT
 from src.utils.check_file import check_file_size
 import json
 import io
-
+from src.utils.redis_cache import set_cache, get_cache
 
 class_bp = Blueprint("class", __name__)
 
@@ -255,6 +255,8 @@ def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
+    allClass = []
+    cacheData = None
 
     if not amountForPaging:
         return send_response(400, 23010, {"message": "amountForPaging not entered"}, "error")
@@ -283,31 +285,48 @@ def get():
 
     if pageNumber < 0:
         return send_response(400, 23080, {"message": "pageNumber must be bigger than 0"}, "error")
+    
+    cacheKey = f"class:get:{amountForPaging}:{pageNumber}"
 
     if not searchQuery:
-        classes = Class.query.order_by(Class.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
-        count = Class.query.count()
+        cacheData = get_cache(cacheKey)
+
+        if not cacheData:
+            classes = Class.query.order_by(Class.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
+            count = Class.query.count()
+        else:
+            allClass = cacheData["classes"]
+            count = cacheData["count"]
     else:
         classes, count = class_paging(searchQuery = searchQuery, amountForPaging = amountForPaging, pageNumber = pageNumber)
 
-    allClass = []
-
-    for cl in classes:
-        specialization = Specialization.query.filter_by(id=cl.idSpecialization).first()
-        allClass.append({
-                        "id": cl.id,
-                        "grade": cl.grade,
-                        "group": cl.group,
-                        "name": cl.name,
-                        "specialization": specialization.abbreviation
-                        })
-        
+    if not cacheData:
+        for cl in classes:
+            specialization = Specialization.query.filter_by(id=cl.idSpecialization).first()
+            allClass.append({
+                            "id": cl.id,
+                            "grade": cl.grade,
+                            "group": cl.group,
+                            "name": cl.name,
+                            "specialization": specialization.abbreviation
+                            })
+        if not searchQuery:
+            set_cache(cacheKey, {"classes": allClass, "count":count})
     
     return send_response(200, 23091, {"message": "Classes found", "classes": allClass, "count":count}, "success")
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required
 def get_count():
-    count = Class.query.count()
+    cacheKey = f"class:count"
+    cacheData = get_cache(cacheKey)
+
+    if not cacheData:
+        count = Class.query.count()
+    else:
+        count = cacheData["count"]
+    
+    if count and not cacheData:
+        set_cache(cacheKey, {"count":count})
 
     return send_response(200, 49011, {"message": "Class count found", "count": count}, "success") 
