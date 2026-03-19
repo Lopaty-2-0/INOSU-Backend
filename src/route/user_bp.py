@@ -694,7 +694,7 @@ def get_of_users():
 
     if not cacheData:
         count = User.query.count()
-        set_cache(cacheKey, {"count"})
+        set_cache(cacheKey, {"count":count})
     else:
         count = cacheData["count"]
 
@@ -899,7 +899,7 @@ def get_user_page():
                             })
         if not searchQuery:
             set_cache(cacheKey, {"users":rightUsers, "count":count})
-            
+
     return send_response(200, 52091, {"message": "Users found", "users":rightUsers, "count":count}, "success")
 
 @user_bp.route("/user/put/pfp", methods = ["PUT"])
