@@ -68,7 +68,7 @@ def maturita_save(data):
 def maturita_load(data):
     for d in data:
         d["startDate"] = datetime.fromisoformat(d["startDate"])
-        d["endDate"] = datetime.fromisoformat(d["endData"])
+        d["endDate"] = datetime.fromisoformat(d["endDate"])
 
     return data
 
