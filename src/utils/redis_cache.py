@@ -45,21 +45,37 @@ def get_cache(cache_key):
     return loadedData
 
 def user_load(data):
-    for d in data:
-        d["createdAt"] = datetime.fromisoformat(d["createdAt"])
-        d["updatedAt"] = datetime.fromisoformat(d["updatedAt"])
+    if not "createdAt" in data and not "updatedAt" in data:
+        for d in data:
+            d["createdAt"] = datetime.fromisoformat(d["createdAt"])
+
+            if "updatedAt" in d:
+                d["updatedAt"] = datetime.fromisoformat(d["updatedAt"])
+    else:
+        data["createdAt"] = datetime.fromisoformat(data["createdAt"])
+
+        if "updatedAt" in data:
+            data["updatedAt"] = datetime.fromisoformat(data["updatedAt"])
 
     return data
 
 def user_save(data):
-    for d in data:
-        d["createdAt"] = d["createdAt"].isoformat()
-        d["updatedAt"] = d["updatedAt"].isoformat()
+    if not "createdAt" in data and not "updatedAt" in data:
+        for d in data:
+            d["createdAt"] = d["createdAt"].isoformat()
+
+            if "updatedAt" in d:
+                d["updatedAt"] = d["updatedAt"].isoformat()
+    else:
+        data["createdAt"] = data["createdAt"].isoformat()
+        
+        if "updatedAt" in data:
+            data["updatedAt"] = data["updatedAt"].isoformat()
 
     return data
 
 def maturita_save(data):
-    if not "startDate" in data or not "endDate" in data:
+    if not "startDate" in data and not "endDate" in data:
         for d in data:
             d["startDate"] = d["startDate"].isoformat()
             d["endDate"] = d["endDate"].isoformat()
@@ -70,7 +86,7 @@ def maturita_save(data):
     return data
 
 def maturita_load(data):
-    if not "startDate" in data or not "endDate" in data:
+    if not "startDate" in data and not "endDate" in data:
         for d in data:
             d["startDate"] = datetime.fromisoformat(d["startDate"])
             d["endDate"] = datetime.fromisoformat(d["endDate"])
@@ -82,8 +98,10 @@ def maturita_load(data):
 
 def table_load(data):
     for d in data:
+        if "objector" in d and d["objector"]:
+            d["objector"] = user_load(d["objector"])
+
         d["guarantor"] = user_load(d["guarantor"])
-        d["objector"] = user_load(d["objector"])
         d["user"] = user_load(d["user"])
     
     return data
@@ -91,8 +109,10 @@ def table_load(data):
 
 def table_save(data):
     for d in data:
+        if "objector" in d and d["objector"]:
+            d["objector"] = user_save(d["objector"])
+            
         d["guarantor"] = user_save(d["guarantor"])
-        d["objector"] = user_save(d["objector"])
         d["user"] = user_save(d["user"])
     
     return data
