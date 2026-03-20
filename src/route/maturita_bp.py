@@ -560,7 +560,7 @@ def get():
     cacheKey = f"maturita:get:{amountForPaging}:{pageNumber}"
 
     if not searchQuery:
-        cacheData = set_cache(cacheKey)
+        cacheData = get_cache(cacheKey)
 
         if not cacheData:
             maturitas = Maturita.query.order_by(Maturita.id.desc()).offset(amountForPaging * pageNumber).limit(amountForPaging)
