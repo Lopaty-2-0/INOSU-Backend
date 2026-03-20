@@ -35,11 +35,11 @@ def get_cache(cache_key):
     
     if "tasks" in loadedData:
         loadedData["tasks"] = table_load(loadedData["tasks"])
-    if "maturita" in loadedData:
+    elif "maturita" in loadedData:
         loadedData["maturita"] = maturita_load(loadedData["maturita"])
-    if "users" in loadedData:
+    elif "users" in loadedData:
         loadedData["users"] = user_load(loadedData["users"])
-    if "evaluators" in loadedData:
+    elif "evaluators" in loadedData:
         loadedData["evaluators"] = user_load(loadedData["evaluators"])
 
     return loadedData
@@ -59,16 +59,24 @@ def user_save(data):
     return data
 
 def maturita_save(data):
-    for d in data:
-        d["startDate"] = d["startDate"].isoformat()
-        d["endDate"] = d["endDate"].isoformat()
+    if not "startDate" in data or not "endDate" in data:
+        for d in data:
+            d["startDate"] = d["startDate"].isoformat()
+            d["endDate"] = d["endDate"].isoformat()
+    else:
+        data["startDate"] = data["startDate"].isoformat()
+        data["endDate"] = data["endDate"].isoformat()
 
     return data
 
 def maturita_load(data):
-    for d in data:
-        d["startDate"] = datetime.fromisoformat(d["startDate"])
-        d["endDate"] = datetime.fromisoformat(d["endDate"])
+    if not "startDate" in data or not "endDate" in data:
+        for d in data:
+            d["startDate"] = datetime.fromisoformat(d["startDate"])
+            d["endDate"] = datetime.fromisoformat(d["endDate"])
+    else:
+        data["startDate"] = datetime.fromisoformat(data["startDate"])
+        data["endDate"] = datetime.fromisoformat(data["endDate"])
 
     return data
 
