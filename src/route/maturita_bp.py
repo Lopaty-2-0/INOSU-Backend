@@ -411,6 +411,7 @@ def get_current():
         maturita = Maturita.query.filter((Maturita.endDate > now) & (Maturita.startDate < now)).order_by(Maturita.id.desc()).first()
     else:
         actualMaturita = cacheData["maturita"]
+        maturita = True
 
     if not maturita:
         return send_response(400, 69010, {"message": "no maturita in current time range"}, "error")
@@ -422,9 +423,9 @@ def get_current():
 
         actualMaturita = {"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}
         
-        set_cache(cacheKey, actualMaturita)
+        set_cache(cacheKey, {"maturita":actualMaturita})
 
-    return send_response(201, 69021, {"message": "maturita found successfuly", "maturita":actualMaturita}, "success")
+    return send_response(200, 69021, {"message": "maturita found successfuly", "maturita":actualMaturita}, "success")
 
 @maturita_bp.route("/maturita/get/id", methods = ["GET"])
 @flask_login.login_required
@@ -452,7 +453,7 @@ def get_id():
     for evaluator in actualEvaluators:
         evaluators.append(evaluator.idUser)
     
-    return send_response(201, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
+    return send_response(200, 70051, {"message": "maturita found successfuly", "maturita":{"grade":maturita.grade, "id":maturita.id, "maxPoints":maturita.maxPoints, "startDate":maturita.startDate, "endDate":maturita.endDate, "evaluators":evaluators}}, "success")
 
 @maturita_bp.route("/maturita/delete", methods = ["delete"])
 @flask_login.login_required
@@ -517,7 +518,7 @@ def delete():
     if not goodIds:
         return send_response(400, 71030, {"message": "no deletion"}, "error")
 
-    return send_response(201, 71041, {"message": "maturita deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
+    return send_response(200, 71041, {"message": "maturita deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 
 @maturita_bp.route("/maturita/get", methods = ["GET"])
 @flask_login.login_required
@@ -582,5 +583,5 @@ def get():
         if not searchQuery:
             set_cache(cacheKey, {"maturita":allMaturitas, "count":count})
 
-    return send_response(201, 72091, {"message": "maturita created successfuly", "maturita":allMaturitas, "count":count}, "success")
+    return send_response(200, 72091, {"message": "maturita created successfuly", "maturita":allMaturitas, "count":count}, "success")
 
