@@ -62,7 +62,6 @@ def maturita_save(data):
     for d in data:
         d["startDate"] = d["startDate"].isoformat()
         d["endDate"] = d["endDate"].isoformat()
-        d["evaluators"] = user_save(d["evaluators"])
 
     return data
 
@@ -70,7 +69,6 @@ def maturita_load(data):
     for d in data:
         d["startDate"] = datetime.fromisoformat(d["startDate"])
         d["endDate"] = datetime.fromisoformat(d["endData"])
-        d["evaluators"] = user_load(d["evaluators"])
 
     return data
 
