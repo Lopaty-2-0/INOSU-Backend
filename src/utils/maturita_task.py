@@ -21,8 +21,8 @@ def maturita_task_delete(idUser, idMaturita):
             if version.elaboration:
                 delete_upload_version(version.idTask, version.idTeam, version.elaboration, version.guarantor, version.idVersion)
 
-        db.session.delete(task)
-        db.session.commit()
-
         if taskFile:
             delete_upload_task(id = userTeam.idTask, guarantor = userTeam.guarantor, task = taskFile)
+
+        db.session.delete(task)
+        db.session.commit()
