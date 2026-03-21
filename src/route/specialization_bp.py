@@ -206,7 +206,7 @@ def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
     searchQuery = request.args.get("searchQuery", None)
-
+    cacheData = None
     specializations = []
 
     if not amountForPaging:
