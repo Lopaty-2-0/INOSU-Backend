@@ -16,6 +16,8 @@ from src.utils.enums import Role, Type
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 import redis
+from flask_limiter import Limiter
+from src.utils.limiter import get_user_id
 
 load_dotenv(".env", override=False)
 load_dotenv(".env.hmac", override=True)
@@ -65,6 +67,7 @@ try:
     scheduler = BackgroundScheduler()
     scheduler.start()
     redis_client = redis.Redis(host = redis_host, port = redis_port, db = 0, decode_responses = True)
+    limiter = Limiter(key_func = get_user_id, app = app, default_limits=["60/minute"], storage_uri=f"redis://{redis_host}:{redis_port}")
 
     CORS( 
         app,

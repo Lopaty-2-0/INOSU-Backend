@@ -10,7 +10,7 @@ from src.utils.response import send_response
 from src.utils.send_email import send_email
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, Blueprint, send_file
-from app import db, url, max_INT
+from app import db, url, max_INT, limiter
 from src.models.User import User
 from src.models.Class import Class
 from src.models.User_Class import User_Class
@@ -37,6 +37,7 @@ addUser_extensions = {"json"}
 
 @user_bp.route("/user/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 1010, {"message": "No permission for that"}, "error")
@@ -125,6 +126,7 @@ def add():
   
 @user_bp.route("/user/add/file", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("3/minute")
 def add_file():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 50010, {"message": "No permission for that"}, "error")
@@ -258,6 +260,7 @@ def add_file():
 
 @user_bp.route("/user/get/file", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("5/minute")
 def get_file():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 105010, {"message": "No permission for that"}, "error")
@@ -283,6 +286,7 @@ def get_file():
 
 @user_bp.route("/user/update", methods = ["PUT"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def update():
     #gets data (json)
     data = request.get_json(force=True)
@@ -414,6 +418,7 @@ def update():
     
 @user_bp.route("/user/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     data = request.get_json(force = True)
     idUser = data.get("idUser", None)
@@ -490,6 +495,7 @@ def delete():
 
 @user_bp.route("/user/update/password", methods = ["PUT"])
 @flask_login.login_required
+@limiter.limit("5/minute")
 def password_reset():
     data = request.get_json(force = True)
     oldPassword = (data.get("oldPassword", None))
@@ -514,6 +520,7 @@ def password_reset():
     return send_response(200, 11051, {"message": "Password changed successfuly"}, "success")
 
 @user_bp.route("/user/password/new", methods = ["POST"])
+@limiter.limit("3/minute")
 def password_res():
     data = request.get_json(force = True)
     email = data.get("email", None)
@@ -540,6 +547,7 @@ def password_res():
     return send_response(201, 12051, {"message": "Token created successfuly and send to email"}, "success")
 
 @user_bp.route("/user/password/verify", methods = ["POST"])
+@limiter.limit("5/minute")
 def password_verify():
     data = request.get_json(force = True)
     token = data.get("token", None)
@@ -552,6 +560,7 @@ def password_verify():
     return send_response(200, 13021, {"message": "Verified successfuly", "email":decodedToken["email"]}, "success")
 
 @user_bp.route("/user/password/reset", methods = ["POST"])
+@limiter.limit("5/minute")
 def password_new():
     data = request.get_json(force=True)
     email = data.get("email", None)
@@ -583,6 +592,7 @@ def password_new():
 
 @user_bp.route("/user/get/id", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_by_id():
     id = request.args.get("id", None)
 
@@ -606,6 +616,7 @@ def get_by_id():
 
 @user_bp.route("/user/get/role", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_by_role():
     role = request.args.get("role", None)
     amountForPaging = request.args.get("amountForPaging", None)
@@ -687,6 +698,7 @@ def get_by_role():
 
 @user_bp.route("/user/get/number", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def get_of_users():
     
     cacheKey = "user:get:number"
@@ -702,6 +714,7 @@ def get_of_users():
 
 @user_bp.route("/user/get/roles", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def get_roles():
     cacheKey = "user:get:roles"
     cacheData = get_cache(cacheKey)
@@ -723,11 +736,13 @@ def get_roles():
 
 @user_bp.route("/user/get/currentRole", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("120/minute")
 def get_current_role():
     return send_response(200, 21011, {"message": "Current user role", "role":flask_login.current_user.role}, "success")
 
 @user_bp.route("/user/get/noClass", methods =["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_no_class():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -800,6 +815,7 @@ def get_no_class():
 
 @user_bp.route("/user/get/count/byRole", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def get_count_by_role():
     role = request.args.get("role", None)
 
@@ -823,6 +839,7 @@ def get_count_by_role():
 
 @user_bp.route("/user/logged/data", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("120/minute")
 def get_logged_user_data():
     user = flask_login.current_user
 
@@ -831,6 +848,7 @@ def get_logged_user_data():
 #pageNumber starts with 1
 @user_bp.route("/user/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_user_page():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -904,6 +922,7 @@ def get_user_page():
 
 @user_bp.route("/user/put/pfp", methods = ["PUT"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def put_pfp_to_database():
     
     data = request.get_json(force=True)

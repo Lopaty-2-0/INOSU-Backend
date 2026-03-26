@@ -4,7 +4,7 @@ from src.models.Evaluator import Evaluator
 from src.models.User import User
 import flask_login
 from src.utils.response import send_response
-from app import db, max_INT
+from app import db, max_INT, limiter
 from flask import request
 from src.utils.paging import evaluator_paging
 import datetime
@@ -14,6 +14,7 @@ evaluator_bp = Blueprint("evaluator", __name__)
 
 @evaluator_bp.route("/evaluator/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -89,6 +90,7 @@ def get():
 
 @evaluator_bp.route("/evaluator/get/current", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_current():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)

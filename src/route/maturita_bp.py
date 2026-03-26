@@ -14,7 +14,7 @@ import flask_login
 from src.utils.enums import Role
 from src.utils.response import send_response
 from src.utils.paging import maturita_paging
-from app import db, max_FLOAT, max_INT
+from app import db, max_FLOAT, max_INT, limiter
 import datetime
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
@@ -28,6 +28,7 @@ maturita_bp = Blueprint("maturita", __name__)
 
 @maturita_bp.route("/maturita/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def add():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 67010, {"message": "No permission for that"}, "error")
@@ -109,6 +110,7 @@ def add():
 
 @maturita_bp.route("/maturita/add/file", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("3/minute")
 def add_file():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 103010, {"message": "No permission for that"}, "error")
@@ -244,6 +246,7 @@ def add_file():
 
 @maturita_bp.route("/maturita/get/file", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("5/minute")
 def get_file():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 108010, {"message": "No permission for that"}, "error")
@@ -269,6 +272,7 @@ def get_file():
 
 @maturita_bp.route("/maturita/update", methods = ["PUT"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def update():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 68010, {"message": "No permission for that"}, "error")
@@ -401,6 +405,7 @@ def update():
 
 @maturita_bp.route("/maturita/get/current", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_current():
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     evaluators = []
@@ -429,6 +434,7 @@ def get_current():
 
 @maturita_bp.route("/maturita/get/id", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_id():
     id = request.args.get("id", None)
 
@@ -457,6 +463,7 @@ def get_id():
 
 @maturita_bp.route("/maturita/delete", methods = ["delete"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     data = request.get_json(force=True)
     idMaturita = data.get("id", None)
@@ -522,6 +529,7 @@ def delete():
 
 @maturita_bp.route("/maturita/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)

@@ -1,7 +1,7 @@
 import flask_login
 import os
 from urllib.parse import quote
-from app import pfp_path, task_path, hmac_ip
+from app import pfp_path, task_path, hmac_ip, limiter
 from flask import Blueprint, redirect
 from src.utils.check_file import check_file_access
 from src.utils.token import generate_hmac_token
@@ -15,6 +15,7 @@ expiresIn = 600
 @check_file_bp.route("/file/pfp/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("profilePictures")
+@limiter.limit("120/minute")
 def check_pfp(filename):
     filename = os.path.normpath(filename).replace("\\", "/")
 
@@ -32,6 +33,7 @@ def check_pfp(filename):
 @check_file_bp.route("/file/tasks/<string:guarantor>/<string:idTask>/<string:idTeam>/<string:idVersion>/<string:filename>", methods = ["GET"])
 @flask_login.login_required 
 @check_file_access("tasks")
+@limiter.limit("30/minute")
 def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
     filename = os.path.normpath(filename).replace("\\", "/")
     
@@ -49,6 +51,7 @@ def check_tasks(filename, idTask, idTeam, idVersion, guarantor):
 @check_file_bp.route("/file/task/<string:guarantor>/<string:idTask>/<string:filename>", methods = ["GET"])
 @flask_login.login_required
 @check_file_access("task")
+@limiter.limit("30/minute")
 def check_task(filename, idTask, guarantor):
     filename = os.path.normpath(filename).replace("\\", "/")
 

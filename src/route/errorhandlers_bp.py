@@ -1,6 +1,7 @@
 from flask import Blueprint
 from src.utils.response import send_response
 from src.utils.status_codes import InsufficientStorage
+from flask_limiter.errors import RateLimitExceeded
 
 errors_bp = Blueprint("errors", __name__)
 
@@ -39,3 +40,7 @@ def forbidden(e):
 @errors_bp.app_errorhandler(InsufficientStorage)
 def insuffiecient_storage(e):
     return  send_response(507, "E10090", {"message": "Insuffiecient storage"}, "error")
+
+@errors_bp.app_errorhandler(RateLimitExceeded)
+def too_many_requests(e):
+    return  send_response(429, "E10100", {"message": "Too many requests"}, "error")

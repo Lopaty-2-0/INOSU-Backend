@@ -9,7 +9,7 @@ from src.models.Team import Team
 import flask_login
 import datetime
 from src.utils.response import send_response
-from app import max_INT
+from app import max_INT, limiter
 from src.utils.enums import Status, Role
 from openpyxl import Workbook
 from openpyxl.styles import Border, Side
@@ -24,6 +24,7 @@ maturita_task_bp = Blueprint("maturita_task", __name__)
 
 @maturita_task_bp.route("/maturita_task/get/table", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def get_table():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -134,6 +135,7 @@ def get_table():
 
 @maturita_task_bp.route("/maturita_task/get/excel", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("3/minute")
 def get_excel():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 109010, {"message": "No permission for that"}, "error")

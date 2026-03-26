@@ -3,7 +3,7 @@ from src.models.Conversation import Conversation
 from src.models.Message import Message
 import flask_login
 from src.utils.response import send_response
-from app import max_INT, db, max_TEXT
+from app import max_INT, db, max_TEXT, limiter
 from src.utils.message import create_message
 from src.models.User import User
 from sqlalchemy import or_, and_
@@ -16,6 +16,7 @@ message_bp = Blueprint("message_bp", __name__)
 
 @message_bp.route("/message/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def add():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
@@ -103,6 +104,7 @@ def add():
     
 @message_bp.route("/message/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def delete():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
@@ -162,6 +164,7 @@ def delete():
     
 @message_bp.route("/message/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("120/minute")
 def get_messages():
     idConversation = request.args.get("idConversation", None)
     idUser = request.args.get("idUser", None)

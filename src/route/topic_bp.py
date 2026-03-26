@@ -14,7 +14,7 @@ from src.models.User import User
 from src.utils.task import delete_upload_task
 from src.utils.version import delete_upload_version
 from flask import request, Blueprint, send_file
-from app import db, max_INT
+from app import db, max_INT, limiter
 from src.utils.reminder import cancel_reminder
 from src.utils.check_file import check_file_size
 import json
@@ -25,6 +25,7 @@ topic_bp = Blueprint("topic", __name__)
 
 @topic_bp.route("/topic/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 63010, {"message": "No permission for that"}, "error")
@@ -50,6 +51,7 @@ def add():
 
 @topic_bp.route("/topic/add/file", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("3/minute")
 def add_file():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 102010, {"message": "No permission for that"}, "error")
@@ -116,6 +118,7 @@ def add_file():
 
 @topic_bp.route("/topic/get/file", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("5/minute")
 def get_file():
     if flask_login.current_user.role == Role.Student:
         return send_response(403, 107010, {"message": "No permission for that"}, "error")
@@ -136,6 +139,7 @@ def get_file():
 
 @topic_bp.route("/topic/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     badIds = []
     goodIds = []
@@ -212,6 +216,7 @@ def delete():
 
 @topic_bp.route("/topic/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -274,6 +279,7 @@ def get():
 
 @topic_bp.route("/topic/get/id", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_by_id():
     id = request.args.get("id", None)
 

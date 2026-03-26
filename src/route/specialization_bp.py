@@ -4,7 +4,7 @@ from src.utils.paging import specialization_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint, send_file
-from app import db, max_INT
+from app import db, max_INT, limiter
 from src.utils.check_file import check_file_size
 from src.utils.redis_cache import get_cache, set_cache
 import json
@@ -14,6 +14,7 @@ specialization_bp = Blueprint("specialization", __name__)
 
 @specialization_bp.route("/specialization/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 4010, {"message": "No permission for that"}, "error")
@@ -55,6 +56,7 @@ def add():
 
 @specialization_bp.route("/specialization/add/file", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("3/minute")
 def add_file():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 101010, {"message": "No permission for that"}, "error")
@@ -141,6 +143,7 @@ def add_file():
 
 @specialization_bp.route("/specialization/get/file", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("5/minute")
 def get_file():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 104010, {"message": "No permission for that"}, "error")
@@ -160,6 +163,7 @@ def get_file():
 
 @specialization_bp.route("/specialization/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     badIds = []
     goodIds = []
@@ -202,6 +206,7 @@ def delete():
 
 @specialization_bp.route("/specialization/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -263,6 +268,7 @@ def get():
 
 @specialization_bp.route("/specialization/get/id", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_by_id():
     id = request.args.get("id", None)
 

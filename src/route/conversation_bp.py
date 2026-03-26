@@ -6,7 +6,7 @@ from src.models.Conversation import Conversation
 from src.models.Message import Message
 import flask_login
 from src.utils.response import send_response
-from app import max_INT, db
+from app import max_INT, db, limiter
 from sqlalchemy import or_, and_
 from src.utils.conversation import create_conversation
 from src.utils.all_user_classes import all_user_classes
@@ -20,6 +20,7 @@ conversation_bp = Blueprint("conversation_bp", __name__)
 
 @conversation_bp.route("/conversation/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
@@ -104,6 +105,7 @@ def add():
 
 @conversation_bp.route("/conversation/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     data = request.get_json(force=True)
     idConversation = data.get("idConversation", None)
@@ -145,6 +147,7 @@ def delete():
 
 @conversation_bp.route("/conversation/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -215,6 +218,7 @@ def get():
 
 @conversation_bp.route("/conversation/get/guarantor", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_guarantor():
     idTask = request.args.get("idTask", None)
     objectorConversation = None
@@ -270,6 +274,7 @@ def get_guarantor():
 
 @conversation_bp.route("/conversation/get/participant", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_participant():
     idTask = request.args.get("idTask", None)
     guarantor = request.args.get("guarantor", None)
@@ -333,6 +338,7 @@ def get_participant():
 
 @conversation_bp.route("/conversation/get/id", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_id():
     idConversation = request.args.get("idConversation", None)
     idUser = request.args.get("idUser", None)

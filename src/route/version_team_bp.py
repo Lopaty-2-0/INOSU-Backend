@@ -7,7 +7,7 @@ from src.utils.response import send_response
 from src.utils.enums import Status
 from src.utils.version import make_version, delete_upload_version, check_upload_version
 import flask_login
-from app import db, max_INT
+from app import db, max_INT, limiter
 from src.utils.check_file import check_file_size
 import datetime
 from src.models.User import User
@@ -19,6 +19,7 @@ elaboration_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @version_team_bp.route("/version_team/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def add():
     data = request.get_json(force=True)
     elaboration = data.get("elaboration", None)
@@ -90,6 +91,7 @@ def add():
 
 @version_team_bp.route("/version_team/change", methods = ["PUT"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def change():
     data = request.get_json(force = True)
     idTask = data.get("idTask", None)
@@ -154,6 +156,7 @@ def change():
 
 @version_team_bp.route("/version_team/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     idTask = request.args.get("idTask", None)
     idTeam = request.args.get("idTeam", None)
@@ -242,6 +245,7 @@ def get():
 
 @version_team_bp.route("/version_team/put/elaboration", methods = ["PUT"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def put_elaboration_to_database():
     data = request.get_json(force=True)
     elaboration = data.get("elaboration", None)
