@@ -6,10 +6,12 @@ from werkzeug.security import check_password_hash
 from src.utils.response import send_response
 from src.models.User import User
 from src.utils.all_user_classes import all_user_classes
+from app import limiter
 
 auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/auth/login", methods = ["POST"])
+@limiter.limit("5/minute")
 def login():
     data = request.get_json(force = True)
     login = data.get("login", None)
@@ -30,6 +32,7 @@ def login():
 
 @auth_bp.route("/auth/logout", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def logout():
     flask_login.logout_user()
     session.clear()
@@ -40,6 +43,7 @@ def logout():
     return resp
 
 @auth_bp.route("/auth/verify", methods=["GET"])
+@limiter.limit("120/minute")
 def verify():
     if not flask_login.current_user.is_authenticated:
         state = False

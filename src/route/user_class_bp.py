@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db, max_INT
+from app import db, max_INT, limiter
 from src.models.User_Class import User_Class
 from src.models.Class import Class
 from src.models.User import User
@@ -14,6 +14,7 @@ user_class_bp = Blueprint("user_class", __name__)
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
@@ -66,6 +67,7 @@ def add():
 
 @user_class_bp.route("/user_class/delete", methods=["DELETE"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def delete():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
@@ -102,6 +104,7 @@ def delete():
 
 @user_class_bp.route("/user_class/get/users", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_users():
     idClass = request.args.get("idClass", None)
     amountForPaging = request.args.get("amountForPaging", None)

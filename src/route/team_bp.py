@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 import flask_login
-from app import db, max_FLOAT, max_INT, max_TEXT
+from app import db, max_FLOAT, max_INT, max_TEXT, limiter
 from src.models.Team import Team
 from src.models.User import User
 from src.models.Task import Task
@@ -25,6 +25,7 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @team_bp.route("/team/add", methods=["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -59,6 +60,7 @@ def add():
 
 @team_bp.route("/team/delete", methods=["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -132,6 +134,7 @@ def delete():
 
 @team_bp.route("/team/update", methods=["PUT"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def update():
     data = request.get_json(force = True)
     idTask = data.get("idTask", None)
@@ -225,6 +228,7 @@ def update():
 
 @team_bp.route("/team/get/users", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_users_task():
     idTask = request.args.get("idTask", None)
     amountForPaging = request.args.get("amountForPaging", None)
@@ -319,6 +323,7 @@ def get_users_task():
 
 @team_bp.route("/team/get/teams", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_teams_task():
     idTask = request.args.get("idTask", None)
     amountForPaging = request.args.get("amountForPaging", None)
@@ -402,6 +407,7 @@ def get_teams_task():
 
 @team_bp.route("/team/get/info")
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_team_info():
     idTeam = request.args.get("idTeam", None)
     idTask = request.args.get("idTask", None)

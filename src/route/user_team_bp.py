@@ -1,7 +1,7 @@
 from flask import request, Blueprint
 import flask_login
 import datetime
-from app import db, max_INT
+from app import db, max_INT, limiter
 from src.models.User_Team import User_Team
 from src.models.Task import Task
 from src.models.User_Class import User_Class
@@ -23,6 +23,7 @@ user_team_bp = Blueprint("user_team", __name__)
 
 @user_team_bp.route("/user_team/add", methods=["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -158,6 +159,7 @@ def add():
 
 @user_team_bp.route("/user_team/delete", methods=["DELETE"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def delete():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -221,6 +223,7 @@ def delete():
 
 @user_team_bp.route("/user_team/get", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -311,6 +314,7 @@ def get():
 
 @user_team_bp.route("/user_team/change", methods=["PUT"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def change():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -410,6 +414,7 @@ def change():
 
 @user_team_bp.route("/user_team/count/tasks", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def count_user_tasks():
     userTeams = User_Team.query.filter_by(idUser=flask_login.current_user.id).all()
     now = datetime.datetime.now(datetime.timezone.utc)

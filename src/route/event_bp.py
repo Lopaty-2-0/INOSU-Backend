@@ -5,7 +5,7 @@ from src.models.Event import Event
 from src.models.User_Team import User_Team
 import flask_login
 from src.utils.response import send_response
-from app import max_INT, db
+from app import max_INT, db, limiter
 from src.utils.event import create_event
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Event_Type, Role
@@ -16,6 +16,7 @@ event_bp = Blueprint("event_bp", __name__)
 
 @event_bp.route("/event/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     data = request.get_json(force=True)
     idUser = data.get("idUser", None)
@@ -98,6 +99,7 @@ def add():
 
 @event_bp.route("/event/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     data = request.get_json(force=True)
     idEvent = data.get("idEvent", None)
@@ -137,6 +139,7 @@ def delete():
 
 @event_bp.route("/event/get", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -214,6 +217,7 @@ def get():
 
 @event_bp.route("/event/get/id", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_id():
     idEvent = request.args.get("idEvent", None)
     maker = request.args.get("maker", None)
@@ -255,6 +259,7 @@ def get_id():
 
 @event_bp.route("/event/get/maker/id", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_id_maker():
     idEvent = request.args.get("idEvent", None)
 
@@ -287,6 +292,7 @@ def get_id_maker():
 
 @event_bp.route("/event/get/maker", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maker():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -351,6 +357,7 @@ def get_maker():
 
 @event_bp.route("/event/get/week", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_week():
     timeStampStartDate = request.args.get("startDate", None)
     timeStampEndDate = request.args.get("endDate", None)
@@ -387,6 +394,7 @@ def get_week():
 
 @event_bp.route("/event/get/maker/week", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maker_week():
     timeStampStartDate = request.args.get("startDate", None)
     timeStampEndDate = request.args.get("endDate", None)

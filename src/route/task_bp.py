@@ -18,7 +18,7 @@ from src.models.Conversation import Conversation
 import datetime
 from src.utils.paging import task_paging, maturita_task_paging
 from src.utils.team import make_team, delete_teams_for_task
-from app import db, max_INT, max_FLOAT
+from app import db, max_INT, max_FLOAT, limiter
 from src.utils.reminder import cancel_reminder, create_reminder
 
 task_bp = Blueprint("task", __name__)
@@ -26,6 +26,7 @@ task_extensions = ["pdf", "docx", "odt", "html", "zip"]
 
 @task_bp.route("/task/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
@@ -107,6 +108,7 @@ def add():
 
 @task_bp.route("/task/add/maturita/guarantor", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def add_maturita_guarantor():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
@@ -209,6 +211,7 @@ def add_maturita_guarantor():
 
 @task_bp.route("/task/add/maturita/student", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def add_maturita_student():
     data = request.get_json(force=True)
     taskName = data.get("name", None)
@@ -297,6 +300,7 @@ def add_maturita_student():
 
 @task_bp.route("/task/get/id", methods=["GET"]) 
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_by_id():
     idTask = request.args.get("id", None)
     guarantor = request.args.get("guarantor", None)
@@ -394,6 +398,7 @@ def get_by_id():
 
 @task_bp.route("/task/delete", methods=["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     data = request.get_json(force=True)
     idTask = data.get("id", None)
@@ -452,6 +457,7 @@ def delete():
 
 @task_bp.route("/task/get/task", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_task():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -510,6 +516,7 @@ def get_task():
 
 @task_bp.route("/task/update", methods=["PUT"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def update():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
@@ -628,6 +635,7 @@ def update():
 
 @task_bp.route("/task/get/maturita/guarantor/approved", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_guarantor_approved():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -728,6 +736,7 @@ def get_maturita_guarantor_approved():
 
 @task_bp.route("/task/get/maturita/guarantor/pending", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_guarantor_pending():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -829,6 +838,7 @@ def get_maturita_guarantor_pending():
 
 @task_bp.route("/task/get/maturita/student/approved", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_student_approved():
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     maturita = Maturita.query.filter(Maturita.endDate >= now, Maturita.startDate <= now).first()
@@ -886,6 +896,7 @@ def get_maturita_student_approved():
 
 @task_bp.route("/task/get/maturita/student/pending", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_student_pending():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -984,6 +995,7 @@ def get_maturita_student_pending():
 
 @task_bp.route("/task/update/maturita/student", methods=["PUT"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def update_maturita_student():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
@@ -1059,6 +1071,7 @@ def update_maturita_student():
 
 @task_bp.route("/task/delete/student", methods=["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete_student():
     data = request.get_json(force=True)
     idTask = data.get("idTask", None)
@@ -1138,6 +1151,7 @@ def delete_student():
 
 @task_bp.route("/task/get/maturita/student/rejected", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_student_rejected():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -1236,6 +1250,7 @@ def get_maturita_student_rejected():
 
 @task_bp.route("/task/get/maturita/student/not_approved", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_student_not_approved():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -1336,6 +1351,7 @@ def get_maturita_student_not_approved():
 
 @task_bp.route("/task/put/task", methods=["PUT"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def put_task_to_database():
     data = request.get_json(force=True)
     idTask = data.get("id",None)
@@ -1387,6 +1403,7 @@ def put_task_to_database():
 
 @task_bp.route("/task/get/maturita/objector", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_maturita_objector():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)

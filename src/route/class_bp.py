@@ -5,7 +5,7 @@ from src.utils.paging import class_paging
 from src.utils.response import send_response
 from src.utils.enums import Role
 from flask import request, Blueprint, send_file
-from app import db, max_INT
+from app import db, max_INT, limiter
 from src.utils.check_file import check_file_size
 import json
 import io
@@ -15,6 +15,7 @@ class_bp = Blueprint("class", __name__)
 
 @class_bp.route("/class/add", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("20/minute")
 def add():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 8010, {"message": "No permission for that"}, "error")
@@ -70,6 +71,7 @@ def add():
 
 @class_bp.route("/class/add/file", methods = ["POST"])
 @flask_login.login_required
+@limiter.limit("3/minute")
 def add_file():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 100010, {"message": "No permission for that"}, "error")
@@ -180,6 +182,7 @@ def add_file():
 
 @class_bp.route("/class/get/file", methods = ["GET"])
 @flask_login.login_required
+@limiter.limit("5/minute")
 def get_file():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 106010, {"message": "No permission for that"}, "error")
@@ -200,6 +203,7 @@ def get_file():
 
 @class_bp.route("/class/delete", methods = ["DELETE"])
 @flask_login.login_required
+@limiter.limit("10/minute")
 def delete():
     if flask_login.current_user.role != Role.Admin:
         return send_response(403, 9010, {"message": "No permission for that"}, "error")
@@ -228,6 +232,7 @@ def delete():
 
 @class_bp.route("/class/get/id", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get_by_id():
     id = request.args.get("id", None)
 
@@ -251,6 +256,7 @@ def get_by_id():
 
 @class_bp.route("/class/get", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("60/minute")
 def get():
     amountForPaging = request.args.get("amountForPaging", None)
     pageNumber = request.args.get("pageNumber", None)
@@ -317,6 +323,7 @@ def get():
 
 @class_bp.route("/class/count", methods=["GET"])
 @flask_login.login_required
+@limiter.limit("30/minute")
 def get_count():
     cacheKey = f"class:count"
     cacheData = get_cache(cacheKey)
