@@ -65,7 +65,7 @@ def get_table():
     if pageNumber < 0:
         return send_response(400, 83090, {"message": "pageNumber must be bigger than 0"}, "error")
 
-    cacheKey = "maturita_task:table"
+    cacheKey = f"maturita_task:table:{amountForPaging}:{pageNumber}"
     cacheData = get_cache(cacheKey)
 
     if not cacheData:

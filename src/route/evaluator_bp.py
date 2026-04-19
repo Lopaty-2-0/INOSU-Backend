@@ -64,7 +64,7 @@ def get():
     if not Maturita.query.filter_by(id = idMaturita).first():
         return send_response(404, 73110, {"message": "maturita not found"}, "error")
     
-    cacheKey = f"evaluators:get:{amountForPaging}:{pageNumber}"
+    cacheKey = f"evaluators:get:{idMaturita}:{amountForPaging}:{pageNumber}"
 
     if not searchQuery:
         cacheData = get_cache(cacheKey)
