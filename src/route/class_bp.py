@@ -9,7 +9,7 @@ from app import db, max_INT, limiter
 from src.utils.check_file import check_file_size
 import json
 import io
-from src.utils.redis_cache import set_cache, get_cache
+from src.utils.redis_cache import set_cache, get_cache, delete_cache
 
 class_bp = Blueprint("class", __name__)
 
@@ -65,6 +65,8 @@ def add():
     specialization = Specialization.query.filter_by(id=idSpecialization).first()
     db.session.add(newClass)
     db.session.commit()
+
+    delete_cache(["class"])
 
     return send_response (201, 8151, {"message": "Class created succesfuly", "class": {"id": newClass.id, "grade": newClass.grade, "group": newClass.group, "name":newClass.name, "specialization": specialization.abbreviation}}, "success")
 
@@ -177,7 +179,9 @@ def add_file():
     
     if goodClasses == 0:
         return send_response (400, 100150, {"message": "No classes created", "badClasses":badClasses}, "error") 
-            
+    
+    delete_cache(["class"])
+
     return send_response (201, 100161, {"message": "Classes created successfuly", "badClasses":badClasses}, "success")
 
 @class_bp.route("/class/get/file", methods = ["GET"])
@@ -227,6 +231,8 @@ def delete():
         goodIds.append(id)
 
     db.session.commit()
+
+    delete_cache(["user", "user_class", "class"])
 
     return send_response (200, 9031, {"message": "Class deleted successfuly", "badIds":badIds, "goodIds": goodIds}, "success")
 

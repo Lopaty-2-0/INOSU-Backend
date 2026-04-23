@@ -19,9 +19,11 @@ from src.utils.reminder import cancel_reminder
 from src.utils.check_file import check_file_size
 import json
 import io
-from src.utils.redis_cache import set_cache, get_cache
+from src.utils.redis_cache import set_cache, get_cache, delete_cache
 
 topic_bp = Blueprint("topic", __name__)
+
+delete_cache_keys = ["maturita_task"]
 
 @topic_bp.route("/topic/add", methods = ["POST"])
 @flask_login.login_required
@@ -211,6 +213,8 @@ def delete():
     
     if not goodIds:
         return send_response (400, 64030, {"message": "No deletion"}, "error")
+    
+    delete_cache(delete_cache_keys)
     
     return send_response (200, 64041, {"message": "topics deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 

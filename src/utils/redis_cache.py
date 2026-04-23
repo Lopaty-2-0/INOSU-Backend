@@ -116,3 +116,10 @@ def table_save(data):
         d["user"] = user_save(d["user"])
     
     return data
+
+
+def delete_cache(samples):
+    for sample in samples:
+        
+        for key in redis_client.scan_iter(str(sample) + ":*"):
+            redis_client.delete(key)

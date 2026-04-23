@@ -8,9 +8,11 @@ from src.utils.response import send_response
 from src.utils.all_user_classes import all_user_classes
 from src.utils.enums import Role
 from src.utils.paging import user_paging
-from src.utils.redis_cache import set_cache, get_cache
+from src.utils.redis_cache import set_cache, get_cache, delete_cache
 
 user_class_bp = Blueprint("user_class", __name__)
+
+delete_cache_keys = ["user", "user_class"]
 
 @user_class_bp.route("/user_class/add", methods=["POST"])
 @flask_login.login_required
@@ -62,6 +64,8 @@ def add():
         return send_response(400, 33080, {"message": "Nothing created"}, "error")
 
     db.session.commit()
+
+    delete_cache(delete_cache_keys)
     
     return send_response(201, 33091, {"message": "User added to this class","badIds":badIds, "goodIds":goodIds}, "success")
 
@@ -99,6 +103,8 @@ def delete():
     
     db.session.delete(userCl)
     db.session.commit()
+
+    delete_cache(delete_cache_keys)
 
     return send_response(200, 34091, {"message": "User deleted from this class"}, "success")
 
