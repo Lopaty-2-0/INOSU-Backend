@@ -143,7 +143,7 @@ def add_file():
     if len(users.filename.rsplit(".", 1)) < 2 or users.filename.rsplit(".", 1)[1].lower() != "json":
         return send_response(400, 50030, {"message": "Wrong file format"}, "error")
     
-    response = check_file_size(4*1024*1024, users.tell())
+    response = check_file_size(10*1024*1024, users.tell())
 
     if response:
         return response
