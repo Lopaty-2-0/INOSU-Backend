@@ -6,7 +6,7 @@ from src.utils.enums import Role
 from flask import request, Blueprint, send_file
 from app import db, max_INT, limiter
 from src.utils.check_file import check_file_size
-from src.utils.redis_cache import get_cache, set_cache
+from src.utils.redis_cache import get_cache, set_cache, delete_cache
 import json
 import io
 
@@ -51,6 +51,8 @@ def add():
     newSpecialization = Specialization(lengthOfStudy = lengthOfStudy, abbreviation = abbreviation, name = name)
     db.session.add(newSpecialization)
     db.session.commit()
+
+    delete_cache(["specialization"])
 
     return send_response (201, 4111, {"message": "Specialization created successfuly", "specialization":{"lengthOfStudy":newSpecialization.lengthOfStudy, "abbreviation":newSpecialization.abbreviation, "name":newSpecialization.name, "id":newSpecialization.id}}, "success")
 
@@ -137,7 +139,9 @@ def add_file():
     db.session.commit()
     
     if goodSpecializations == 0:
-        return send_response (400, 101120, {"message": "No specializations created", "badSpecializations":badSpecializations}, "error") 
+        return send_response (400, 101120, {"message": "No specializations created", "badSpecializations":badSpecializations}, "error")
+    
+    delete_cache(["specialization"])
             
     return send_response (201, 101131, {"message": "Specializations created successfuly", "badSpecializations":badSpecializations}, "success")
 
@@ -201,6 +205,8 @@ def delete():
     
     if not goodIds:
         return send_response (400, 5030, {"message": "No deletion"}, "error")
+    
+    delete_cache( ["user", "user_class", "class", "specialization"])
     
     return send_response (200, 5041, {"message": "Specializations deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 

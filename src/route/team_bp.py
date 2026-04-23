@@ -18,10 +18,13 @@ from src.utils.maturita_task import maturita_task_delete
 from src.models.Maturita import Maturita
 from src.models.Maturita_Task import Maturita_Task
 from src.utils.version import delete_upload_version
+from src.utils.redis_cache import delete_cache
 import datetime
 
 team_bp = Blueprint("team", __name__)
+
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
+delete_cache_keys = ["maturita_task"]
 
 @team_bp.route("/team/add", methods=["POST"])
 @flask_login.login_required
@@ -130,6 +133,8 @@ def delete():
 
     db.session.commit()
 
+    delete_cache(delete_cache_keys)
+
     return send_response(200, 31071, {"message": "teams deleted successfuly", "badIds": badIds, "goodIds": goodIds}, "success")
 
 @team_bp.route("/team/update", methods=["PUT"])
@@ -223,6 +228,7 @@ def update():
         team.teamUpdatedAt = datetime.datetime.now(datetime.timezone.utc)
 
     db.session.commit()
+    delete_cache(delete_cache_keys)
 
     return send_response(200, 32161, {"message": "team updated"}, "success")
 

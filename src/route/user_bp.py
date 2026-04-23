@@ -25,9 +25,8 @@ from src.utils.team import delete_teams_for_task
 from src.utils.enums import Role, Type
 from src.utils.paging import user_paging
 from sqlalchemy import or_
-from src.utils.redis_cache import get_cache, set_cache
+from src.utils.redis_cache import get_cache, set_cache, delete_cache
 import io
-
 
 user_bp = Blueprint("user", __name__)
 
@@ -121,6 +120,8 @@ def add():
                 goodIds.append(id)
                 db.session.add(newUserClass)
             db.session.commit()
+    
+    delete_cache(["user", "user_class"])
 
     return send_response(201,1161,{"message" : "User created successfuly", "user": {"id": newUser.id, "name": newUser.name, "surname": newUser.surname, "abbreviation": newUser.abbreviation, "role": newUser.role.value, "profilePicture": newUser.profilePicture,"email": newUser.email, "idClass": all_user_classes(newUser.id), "reminders":newUser.reminders}, "goodIds": goodIds, "badIds":badIds}, "success")
   
@@ -253,7 +254,9 @@ def add_file():
             db.session.commit()
     
     if goodUsers == 0:
-        return send_response (400, 50150, {"message": "No users created", "badUsers":badUsers}, "error") 
+        return send_response (400, 50150, {"message": "No users created", "badUsers":badUsers}, "error")
+    
+    delete_cache(["user", "user_class"])
             
     return send_response (201, 50161, {"message": "Users created successfuly", "badUsers":badUsers}, "success")
 
@@ -414,6 +417,8 @@ def update():
 
     db.session.commit()
 
+    delete_cache(["user", "evaluators", "maturita_task", "maturita", "user_class"])
+
     return send_response(200, 2161, {"message": "User changed successfuly", "user":{"id": secondUser.id, "name": secondUser.name, "surname": secondUser.surname, "abbreviation": secondUser.abbreviation, "role": secondUser.role.value, "profilePicture": fileName, "email": secondUser.email, "idClass": all_user_classes(secondUser.id), "createdAt":secondUser.createdAt, "updatedAt":secondUser.updatedAt, "reminders":secondUser.reminders}, "badIds":badIds, "goodIds":goodIds, "uploadUrl":uploadUrl}, "success")
     
 @user_bp.route("/user/delete", methods = ["DELETE"])
@@ -490,6 +495,8 @@ def delete():
 
     if not goodIds:
         return send_response(400, 3040, {"message": "Nothing deleted"}, "error")
+    
+    delete_cache(["user", "evaluators", "maturita_task", "maturita", "user_class"])
 
     return send_response(200, 3051, {"message":"Successfuly deleted users", "deletedIds": goodIds, "notdeletedIds": badIds}, "success")
 
@@ -958,6 +965,8 @@ def put_pfp_to_database():
 
     user.profilePicture = profilePicture
     db.session.commit()
+
+    delete_cache(["user", "evaluators", "maturita_task", "maturita", "user_class"])
 
     return send_response(200, 57081, {"message": "profilePicture changed successfuly"}, "success")
     

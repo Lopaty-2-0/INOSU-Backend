@@ -20,9 +20,12 @@ from src.utils.paging import task_paging, maturita_task_paging
 from src.utils.team import make_team, delete_teams_for_task
 from app import db, max_INT, max_FLOAT, limiter
 from src.utils.reminder import cancel_reminder, create_reminder
+from src.utils.redis_cache import delete_cache
 
 task_bp = Blueprint("task", __name__)
+
 task_extensions = ["pdf", "docx", "odt", "html", "zip"]
+delete_cache_keys = ["maturita_task"]
 
 @task_bp.route("/task/add", methods = ["POST"])
 @flask_login.login_required
@@ -206,6 +209,8 @@ def add_maturita_guarantor():
                 "profilePicture":user.profilePicture,
                 "email":user.email
                 }
+    
+    delete_cache(delete_cache_keys)
 
     return send_response(201, 61191, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
@@ -295,6 +300,8 @@ def add_maturita_student():
                 "profilePicture":user.profilePicture,
                 "email":user.email
                 }
+    
+    delete_cache(delete_cache_keys)
 
     return send_response(201, 62171, {"message":"Task created successfuly", "task":{"id": idTask, "name": newTask.name, "startDate": newTask.startDate, "endDate": newTask.endDate, "task": task, "guarantor": guarantor, "deadline": newTask.deadline, "points": newTask.points}, "uploadUrl":uploadUrl}, "success")
 
@@ -630,6 +637,8 @@ def update():
             "profilePicture":flask_login.current_user.profilePicture,
             "email":flask_login.current_user.email
             }
+    
+    delete_cache(delete_cache_keys)
 
     return send_response(201, 74201, {"message":"Task updated successfuly", "task": {"id": idTask, "name": actualTask.name, "startDate": actualTask.startDate, "endDate": actualTask.endDate, "task": task, "guarantor": guarantor, "deadline": actualTask.deadline, "points": actualTask.points}, "uploadUrl":uploadUrl}, "success")
 
@@ -1066,6 +1075,8 @@ def update_maturita_student():
             "profilePicture":user.profilePicture,
             "email":user.email
             }
+    
+    delete_cache(delete_cache_keys)
 
     return send_response(201, 80121, {"message":"Task updated successfuly", "task": {"id": idTask, "name": actualTask.name, "startDate": actualTask.startDate, "endDate": actualTask.endDate, "task": task, "guarantor": guarantorData, "deadline": actualTask.deadline, "points": actualTask.points}, "uploadUrl":uploadUrl}, "success")
 
@@ -1398,6 +1409,8 @@ def put_task_to_database():
 
     actualTask.task = task
     db.session.commit()
+
+    delete_cache(delete_cache_keys)
 
     return send_response(201, 84121, {"message":"Task changed successfuly"}, "success")
 

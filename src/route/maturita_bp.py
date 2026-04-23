@@ -21,8 +21,7 @@ from src.utils.version import delete_upload_version
 from src.utils.check_file import check_file_size
 import json
 import io
-from src.utils.redis_cache import get_cache, set_cache
-
+from src.utils.redis_cache import get_cache, set_cache, delete_cache
 
 maturita_bp = Blueprint("maturita", __name__)
 
@@ -105,6 +104,8 @@ def add():
             goodIds.append(evaluator)
 
         db.session.commit()
+    
+    delete_cache(["evaluators", "maturita"])
 
     return send_response (201, 67131, {"message": "maturita created successfuly", "maturita":{"grade":newMaturita.grade, "id":newMaturita.id, "maxPoints":newMaturita.maxPoints, "startDate":newMaturita.startDate, "endDate":newMaturita.endDate}, "goodIds":goodIds, "badIds":badIds}, "success")
 
@@ -240,7 +241,9 @@ def add_file():
     db.session.commit()
     
     if goodMaturitas == 0:
-        return send_response (400, 103140, {"message": "No maturitas created", "badMaturitas":badMaturitas}, "error") 
+        return send_response (400, 103140, {"message": "No maturitas created", "badMaturitas":badMaturitas}, "error")
+    
+    delete_cache(["evaluators", "maturita"])
             
     return send_response (201, 103151, {"message": "maturitas created successfuly", "badMaturitas":badMaturitas}, "success")
 
@@ -401,6 +404,8 @@ def update():
 
     db.session.commit()
 
+    delete_cache(["evaluators", "maturita", "maturita_task"])
+
     return send_response(201, 68151, {"message": "maturita updated successfuly", "goodIds":goodIds, "badIds": badIds}, "success")
 
 @maturita_bp.route("/maturita/get/current", methods = ["GET"])
@@ -524,6 +529,8 @@ def delete():
 
     if not goodIds:
         return send_response(400, 71030, {"message": "no deletion"}, "error")
+    
+    delete_cache(["evaluators", "maturita", "maturita_task"])
 
     return send_response(200, 71041, {"message": "maturita deleted successfuly", "goodIds":goodIds, "badIds":badIds}, "success")
 

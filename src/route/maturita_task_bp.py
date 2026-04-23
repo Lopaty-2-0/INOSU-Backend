@@ -18,8 +18,6 @@ from src.utils.excel import make_borders, center
 import io
 from src.utils.redis_cache import get_cache, set_cache
 
-#TODO: přidat export té tabulky, nejlíp excel tabulka
-
 maturita_task_bp = Blueprint("maturita_task", __name__)
 
 @maturita_task_bp.route("/maturita_task/get/table", methods = ["GET"])

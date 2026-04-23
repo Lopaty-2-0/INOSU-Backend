@@ -17,9 +17,11 @@ from sqlalchemy import and_, or_
 from src.utils.version import delete_upload_version
 from src.models.Conversation import Conversation
 from src.utils.archive_conversation import cancel_archive_conversation
+from src.utils.redis_cache import delete_cache
 
 user_team_bp = Blueprint("user_team", __name__)
 
+delete_cache_keys = ["maturita_task"]
 
 @user_team_bp.route("/user_team/add", methods=["POST"])
 @flask_login.login_required
@@ -154,6 +156,8 @@ def add():
 
     if not goodIds and not differentTeam:
         return send_response(400, 36070, {"message": "Nothing created"}, "error")
+    
+    delete_cache(delete_cache_keys)
 
     return send_response(201, 36081, {"message": "user_team created successfuly","badIds":badIds, "goodIds":goodIds, "differentTeam":differentTeam}, "success")
 
@@ -218,6 +222,7 @@ def delete():
     db.session.commit()
 
     cancel_reminder(idUser = idUser, idTask = idTask, guarantor = flask_login.current_user.id)
+    delete_cache(delete_cache_keys)
 
     return send_response(200, 37141, {"message": "user_team deleted successfuly"}, "success")
 
@@ -409,6 +414,8 @@ def change():
         db.session.delete(team)
 
     db.session.commit()
+    
+    delete_cache(delete_cache_keys)
 
     return send_response(200, 43101, {"message": "user_teams changed", "badIds":badIds, "goodIds":goodIds, "differentTeam": differentTeam}, "success")
 
