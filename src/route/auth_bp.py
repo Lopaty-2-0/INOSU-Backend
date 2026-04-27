@@ -37,7 +37,7 @@ def logout():
     flask_login.logout_user()
     session.clear()
     
-    resp = make_response({"statuscode": 200, "resCode": 7011, "data": {"message": "Logged out"}, "resType": "success"}, 200) # zde je nutné přímo použít jejich make_response, jinak nelze smazat tu cookie
+    resp = make_response({"statuscode": 200, "resCode": 7011, "data": {"message": "Logged out"}, "resType": "success"}, 200)
     resp.delete_cookie("remember_token")
     
     return resp
