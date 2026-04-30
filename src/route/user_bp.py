@@ -291,7 +291,6 @@ def get_file():
 @flask_login.login_required
 @limiter.limit("20/minute")
 def update():
-    #gets data (json)
     data = request.get_json(force=True)
     name = data.get("name", None)
     surname = data.get("surname", None)
@@ -321,7 +320,6 @@ def update():
         if pictureResponse:
             return pictureResponse
         
-    #checks if there is id for user
     if not idUser:
         if not profilePicture and not isinstance(reminders, bool):
             return send_response(400, 2010, {"message": "Nothing entered to change"}, "error")
@@ -852,7 +850,6 @@ def get_logged_user_data():
 
     return send_response(200, 50011, {"message": "Logged user data", "user": {"id": user.id, "name": user.name, "surname": user.surname, "abbreviation": user.abbreviation, "role": user.role.value, "profilePicture": user.profilePicture, "email": user.email, "idClass": all_user_classes(user.id), "createdAt":user.createdAt, "updatedAt":user.updatedAt, "reminders":user.reminders}}, "success")
 
-#pageNumber starts with 1
 @user_bp.route("/user/get", methods = ["GET"])
 @flask_login.login_required
 @limiter.limit("60/minute")
