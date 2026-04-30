@@ -5,8 +5,8 @@ class Conversation(db.Model):
     __tablename__ = "conversation"
 
     idConversation = db.Column(INTEGER(unsigned=True), primary_key=True)
-    idUser1 = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id"), primary_key=True)
-    idUser2 = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id"), primary_key=True)
+    idUser1 = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id", ondelete = "CASCADE"), primary_key=True)
+    idUser2 = db.Column(INTEGER(unsigned=True), db.ForeignKey("user.id", ondelete = "CASCADE"), primary_key=True)
     idTask = db.Column(INTEGER(unsigned=True), nullable = True)
     guarantor = db.Column(INTEGER(unsigned=True), nullable = True)
     isArchived = db.Column(db.Boolean, default=False, nullable=False)
