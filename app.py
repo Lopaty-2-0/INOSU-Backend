@@ -153,6 +153,7 @@ try:
         redis_client.ping()
     except redis.exceptions.ConnectionError as e:
         print("Problem with redis:", e)
+        exit()
         
 except OperationalError as dbError:
     if dbError.orig.args[0] == 1049:
