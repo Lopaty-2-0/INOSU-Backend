@@ -31,7 +31,7 @@ import io
 user_bp = Blueprint("user", __name__)
 
 email_regex = r"^\S+@\S+\.\S+$"
-pfp_extensions = {"jpg", "png", "jpeg"}
+pfp_extensions = {"jpg", "png", "jpeg", "gif"}
 addUser_extensions = {"json"}
 
 @user_bp.route("/user/add", methods = ["POST"])
